@@ -1,7 +1,7 @@
 package org.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +18,7 @@ public class Division {
     private String description;
 
     @OneToMany(mappedBy = "division")
+    @JsonIgnore
     private List<User> users = new ArrayList<>();
 
     // Getters and Setters

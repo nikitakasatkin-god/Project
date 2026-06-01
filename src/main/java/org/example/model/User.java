@@ -1,7 +1,7 @@
 package org.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,6 +15,7 @@ public class User {
     private String username;
 
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
 
     @Column(name = "full_name")
@@ -25,6 +26,7 @@ public class User {
 
     @ManyToOne
     @JoinColumn(name = "division_id")
+    @JsonIgnore
     private Division division;
 
     private Boolean active = true;

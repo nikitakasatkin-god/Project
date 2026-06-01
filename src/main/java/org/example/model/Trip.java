@@ -1,7 +1,7 @@
 package org.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -14,6 +14,7 @@ public class Trip {
 
     @ManyToOne
     @JoinColumn(name = "request_id")
+    @JsonIgnore
     private Request request;
 
     @ManyToOne

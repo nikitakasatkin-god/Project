@@ -6,79 +6,273 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Заявки - Логистика</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fb;
+            color: #1a1f36;
+        }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100%;
+            background: white;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.05);
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid #e5e7eb; }
+        .sidebar-header h2 {
+            font-size: 22px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .sidebar-menu { padding: 16px 0; }
+        .menu-item { padding: 12px 24px; cursor: pointer; transition: all 0.2s; }
+        .menu-item:hover { background: #f9fafb; }
+        .menu-title {
+            font-weight: 600;
+            color: #374151;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .has-submenu { position: relative; }
+        .submenu { margin-top: 8px; margin-left: 20px; display: none; }
+        .submenu.show { display: block; }
+        .submenu-item {
+            padding: 8px 12px;
+            color: #6b7280;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .submenu-item:hover { background: #f3f4f6; color: #667eea; }
+        .arrow { font-size: 12px; transition: transform 0.2s; }
+        .has-submenu.open .arrow { transform: rotate(180deg); }
+        .main-content { margin-left: 280px; padding: 24px; min-height: 100vh; }
+        .top-bar {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .page-title { font-size: 24px; font-weight: 700; color: #1a1f36; }
+        .user-info { display: flex; align-items: center; gap: 16px; }
+        .user-name { font-weight: 600; color: #374151; }
+        .logout-btn {
+            padding: 8px 16px;
+            background: #fee2e2;
+            color: #dc2626;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .content-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .filter-group { display: flex; gap: 12px; flex-wrap: wrap; }
+        .filter-select, .search-input {
+            padding: 8px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+        }
+        .search-input { width: 250px; }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+        .requests-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .request-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            transition: all 0.2s;
+            overflow: hidden;
+        }
+        .request-card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.08); transform: translateY(-2px); }
+        .request-card-header {
+            padding: 16px;
+            background: #f9fafb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .request-id { font-weight: 700; font-size: 16px; color: #1a1f36; }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status-new { background: #fef3c7; color: #d97706; }
+        .status-progress { background: #dbeafe; color: #2563eb; }
+        .status-completed { background: #d1fae5; color: #059669; }
+        .request-card-body { padding: 16px; }
+        .request-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .info-label { color: #6b7280; }
+        .request-card-footer {
+            padding: 12px 16px;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .link-button { color: #667eea; text-decoration: none; font-weight: 500; background: none; border: none; cursor: pointer; }
+        .delete-btn { background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px 8px; border-radius: 6px; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 650px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .modal-header h3 { font-size: 20px; }
+        .modal-header .close { font-size: 28px; cursor: pointer; color: #9ca3af; }
+        .modal-body { padding: 24px; }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151; }
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border 0.2s;
+        }
+        .form-control:focus { outline: none; border-color: #667eea; }
+        .empty-state { text-align: center; padding: 60px 20px; }
+        .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+        .empty-text { font-size: 16px; color: #6b7280; margin-bottom: 20px; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
 <div class="sidebar">
-    <div class="sidebar-header">
-        <h2>Логистика</h2>
-    </div>
+    <div class="sidebar-header"><h2>Логистика</h2></div>
     <div class="sidebar-menu">
-        <div class="menu-item" onclick="location.href='/dashboard'">
+        <div class="menu-item" onclick="window.location.href='/dashboard'">
             <div class="menu-title">🏠 Главная</div>
         </div>
-        <div class="menu-item has-submenu" data-submenu="branded">
-            <div class="menu-title">
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
                 📦 Брендовая продукция
                 <span class="arrow">▼</span>
             </div>
-            <div class="submenu" id="submenu-branded">
-                <div class="submenu-item active" data-type="BRANDED" data-page="requests">Заявки</div>
-                <div class="submenu-item" data-type="BRANDED" data-page="trips">Рейсы</div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=BRANDED'">Заявки</div>
+                <div class="submenu-item" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
             </div>
         </div>
-        <div class="menu-item has-submenu" data-submenu="non-branded">
-            <div class="menu-title">
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
                 📦 Небрендовая продукция
                 <span class="arrow">▼</span>
             </div>
-            <div class="submenu" id="submenu-non-branded">
-                <div class="submenu-item" data-type="NON_BRANDED" data-page="requests">Заявки</div>
-                <div class="submenu-item" data-type="NON_BRANDED" data-page="trips">Рейсы</div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
+                <div class="submenu-item" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
             </div>
         </div>
-        <div class="menu-item has-submenu" data-submenu="references">
-            <div class="menu-title">
-                📚 Справочники
-                <span class="arrow">▼</span>
-            </div>
-            <div class="submenu" id="submenu-references">
-                <div class="submenu-item" data-page="divisions">Подразделения</div>
-                <div class="submenu-item" data-page="tariffs-branded">Тарифы Брендовая</div>
-                <div class="submenu-item" data-page="tariffs-non-branded">Тарифы Небрендовая</div>
-                <div class="submenu-item" data-page="carriers">Перевозчики</div>
-                <div class="submenu-item" data-page="plants">Заводы</div>
-                <div class="submenu-item" data-page="warehouses">Склады</div>
-            </div>
+        <div class="menu-item" onclick="window.location.href='/references'">
+            <div class="menu-title">📚 Справочники</div>
         </div>
-        <div class="menu-item has-submenu" data-submenu="settings">
-            <div class="menu-title">
-                ⚙️ Настройки
-                <span class="arrow">▼</span>
-            </div>
-            <div class="submenu" id="submenu-settings">
-                <div class="submenu-item" data-page="params">Параметры</div>
-                <div class="submenu-item" data-page="updates">Применение обновлений</div>
-                <div class="submenu-item" data-page="system-message">Сообщение о недоступности</div>
-                <div class="submenu-item" data-page="users-list">Пользователи</div>
-            </div>
+        <div class="menu-item" onclick="window.location.href='/settings'">
+            <div class="menu-title">⚙️ Настройки</div>
         </div>
-        <div class="menu-item has-submenu" data-submenu="profile">
-            <div class="menu-title">
-                👤 Профиль
-                <span class="arrow">▼</span>
-            </div>
-            <div class="submenu" id="submenu-profile">
-                <div class="submenu-item" data-page="profile-info">ФИО</div>
-                <div class="submenu-item" data-page="logout">Выход</div>
-            </div>
+        <div class="menu-item" onclick="window.location.href='/profile'">
+            <div class="menu-title">👤 Профиль</div>
         </div>
     </div>
 </div>
 
 <div class="main-content">
     <div class="top-bar">
-        <h1 class="page-title" id="page-title">Заявки</h1>
+        <h1 class="page-title" id="page-title">Заявки (Брендовая продукция)</h1>
         <div class="user-info">
             <span class="user-name" sec:authentication="name"></span>
             <a href="/logout" class="logout-btn">Выйти</a>
@@ -99,17 +293,13 @@
             </div>
             <button class="btn-primary" id="createRequestBtn">+ Создать заявку</button>
         </div>
-
-        <div id="requestsContainer" class="requests-container">
-            <!-- Заявки будут загружены через JS -->
-            <div class="loading">Загрузка...</div>
-        </div>
+        <div id="requestsContainer" class="requests-container"><div class="loading">Загрузка...</div></div>
     </div>
 </div>
 
 <!-- Модальное окно создания заявки -->
 <div id="createModal" class="modal">
-    <div class="modal-content modal-lg">
+    <div class="modal-content">
         <div class="modal-header">
             <h3>Создание заявки</h3>
             <span class="close">&times;</span>
@@ -121,25 +311,18 @@
                         <label>Объем (тонн) *</label>
                         <input type="number" id="volume" step="0.1" required class="form-control">
                     </div>
-                    <div class="form-group">
-                        <label>Тип продукции *</label>
-                        <select id="productType" class="form-control" required>
-                            <option value="BRANDED">Брендовая продукция</option>
-                            <option value="NON_BRANDED">Небрендовая продукция</option>
-                        </select>
-                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Пункт погрузки *</label>
+                        <label>Пункт погрузки (Завод) *</label>
                         <select id="pickupPoint" class="form-control" required>
-                            <option value="">Выберите пункт погрузки</option>
+                            <option value="">Выберите завод</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Пункт разгрузки *</label>
+                        <label>Пункт разгрузки (Склад) *</label>
                         <select id="deliveryPoint" class="form-control" required>
-                            <option value="">Выберите пункт разгрузки</option>
+                            <option value="">Выберите склад</option>
                         </select>
                     </div>
                 </div>
@@ -172,25 +355,51 @@
     </div>
 </div>
 
-<script src="/js/main.js"></script>
 <script>
+    function toggleSubmenu(element) {
+        const menuItem = element.closest('.has-submenu');
+        menuItem.classList.toggle('open');
+        const submenu = menuItem.querySelector('.submenu');
+        if (submenu) {
+            submenu.classList.toggle('show');
+        }
+        event.stopPropagation();
+    }
+
     let currentProductType = 'BRANDED';
     let allRequests = [];
 
-    // Загрузка пунктов погрузки/разгрузки из справочников
+    // Определяем тип продукции из URL при загрузке
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('type') === 'NON_BRANDED') {
+        currentProductType = 'NON_BRANDED';
+        document.getElementById('page-title').innerText = 'Заявки (Небрендовая продукция)';
+    }
+
     async function loadPickupPoints() {
         try {
-            const [plants, warehouses] = await Promise.all([
-                fetch('/api/references/plants').then(r => r.json()),
-                fetch('/api/references/warehouses').then(r => r.json())
-            ]);
-            const options = [...plants.map(p => ({value: p.name, label: `🏭 ${p.name}`})),
-                           ...warehouses.map(w => ({value: w.name, label: `📦 ${w.name}`}))];
+            const response = await fetch('/api/requests/reference/pickup-points');
+            const plants = await response.json();
             const pickupSelect = document.getElementById('pickupPoint');
+            pickupSelect.innerHTML = '<option value="">Выберите завод</option>' +
+                plants.map(p => `<option value="${p.value}">${p.label}</option>`).join('');
+        } catch(e) {
+            console.error('Ошибка загрузки заводов:', e);
+            document.getElementById('pickupPoint').innerHTML = '<option value="">Выберите завод</option><option value="Завод №1">🏭 Завод №1</option><option value="Завод №2">🏭 Завод №2</option>';
+        }
+    }
+
+    async function loadDeliveryPoints() {
+        try {
+            const response = await fetch('/api/requests/reference/delivery-points');
+            const warehouses = await response.json();
             const deliverySelect = document.getElementById('deliveryPoint');
-            pickupSelect.innerHTML = '<option value="">Выберите пункт погрузки</option>' + options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
-            deliverySelect.innerHTML = '<option value="">Выберите пункт разгрузки</option>' + options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
-        } catch(e) { console.error(e); }
+            deliverySelect.innerHTML = '<option value="">Выберите склад</option>' +
+                warehouses.map(w => `<option value="${w.value}">${w.label}</option>`).join('');
+        } catch(e) {
+            console.error('Ошибка загрузки складов:', e);
+            document.getElementById('deliveryPoint').innerHTML = '<option value="">Выберите склад</option><option value="Склад №1">📦 Склад №1</option><option value="Склад №2">📦 Склад №2</option>';
+        }
     }
 
     async function loadRequests() {
@@ -198,7 +407,10 @@
             const response = await fetch(`/api/requests?type=${currentProductType}`);
             allRequests = await response.json();
             applyFilters();
-        } catch(e) { console.error(e); }
+        } catch(e) {
+            console.error(e);
+            document.getElementById('requestsContainer').innerHTML = '<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-text">Ошибка загрузки заявок</div></div>';
+        }
     }
 
     function applyFilters() {
@@ -206,7 +418,7 @@
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         let filtered = [...allRequests];
         if (statusFilter !== 'ALL') filtered = filtered.filter(r => r.status === statusFilter);
-        if (searchTerm) filtered = filtered.filter(r => r.id.toString().includes(searchTerm) || r.pickupPoint.toLowerCase().includes(searchTerm));
+        if (searchTerm) filtered = filtered.filter(r => r.id.toString().includes(searchTerm) || (r.pickupPoint && r.pickupPoint.toLowerCase().includes(searchTerm)));
         renderRequests(filtered);
     }
 
@@ -222,17 +434,17 @@
                     <div class="request-card" data-id="${req.id}">
                         <div class="request-card-header">
                             <span class="request-id">Заявка №${req.id}</span>
-                            <span class="status-badge status-${getStatusClass(req.status)}">${getStatusText(req.status)}</span>
+                            <span class="status-badge status-${req.status === 'NEW' ? 'new' : req.status === 'IN_PROGRESS' ? 'progress' : 'completed'}">${req.status === 'NEW' ? 'Новая' : req.status === 'IN_PROGRESS' ? 'В работе' : req.status === 'PROCESSED' ? 'Обработана' : 'Завершена'}</span>
                         </div>
                         <div class="request-card-body">
                             <div class="request-info"><span class="info-label">Объем:</span> ${req.volume} т</div>
-                            <div class="request-info"><span class="info-label">Погрузка:</span> ${req.pickupPoint}</div>
-                            <div class="request-info"><span class="info-label">Разгрузка:</span> ${req.deliveryPoint}</div>
-                            <div class="request-info"><span class="info-label">Дата:</span> ${req.pickupStartDate} - ${req.pickupEndDate}</div>
+                            <div class="request-info"><span class="info-label">Погрузка:</span> ${req.pickupPoint || '-'}</div>
+                            <div class="request-info"><span class="info-label">Разгрузка:</span> ${req.deliveryPoint || '-'}</div>
+                            <div class="request-info"><span class="info-label">Дата:</span> ${req.pickupStartDate || '-'} - ${req.pickupEndDate || '-'}</div>
                         </div>
                         <div class="request-card-footer">
                             <button class="link-button" onclick="viewRequest(${req.id})">Подробнее →</button>
-                            ${canDelete(req) ? `<button class="delete-btn" onclick="deleteRequest(${req.id})">🗑️</button>` : ''}
+                            ${req.status === 'NEW' ? `<button class="delete-btn" onclick="deleteRequest(${req.id})">🗑️</button>` : ''}
                         </div>
                     </div>
                 `).join('')}
@@ -240,36 +452,94 @@
         `;
     }
 
-    function getStatusClass(status) {
-        const map = {'NEW': 'new', 'IN_PROGRESS': 'progress', 'PROCESSED': 'completed', 'COMPLETED': 'completed'};
-        return map[status] || 'new';
-    }
-
-    function getStatusText(status) {
-        const map = {'NEW': 'Новая', 'IN_PROGRESS': 'В работе', 'PROCESSED': 'Обработана', 'COMPLETED': 'Завершена'};
-        return map[status] || status;
-    }
-
-    function canDelete(req) {
-        return req.status === 'NEW' && document.querySelector('[sec\\:authorize="hasRole(\'LOGIST\')"]') !== null;
-    }
-
-    function viewRequest(id) { window.location.href = `/request-detail.html?id=${id}`; }
+    function viewRequest(id) { window.location.href = `/request-detail?id=${id}`; }
 
     function openCreateModal() {
         document.getElementById('createModal').style.display = 'flex';
         loadPickupPoints();
+        loadDeliveryPoints();
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('pickupStartDate').min = today;
         document.getElementById('pickupEndDate').min = today;
+        const now = new Date();
+        const defaultTime = `${String(now.getHours()).padStart(2,'0')}:00`;
+        document.getElementById('pickupStartTime').value = defaultTime;
+        document.getElementById('pickupEndTime').value = '17:00';
     }
 
     function closeCreateModal() { document.getElementById('createModal').style.display = 'none'; }
 
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+            color: white;
+            border-radius: 10px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    function validateForm() {
+        const volume = document.getElementById('volume').value;
+        const pickupPoint = document.getElementById('pickupPoint').value;
+        const deliveryPoint = document.getElementById('deliveryPoint').value;
+        const startDate = document.getElementById('pickupStartDate').value;
+        const endDate = document.getElementById('pickupEndDate').value;
+        const startTime = document.getElementById('pickupStartTime').value;
+        const endTime = document.getElementById('pickupEndTime').value;
+
+        const missing = [];
+        if (!volume) missing.push('Объем');
+        if (!pickupPoint) missing.push('Пункт погрузки');
+        if (!deliveryPoint) missing.push('Пункт разгрузки');
+        if (!startDate) missing.push('Дата начала погрузки');
+        if (!endDate) missing.push('Дата окончания погрузки');
+        if (!startTime) missing.push('Время начала погрузки');
+        if (!endTime) missing.push('Время окончания погрузки');
+
+        if (missing.length > 0) {
+            showNotification(`Не все обязательные поля заполнены. Заполните: ${missing.join(', ')}`, 'error');
+            return false;
+        }
+
+        if (parseFloat(volume) <= 0) {
+            showNotification('Введите корректный объем (больше 0)', 'error');
+            return false;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        if (startDate < today) {
+            showNotification('Дата начала погрузки не может быть раньше сегодняшнего дня', 'error');
+            return false;
+        }
+
+        if (startDate > endDate) {
+            showNotification('Дата начала не может быть позже даты окончания', 'error');
+            return false;
+        }
+
+        if (startTime >= endTime) {
+            showNotification('Время начала должно быть раньше времени окончания', 'error');
+            return false;
+        }
+
+        return true;
+    }
+
     async function createRequest() {
-        const data = {
-            volume: document.getElementById('volume').value,
-            productType: document.getElementById('productType').value,
+        if (!validateForm()) return;
+
+        const requestData = {
+            volume: parseFloat(document.getElementById('volume').value),
+            productType: currentProductType,
             pickupPoint: document.getElementById('pickupPoint').value,
             deliveryPoint: document.getElementById('deliveryPoint').value,
             pickupStartDate: document.getElementById('pickupStartDate').value,
@@ -277,17 +547,45 @@
             pickupStartTime: document.getElementById('pickupStartTime').value,
             pickupEndTime: document.getElementById('pickupEndTime').value
         };
+
+        console.log('Отправляем данные:', requestData);
+
         try {
-            await fetch('/api/requests', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
-            closeCreateModal();
-            loadRequests();
-        } catch(e) { alert('Ошибка при создании'); }
+            const response = await fetch('/api/requests', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(requestData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showNotification('Заявка успешно создана!', 'success');
+                closeCreateModal();
+                loadRequests();
+            } else {
+                showNotification(result.error || 'Ошибка при создании заявки', 'error');
+                console.error('Ошибка:', result);
+            }
+        } catch(e) {
+            showNotification('Ошибка при создании заявки: ' + e.message, 'error');
+            console.error(e);
+        }
     }
 
     async function deleteRequest(id) {
         if (confirm('Удалить заявку?')) {
-            await fetch(`/api/requests/${id}`, {method: 'DELETE'});
-            loadRequests();
+            try {
+                const response = await fetch(`/api/requests/${id}`, {method: 'DELETE'});
+                if (response.ok) {
+                    showNotification('Заявка удалена', 'success');
+                    loadRequests();
+                } else {
+                    showNotification('Ошибка при удалении', 'error');
+                }
+            } catch(e) {
+                showNotification('Ошибка при удалении', 'error');
+            }
         }
     }
 
@@ -297,9 +595,6 @@
     document.querySelector('#createModal .close').addEventListener('click', closeCreateModal);
     window.onclick = (e) => { if (e.target === document.getElementById('createModal')) closeCreateModal(); };
 
-    // Определение типа продукции из URL
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('type') === 'NON_BRANDED') currentProductType = 'NON_BRANDED';
     loadRequests();
 </script>
 </body>

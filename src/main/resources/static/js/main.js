@@ -13,15 +13,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Инициализация бокового меню
 function initSidebar() {
+    // Находим все элементы с подменю
     document.querySelectorAll('.has-submenu').forEach(item => {
         const title = item.querySelector('.menu-title');
-        title.addEventListener('click', (e) => {
-            e.stopPropagation();
-            item.classList.toggle('open');
-            const submenu = item.querySelector('.submenu');
-            if (submenu) submenu.classList.toggle('show');
-        });
+        if (title) {
+            // Удаляем старый обработчик, если есть
+            title.removeEventListener('click', toggleSubmenu);
+            // Добавляем новый
+            title.addEventListener('click', toggleSubmenu);
+        }
     });
+}
+
+function toggleSubmenu(event) {
+    const menuItem = event.currentTarget.closest('.has-submenu');
+    if (menuItem) {
+        menuItem.classList.toggle('open');
+        const submenu = menuItem.querySelector('.submenu');
+        if (submenu) {
+            submenu.classList.toggle('show');
+        }
+    }
+    event.stopPropagation();
 }
 
 // Инициализация datepicker с ограничением дат
@@ -106,12 +119,10 @@ function getStatusText(status) {
     return texts[status] || status;
 }
 
-// Уведомления (заглушка)
+// Уведомления
 function showNotification(message, type = 'info') {
-    // В реальной системе здесь был бы Toast уведомление
     console.log(`[${type.toUpperCase()}] ${message}`);
 
-    // Простое всплывающее уведомление
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
@@ -220,6 +231,7 @@ style.textContent = `
 document.head.appendChild(style);
 
 // Экспорт функций в глобальный контекст
+window.toggleSubmenu = toggleSubmenu;
 window.showNotification = showNotification;
 window.confirmAction = confirmAction;
 window.exportToExcel = exportToExcel;

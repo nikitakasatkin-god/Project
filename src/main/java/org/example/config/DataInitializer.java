@@ -144,6 +144,39 @@ public class DataInitializer implements CommandLineRunner {
             warehouseRepository.save(wh2);
         }
 
+        // В методе run добавьте больше заводов и складов:
+        if (plantRepository.count() == 0) {
+            String[][] plants = {
+                    {"Завод №1", "г. Москва, ул. Заводская, 1"},
+                    {"Завод №2", "г. Санкт-Петербург, ул. Промышленная, 15"},
+                    {"Завод №3", "г. Нижний Новгород, ул. Индустриальная, 8"},
+                    {"Завод №4", "г. Казань, ул. Производственная, 22"},
+                    {"Завод №5", "г. Екатеринбург, ул. Станкостроительная, 5"}
+            };
+            for (String[] plant : plants) {
+                Plant p = new Plant();
+                p.setName(plant[0]);
+                p.setAddress(plant[1]);
+                plantRepository.save(p);
+            }
+        }
+
+        if (warehouseRepository.count() == 0) {
+            String[][] warehouses = {
+                    {"Склад №1", "г. Москва, ул. Складская, 5"},
+                    {"Склад №2", "г. Санкт-Петербург, ул. Логистическая, 10"},
+                    {"Склад №3", "г. Нижний Новгород, ул. Транспортная, 12"},
+                    {"Склад №4", "г. Казань, ул. Приемная, 7"},
+                    {"Склад №5", "г. Екатеринбург, ул. Отгрузочная, 3"}
+            };
+            for (String[] warehouse : warehouses) {
+                Warehouse w = new Warehouse();
+                w.setName(warehouse[0]);
+                w.setAddress(warehouse[1]);
+                warehouseRepository.save(w);
+            }
+        }
+
         System.out.println("=== Data initialization completed ===");
         System.out.println("Users: " + userRepository.count());
         System.out.println("Divisions: " + divisionRepository.count());
