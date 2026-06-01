@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заявки - Логистика</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h2>Логистика</h2>
+    </div>
+    <div class="sidebar-menu">
+        <div class="menu-item" onclick="location.href='/dashboard'">
+            <div class="menu-title">🏠 Главная</div>
+        </div>
+        <div class="menu-item has-submenu" data-submenu="branded">
+            <div class="menu-title">
+                📦 Брендовая продукция
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu" id="submenu-branded">
+                <div class="submenu-item active" data-type="BRANDED" data-page="requests">Заявки</div>
+                <div class="submenu-item" data-type="BRANDED" data-page="trips">Рейсы</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu" data-submenu="non-branded">
+            <div class="menu-title">
+                📦 Небрендовая продукция
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu" id="submenu-non-branded">
+                <div class="submenu-item" data-type="NON_BRANDED" data-page="requests">Заявки</div>
+                <div class="submenu-item" data-type="NON_BRANDED" data-page="trips">Рейсы</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu" data-submenu="references">
+            <div class="menu-title">
+                📚 Справочники
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu" id="submenu-references">
+                <div class="submenu-item" data-page="divisions">Подразделения</div>
+                <div class="submenu-item" data-page="tariffs-branded">Тарифы Брендовая</div>
+                <div class="submenu-item" data-page="tariffs-non-branded">Тарифы Небрендовая</div>
+                <div class="submenu-item" data-page="carriers">Перевозчики</div>
+                <div class="submenu-item" data-page="plants">Заводы</div>
+                <div class="submenu-item" data-page="warehouses">Склады</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu" data-submenu="settings">
+            <div class="menu-title">
+                ⚙️ Настройки
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu" id="submenu-settings">
+                <div class="submenu-item" data-page="params">Параметры</div>
+                <div class="submenu-item" data-page="updates">Применение обновлений</div>
+                <div class="submenu-item" data-page="system-message">Сообщение о недоступности</div>
+                <div class="submenu-item" data-page="users-list">Пользователи</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu" data-submenu="profile">
+            <div class="menu-title">
+                👤 Профиль
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu" id="submenu-profile">
+                <div class="submenu-item" data-page="profile-info">ФИО</div>
+                <div class="submenu-item" data-page="logout">Выход</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="top-bar">
+        <h1 class="page-title" id="page-title">Заявки</h1>
+        <div class="user-info">
+            <span class="user-name" sec:authentication="name"></span>
+            <a href="/logout" class="logout-btn">Выйти</a>
+        </div>
+    </div>
+
+    <div class="content-panel">
+        <div class="panel-header">
+            <div class="filter-group">
+                <select id="statusFilter" class="filter-select">
+                    <option value="ALL">Все статусы</option>
+                    <option value="NEW">Новые</option>
+                    <option value="IN_PROGRESS">В работе</option>
+                    <option value="PROCESSED">Обработаны</option>
+                    <option value="COMPLETED">Завершены</option>
+                </select>
+                <input type="text" id="searchInput" placeholder="Поиск по заявкам..." class="search-input">
+            </div>
+            <button class="btn-primary" id="createRequestBtn">+ Создать заявку</button>
+        </div>
+
+        <div id="requestsContainer" class="requests-container">
+            <!-- Заявки будут загружены через JS -->
+            <div class="loading">Загрузка...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания заявки -->
+<div id="createModal" class="modal">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3>Создание заявки</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="requestForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Объем (тонн) *</label>
+                        <input type="number" id="volume" step="0.1" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Тип продукции *</label>
+                        <select id="productType" class="form-control" required>
+                            <option value="BRANDED">Брендовая продукция</option>
+                            <option value="NON_BRANDED">Небрендовая продукция</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Пункт погрузки *</label>
+                        <select id="pickupPoint" class="form-control" required>
+                            <option value="">Выберите пункт погрузки</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Пункт разгрузки *</label>
+                        <select id="deliveryPoint" class="form-control" required>
+                            <option value="">Выберите пункт разгрузки</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Дата начала погрузки *</label>
+                        <input type="date" id="pickupStartDate" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Дата окончания погрузки *</label>
+                        <input type="date" id="pickupEndDate" required class="form-control">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Время начала погрузки *</label>
+                        <input type="time" id="pickupStartTime" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Время окончания погрузки *</label>
+                        <input type="time" id="pickupEndTime" required class="form-control">
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeCreateModal()">Отмена</button>
+            <button class="btn-primary" onclick="createRequest()">Создать</button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+    let currentProductType = 'BRANDED';
+    let allRequests = [];
+
+    // Загрузка пунктов погрузки/разгрузки из справочников
+    async function loadPickupPoints() {
+        try {
+            const [plants, warehouses] = await Promise.all([
+                fetch('/api/references/plants').then(r => r.json()),
+                fetch('/api/references/warehouses').then(r => r.json())
+            ]);
+            const options = [...plants.map(p => ({value: p.name, label: `🏭 ${p.name}`})),
+                           ...warehouses.map(w => ({value: w.name, label: `📦 ${w.name}`}))];
+            const pickupSelect = document.getElementById('pickupPoint');
+            const deliverySelect = document.getElementById('deliveryPoint');
+            pickupSelect.innerHTML = '<option value="">Выберите пункт погрузки</option>' + options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+            deliverySelect.innerHTML = '<option value="">Выберите пункт разгрузки</option>' + options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+        } catch(e) { console.error(e); }
+    }
+
+    async function loadRequests() {
+        try {
+            const response = await fetch(`/api/requests?type=${currentProductType}`);
+            allRequests = await response.json();
+            applyFilters();
+        } catch(e) { console.error(e); }
+    }
+
+    function applyFilters() {
+        const statusFilter = document.getElementById('statusFilter').value;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        let filtered = [...allRequests];
+        if (statusFilter !== 'ALL') filtered = filtered.filter(r => r.status === statusFilter);
+        if (searchTerm) filtered = filtered.filter(r => r.id.toString().includes(searchTerm) || r.pickupPoint.toLowerCase().includes(searchTerm));
+        renderRequests(filtered);
+    }
+
+    function renderRequests(requests) {
+        const container = document.getElementById('requestsContainer');
+        if (!requests.length) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Нет созданных заявок</div><button class="btn-primary" onclick="openCreateModal()">Создать заявку</button></div>';
+            return;
+        }
+        container.innerHTML = `
+            <div class="requests-grid">
+                ${requests.map(req => `
+                    <div class="request-card" data-id="${req.id}">
+                        <div class="request-card-header">
+                            <span class="request-id">Заявка №${req.id}</span>
+                            <span class="status-badge status-${getStatusClass(req.status)}">${getStatusText(req.status)}</span>
+                        </div>
+                        <div class="request-card-body">
+                            <div class="request-info"><span class="info-label">Объем:</span> ${req.volume} т</div>
+                            <div class="request-info"><span class="info-label">Погрузка:</span> ${req.pickupPoint}</div>
+                            <div class="request-info"><span class="info-label">Разгрузка:</span> ${req.deliveryPoint}</div>
+                            <div class="request-info"><span class="info-label">Дата:</span> ${req.pickupStartDate} - ${req.pickupEndDate}</div>
+                        </div>
+                        <div class="request-card-footer">
+                            <button class="link-button" onclick="viewRequest(${req.id})">Подробнее →</button>
+                            ${canDelete(req) ? `<button class="delete-btn" onclick="deleteRequest(${req.id})">🗑️</button>` : ''}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    function getStatusClass(status) {
+        const map = {'NEW': 'new', 'IN_PROGRESS': 'progress', 'PROCESSED': 'completed', 'COMPLETED': 'completed'};
+        return map[status] || 'new';
+    }
+
+    function getStatusText(status) {
+        const map = {'NEW': 'Новая', 'IN_PROGRESS': 'В работе', 'PROCESSED': 'Обработана', 'COMPLETED': 'Завершена'};
+        return map[status] || status;
+    }
+
+    function canDelete(req) {
+        return req.status === 'NEW' && document.querySelector('[sec\\:authorize="hasRole(\'LOGIST\')"]') !== null;
+    }
+
+    function viewRequest(id) { window.location.href = `/request-detail.html?id=${id}`; }
+
+    function openCreateModal() {
+        document.getElementById('createModal').style.display = 'flex';
+        loadPickupPoints();
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('pickupStartDate').min = today;
+        document.getElementById('pickupEndDate').min = today;
+    }
+
+    function closeCreateModal() { document.getElementById('createModal').style.display = 'none'; }
+
+    async function createRequest() {
+        const data = {
+            volume: document.getElementById('volume').value,
+            productType: document.getElementById('productType').value,
+            pickupPoint: document.getElementById('pickupPoint').value,
+            deliveryPoint: document.getElementById('deliveryPoint').value,
+            pickupStartDate: document.getElementById('pickupStartDate').value,
+            pickupEndDate: document.getElementById('pickupEndDate').value,
+            pickupStartTime: document.getElementById('pickupStartTime').value,
+            pickupEndTime: document.getElementById('pickupEndTime').value
+        };
+        try {
+            await fetch('/api/requests', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+            closeCreateModal();
+            loadRequests();
+        } catch(e) { alert('Ошибка при создании'); }
+    }
+
+    async function deleteRequest(id) {
+        if (confirm('Удалить заявку?')) {
+            await fetch(`/api/requests/${id}`, {method: 'DELETE'});
+            loadRequests();
+        }
+    }
+
+    document.getElementById('statusFilter').addEventListener('change', () => applyFilters());
+    document.getElementById('searchInput').addEventListener('input', () => applyFilters());
+    document.getElementById('createRequestBtn').addEventListener('click', () => openCreateModal());
+    document.querySelector('#createModal .close').addEventListener('click', closeCreateModal);
+    window.onclick = (e) => { if (e.target === document.getElementById('createModal')) closeCreateModal(); };
+
+    // Определение типа продукции из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('type') === 'NON_BRANDED') currentProductType = 'NON_BRANDED';
+    loadRequests();
+</script>
+</body>
+</html>

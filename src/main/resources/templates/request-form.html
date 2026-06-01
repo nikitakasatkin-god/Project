@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Форма заявки - Логистика</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .form-section {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .form-section h3 {
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 18px;
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+            margin-top: 24px;
+        }
+        .info-message {
+            background: #eef2ff;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #4338ca;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .info-message.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .readonly-field {
+            background: #f3f4f6;
+            cursor: not-allowed;
+        }
+        .field-hint {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .form-actions {
+                flex-direction: column;
+            }
+            .form-actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h2>Логистика</h2>
+    </div>
+    <div class="sidebar-menu">
+        <div class="menu-item" onclick="location.href='/dashboard'">
+            <div class="menu-title">🏠 Главная</div>
+        </div>
+        <div class="menu-item has-submenu" data-submenu="branded">
+            <div class="menu-title">
+                📦 Брендовая продукция
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu" id="submenu-branded">
+                <div class="submenu-item" data-type="BRANDED" onclick="location.href='/requests?type=BRANDED'">Заявки</div>
+                <div class="submenu-item" data-type="BRANDED" onclick="location.href='/trips?type=BRANDED'">Рейсы</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu" data-submenu="non-branded">
+            <div class="menu-title">
+                📦 Небрендовая продукция
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu" id="submenu-non-branded">
+                <div class="submenu-item" data-type="NON_BRANDED" onclick="location.href='/requests?type=NON_BRANDED'">Заявки</div>
+                <div class="submenu-item" data-type="NON_BRANDED" onclick="location.href='/trips?type=NON_BRANDED'">Рейсы</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu" data-submenu="references">
+            <div class="menu-title">
+                📚 Справочники
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu" id="submenu-references">
+                <div class="submenu-item" onclick="location.href='/references#divisions'">Подразделения</div>
+                <div class="submenu-item" onclick="location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
+                <div class="submenu-item" onclick="location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
+                <div class="submenu-item" onclick="location.href='/references#carriers'">Перевозчики</div>
+                <div class="submenu-item" onclick="location.href='/references#plants'">Заводы</div>
+                <div class="submenu-item" onclick="location.href='/references#warehouses'">Склады</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu" data-submenu="settings">
+            <div class="menu-title">
+                ⚙️ Настройки
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu" id="submenu-settings">
+                <div class="submenu-item" onclick="location.href='/settings'">Параметры</div>
+                <div class="submenu-item" onclick="location.href='/settings'">Применение обновлений</div>
+                <div class="submenu-item" onclick="location.href='/settings'">Сообщение о недоступности</div>
+                <div class="submenu-item" onclick="location.href='/settings'">Пользователи</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu" data-submenu="profile">
+            <div class="menu-title">
+                👤 Профиль
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu" id="submenu-profile">
+                <div class="submenu-item" onclick="location.href='/profile'">ФИО</div>
+                <div class="submenu-item" onclick="location.href='/logout'">Выход</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="top-bar">
+        <button class="back-btn" onclick="history.back()">← Назад</button>
+        <h1 class="page-title" id="page-title">
+            <span th:text="${requestId != null ? 'Редактирование заявки' : 'Создание заявки'}"></span>
+        </h1>
+        <div class="user-info">
+            <span class="user-name" sec:authentication="name"></span>
+            <a href="/logout" class="logout-btn">Выйти</a>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <!-- Информационное сообщение -->
+        <div id="infoMessage" class="info-message" style="display: none;">
+            <span>ℹ️</span>
+            <span id="infoMessageText"></span>
+        </div>
+
+        <!-- Основная форма -->
+        <form id="requestForm">
+            <div class="form-section">
+                <h3>Основная информация</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Тип продукции *</label>
+                        <select id="productType" class="form-control" required>
+                            <option value="BRANDED">Брендовая продукция</option>
+                            <option value="NON_BRANDED">Небрендовая продукция</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Объем (тонн) *</label>
+                        <input type="number" id="volume" step="0.1" class="form-control" required>
+                        <div class="field-hint">Минимальный объем: 1 тонна</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Маршрут</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Пункт погрузки *</label>
+                        <select id="pickupPoint" class="form-control" required>
+                            <option value="">Выберите пункт погрузки</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Пункт разгрузки *</label>
+                        <select id="deliveryPoint" class="form-control" required>
+                            <option value="">Выберите пункт разгрузки</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Дата и время погрузки</h3>
+                <div class="info-message warning" style="margin-bottom: 16px;">
+                    <span>⚠️</span>
+                    <span>Дата погрузки не может быть раньше сегодняшнего дня</span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Дата начала погрузки *</label>
+                        <input type="date" id="pickupStartDate" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата окончания погрузки *</label>
+                        <input type="date" id="pickupEndDate" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Время начала погрузки *</label>
+                        <input type="time" id="pickupStartTime" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Время окончания погрузки *</label>
+                        <input type="time" id="pickupEndTime" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+
+            <div id="editRestrictions" class="form-section" style="display: none;">
+                <h3>Информация о заявке</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Статус</label>
+                        <input type="text" id="statusDisplay" class="form-control readonly-field" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Владелец заявки</label>
+                        <input type="text" id="ownerName" class="form-control readonly-field" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Подразделение</label>
+                        <input type="text" id="divisionName" class="form-control readonly-field" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата создания</label>
+                        <input type="text" id="createdAt" class="form-control readonly-field" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="cancelForm()">Отмена</button>
+                <button type="button" class="btn-primary" id="submitBtn" onclick="submitForm()">
+                    <span th:text="${requestId != null ? 'Сохранить изменения' : 'Создать заявку'}"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let requestId = null;
+    let isEditMode = false;
+    let originalData = {};
+
+    // Получение ID из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    requestId = urlParams.get('id');
+    isEditMode = requestId && requestId !== 'null';
+
+    // Загрузка пунктов из справочников
+    async function loadLocations() {
+        try {
+            const [plants, warehouses] = await Promise.all([
+                fetch('/api/references/plants').then(r => r.json()),
+                fetch('/api/references/warehouses').then(r => r.json())
+            ]);
+            const options = [
+                ...plants.map(p => ({value: p.name, label: `🏭 Завод: ${p.name}`})),
+                ...warehouses.map(w => ({value: w.name, label: `📦 Склад: ${w.name}`}))
+            ];
+            const pickupSelect = document.getElementById('pickupPoint');
+            const deliverySelect = document.getElementById('deliveryPoint');
+            pickupSelect.innerHTML = '<option value="">Выберите пункт погрузки</option>' +
+                options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+            deliverySelect.innerHTML = '<option value="">Выберите пункт разгрузки</option>' +
+                options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+        } catch(e) {
+            console.error('Ошибка загрузки справочников:', e);
+        }
+    }
+
+    // Загрузка данных заявки для редактирования
+    async function loadRequestData() {
+        if (!isEditMode) return;
+
+        try {
+            const response = await fetch(`/api/requests/${requestId}`);
+            const data = await response.json();
+            originalData = data;
+
+            // Заполнение полей
+            document.getElementById('productType').value = data.productType;
+            document.getElementById('volume').value = data.volume;
+            document.getElementById('pickupPoint').value = data.pickupPoint;
+            document.getElementById('deliveryPoint').value = data.deliveryPoint;
+            document.getElementById('pickupStartDate').value = data.pickupStartDate;
+            document.getElementById('pickupEndDate').value = data.pickupEndDate;
+            document.getElementById('pickupStartTime').value = data.pickupStartTime;
+            document.getElementById('pickupEndTime').value = data.pickupEndTime;
+
+            // Показываем дополнительную секцию с информацией
+            document.getElementById('editRestrictions').style.display = 'block';
+            document.getElementById('statusDisplay').value = getStatusText(data.status);
+            document.getElementById('ownerName').value = data.owner?.fullName || data.owner?.username || 'Не указан';
+            document.getElementById('divisionName').value = data.division?.name || 'Не указано';
+            document.getElementById('createdAt').value = formatDateTime(data.createdAt);
+
+            // Блокировка полей если заявка не в статусе NEW
+            if (data.status !== 'NEW') {
+                disableFormFields(true);
+                document.getElementById('infoMessage').style.display = 'flex';
+                document.getElementById('infoMessageText').innerHTML =
+                    'Заявка имеет статус "' + getStatusText(data.status) + '". Редактирование недоступно.';
+                document.getElementById('submitBtn').style.display = 'none';
+            } else {
+                // Проверка роли: только логист из того же подразделения может редактировать
+                const userRole = getCurrentRoleFromPage();
+                if (userRole !== 'LOGIST' && userRole !== 'ADMIN') {
+                    disableFormFields(true);
+                    document.getElementById('infoMessage').style.display = 'flex';
+                    document.getElementById('infoMessageText').innerHTML =
+                        'Только логист может редактировать заявку.';
+                    document.getElementById('submitBtn').style.display = 'none';
+                }
+            }
+
+            // Установка ограничений на даты
+            setDateRestrictions();
+
+        } catch(e) {
+            console.error('Ошибка загрузки заявки:', e);
+            showNotification('Не удалось загрузить данные заявки', 'error');
+        }
+    }
+
+    function getCurrentRoleFromPage() {
+        const body = document.body;
+        if (body.getAttribute('data-role')) return body.getAttribute('data-role');
+        // Проверка через meta или вычисление
+        return 'LOGIST';
+    }
+
+    function disableFormFields(disabled) {
+        const fields = ['productType', 'volume', 'pickupPoint', 'deliveryPoint',
+                       'pickupStartDate', 'pickupEndDate', 'pickupStartTime', 'pickupEndTime'];
+        fields.forEach(field => {
+            const el = document.getElementById(field);
+            if (el) el.disabled = disabled;
+        });
+    }
+
+    function setDateRestrictions() {
+        const today = new Date().toISOString().split('T')[0];
+        const startDateInput = document.getElementById('pickupStartDate');
+        const endDateInput = document.getElementById('pickupEndDate');
+
+        startDateInput.min = today;
+        endDateInput.min = today;
+
+        // Если дата в заявке раньше сегодняшнего дня - блокируем
+        if (startDateInput.value && startDateInput.value < today) {
+            startDateInput.classList.add('readonly-field');
+            startDateInput.disabled = true;
+            document.getElementById('infoMessage').style.display = 'flex';
+            document.getElementById('infoMessageText').innerHTML =
+                'Дата начала погрузки не может быть изменена, так как установлена на прошедшую дату.';
+        }
+
+        startDateInput.addEventListener('change', function() {
+            if (this.value < today) {
+                alert('Дата не может быть раньше сегодняшнего дня');
+                this.value = today;
+            }
+            endDateInput.min = this.value;
+        });
+
+        endDateInput.addEventListener('change', function() {
+            if (this.value < startDateInput.value) {
+                alert('Дата окончания не может быть раньше даты начала');
+                this.value = startDateInput.value;
+            }
+        });
+    }
+
+    function getStatusText(status) {
+        const texts = {'NEW': 'Новая', 'IN_PROGRESS': 'В работе', 'PROCESSED': 'Обработана', 'COMPLETED': 'Завершена'};
+        return texts[status] || status;
+    }
+
+    function formatDateTime(dateTimeStr) {
+        if (!dateTimeStr) return '-';
+        const date = new Date(dateTimeStr);
+        return date.toLocaleString('ru-RU');
+    }
+
+    // Валидация формы
+    function validateForm() {
+        const volume = parseFloat(document.getElementById('volume').value);
+        if (isNaN(volume) || volume <= 0) {
+            alert('Введите корректный объем (больше 0)');
+            return false;
+        }
+
+        const pickupPoint = document.getElementById('pickupPoint').value;
+        const deliveryPoint = document.getElementById('deliveryPoint').value;
+        if (!pickupPoint || !deliveryPoint) {
+            alert('Выберите пункт погрузки и разгрузки');
+            return false;
+        }
+
+        if (pickupPoint === deliveryPoint) {
+            alert('Пункт погрузки и разгрузки не могут совпадать');
+            return false;
+        }
+
+        const startDate = document.getElementById('pickupStartDate').value;
+        const endDate = document.getElementById('pickupEndDate').value;
+        if (!startDate || !endDate) {
+            alert('Выберите даты погрузки');
+            return false;
+        }
+
+        if (startDate > endDate) {
+            alert('Дата начала не может быть позже даты окончания');
+            return false;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        if (startDate < today) {
+            alert('Дата начала погрузки не может быть раньше сегодняшнего дня');
+            return false;
+        }
+
+        const startTime = document.getElementById('pickupStartTime').value;
+        const endTime = document.getElementById('pickupEndTime').value;
+        if (startTime && endTime && startTime >= endTime) {
+            alert('Время начала должно быть раньше времени окончания');
+            return false;
+        }
+
+        return true;
+    }
+
+    // Отправка формы
+    async function submitForm() {
+        if (!validateForm()) return;
+
+        const formData = {
+            volume: parseFloat(document.getElementById('volume').value),
+            productType: document.getElementById('productType').value,
+            pickupPoint: document.getElementById('pickupPoint').value,
+            deliveryPoint: document.getElementById('deliveryPoint').value,
+            pickupStartDate: document.getElementById('pickupStartDate').value,
+            pickupEndDate: document.getElementById('pickupEndDate').value,
+            pickupStartTime: document.getElementById('pickupStartTime').value,
+            pickupEndTime: document.getElementById('pickupEndTime').value
+        };
+
+        try {
+            let response;
+            if (isEditMode) {
+                response = await fetch(`/api/requests/${requestId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(formData)
+                });
+            } else {
+                response = await fetch('/api/requests', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(formData)
+                });
+            }
+
+            if (response.ok) {
+                showNotification(isEditMode ? 'Заявка обновлена' : 'Заявка создана', 'success');
+                setTimeout(() => {
+                    window.location.href = '/requests?type=' + formData.productType;
+                }, 1000);
+            } else {
+                const error = await response.text();
+                alert('Ошибка: ' + error);
+            }
+        } catch(e) {
+            console.error('Ошибка сохранения:', e);
+            alert('Произошла ошибка при сохранении');
+        }
+    }
+
+    function cancelForm() {
+        if (isEditMode) {
+            window.location.href = `/request-detail.html?id=${requestId}`;
+        } else {
+            window.location.href = '/requests';
+        }
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#10b981' : '#ef4444'};
+            color: white;
+            border-radius: 10px;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadLocations();
+        if (isEditMode) {
+            await loadRequestData();
+            document.getElementById('page-title').innerText = 'Редактирование заявки';
+        } else {
+            setDateRestrictions();
+            // Установка времени по умолчанию
+            const now = new Date();
+            const defaultTime = `${String(now.getHours()).padStart(2,'0')}:00`;
+            document.getElementById('pickupStartTime').value = defaultTime;
+            document.getElementById('pickupEndTime').value = '17:00';
+        }
+
+        // Добавление анимации
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateX(100%); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+</body>
+</html>

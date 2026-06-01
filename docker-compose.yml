@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: logistics_postgres
+    environment:
+      POSTGRES_DB: logistics_db
+      POSTGRES_USER: logistics_user
+      POSTGRES_PASSWORD: logistics_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - logistics_network
+
+  app:
+    build: .
+    container_name: logistics_app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/logistics_db
+      SPRING_DATASOURCE_USERNAME: logistics_user
+      SPRING_DATASOURCE_PASSWORD: logistics_pass
+    networks:
+      - logistics_network
+
+volumes:
+  postgres_data:
+
+networks:
+  logistics_network:
+    driver: bridge

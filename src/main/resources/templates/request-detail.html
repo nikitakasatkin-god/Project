@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Заявка - Логистика</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-header"><h2>Логистика</h2></div>
+    <div class="sidebar-menu">
+        <div class="menu-item" onclick="location.href='/dashboard'"><div class="menu-title">🏠 Главная</div></div>
+        <div class="menu-item has-submenu" data-submenu="branded"><div class="menu-title">📦 Брендовая продукция<span class="arrow">▼</span></div>
+            <div class="submenu"><div class="submenu-item" data-type="BRANDED" onclick="location.href='/requests?type=BRANDED'">Заявки</div>
+                <div class="submenu-item" data-type="BRANDED" onclick="location.href='/trips?type=BRANDED'">Рейсы</div></div>
+        </div>
+        <div class="menu-item has-submenu" data-submenu="non-branded"><div class="menu-title">📦 Небрендовая продукция<span class="arrow">▼</span></div>
+            <div class="submenu"><div class="submenu-item" data-type="NON_BRANDED" onclick="location.href='/requests?type=NON_BRANDED'">Заявки</div>
+                <div class="submenu-item" data-type="NON_BRANDED" onclick="location.href='/trips?type=NON_BRANDED'">Рейсы</div></div>
+        </div>
+        <div class="menu-item" onclick="location.href='/references'"><div class="menu-title">📚 Справочники</div></div>
+        <div class="menu-item" onclick="location.href='/settings'"><div class="menu-title">⚙️ Настройки</div></div>
+        <div class="menu-item" onclick="location.href='/profile'"><div class="menu-title">👤 Профиль</div></div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="top-bar">
+        <button class="back-btn" onclick="history.back()">← Назад</button>
+        <h1 class="page-title" id="page-title">Заявка</h1>
+        <div class="user-info"><span class="user-name" id="username"></span><a href="/logout" class="logout-btn">Выйти</a></div>
+    </div>
+
+    <div class="content-panel" id="requestInfo">
+        <div class="loading">Загрузка...</div>
+    </div>
+
+    <div class="content-panel" id="tripsPanel" style="margin-top: 20px;">
+        <div class="panel-header">
+            <h3>Рейсы</h3>
+            <button class="btn-primary" id="addTripBtn" style="display: none;">+ Добавить рейс</button>
+        </div>
+        <div id="tripsContainer"></div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления рейса -->
+<div id="addTripModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Добавление рейса</h3><span class="close">&times;</span></div>
+        <div class="modal-body">
+            <form id="tripForm">
+                <div class="form-group"><label>Перевозчик *</label><select id="carrierId" class="form-control" required><option value="">Выберите перевозчика</option></select></div>
+                <div class="form-group"><label>Госномер автомобиля *</label><select id="vehicleId" class="form-control" required disabled><option value="">Сначала выберите перевозчика</option></select></div>
+                <div class="form-group"><label>Госномер прицепа</label><input type="text" id="trailerPlate" class="form-control" readonly placeholder="Подтянется автоматически"></div>
+                <div class="form-group"><label>Марка автомобиля</label><input type="text" id="vehicleBrand" class="form-control" readonly placeholder="Подтянется автоматически"></div>
+                <div class="form-group"><label>Водитель</label><input type="text" id="driverName" class="form-control" readonly placeholder="Подтянется автоматически"></div>
+                <div class="form-group"><label>Дата рейса *</label><input type="date" id="tripDate" class="form-control" required></div>
+                <div class="form-group"><label>Объем, тонн</label><input type="text" id="tripVolume" class="form-control" readonly placeholder="Рассчитывается автоматически"></div>
+            </form>
+        </div>
+        <div class="modal-footer"><button class="btn-secondary" onclick="closeTripModal()">Отмена</button><button class="btn-primary" onclick="addTrip()">Добавить</button></div>
+    </div>
+</div>
+
+<script>
+    let requestId = null;
+    let requestData = null;
+    let vehicles = [];
+
+    async function loadRequest() {
+        const urlParams = new URLSearchParams(window.location.search);
+        requestId = urlParams.get('id');
+        if (!requestId) { window.location.href = '/requests'; return; }
+        try {
+            const response = await fetch(`/api/requests/${requestId}`);
+            requestData = await response.json();
+            renderRequestInfo();
+            renderTrips();
+            checkButtonsVisibility();
+        } catch(e) { console.error(e); }
+    }
+
+    function renderRequestInfo() {
+        const container = document.getElementById('requestInfo');
+        container.innerHTML = `
+            <div class="detail-header">
+                <div><span class="detail-label">Заявка №</span><span class="detail-value">${requestData.id}</span></div>
+                <div><span class="status-badge status-${getStatusClass(requestData.status)}">${getStatusText(requestData.status)}</span></div>
+            </div>
+            <div class="detail-grid">
+                <div class="detail-item"><div class="detail-label">Объем</div><div class="detail-value">${requestData.volume} т</div></div>
+                <div class="detail-item"><div class="detail-label">Пункт погрузки</div><div class="detail-value">${requestData.pickupPoint}</div></div>
+                <div class="detail-item"><div class="detail-label">Пункт разгрузки</div><div class="detail-value">${requestData.deliveryPoint}</div></div>
+                <div class="detail-item"><div class="detail-label">Дата погрузки</div><div class="detail-value">${requestData.pickupStartDate} - ${requestData.pickupEndDate}</div></div>
+                <div class="detail-item"><div class="detail-label">Время погрузки</div><div class="detail-value">${requestData.pickupStartTime} - ${requestData.pickupEndTime}</div></div>
+                <div class="detail-item"><div class="detail-label">Владелец</div><div class="detail-value">${requestData.owner?.username || 'Не указан'}</div></div>
+            </div>
+            ${requestData.status === 'NEW' && canProcess() ? `<div class="action-buttons"><button class="btn-primary" onclick="processRequest()">✅ Обработать</button></div>` : ''}
+        `;
+    }
+
+    async function renderTrips() {
+        const container = document.getElementById('tripsContainer');
+        const trips = requestData.trips || [];
+        if (!trips.length) { container.innerHTML = '<div class="empty-state"><div class="empty-icon">🚛</div><div class="empty-text">Нет добавленных рейсов</div></div>'; return; }
+        container.innerHTML = `
+            <table class="data-table">
+                <thead><tr><th>№</th><th>Перевозчик</th><th>Госномер</th><th>Марка</th><th>Водитель</th><th>Дата</th><th>Объем</th><th>Статус</th><th>Действия</th></tr></thead>
+                <tbody>${trips.map(trip => `
+                    <tr>
+                        <td>${trip.sequenceNumber || trip.id}</td>
+                        <td>${trip.carrier?.name || '-'}</td>
+                        <td>${trip.vehiclePlate || '-'}</td>
+                        <td>${trip.vehicleBrand || '-'}</td>
+                        <td>${trip.driverName || '-'}</td>
+                        <td>${trip.tripDate}</td>
+                        <td>${trip.volume} т</td>
+                        <td><span class="status-badge status-trip-${getTripStatusClass(trip.status)}">${getTripStatusText(trip.status)}</span></td>
+                        <td>${canUpdateTripStatus(trip) ? `<button class="status-update-btn" onclick="updateTripStatus(${trip.id}, 'ARRIVED_LOADING')">🚚 Прибыл на погрузку</button>` : ''}
+                            ${trip.status === 'ARRIVED_LOADING' ? `<button class="status-update-btn" onclick="updateTripStatus(${trip.id}, 'LOADED')">📦 Погружен</button>` : ''}
+                            ${trip.status === 'NEW' && canDeleteTrip() ? `<button class="delete-btn" onclick="deleteTrip(${trip.id})">🗑️</button>` : ''}</td>
+                    </tr>
+                `).join('')}</tbody>
+            </table>
+        `;
+    }
+
+    function getTripStatusClass(status) {
+        const map = {'NEW':'new','ARRIVED_LOADING':'info','LOADED':'success','IN_TRANSIT':'progress','PROCESSED':'completed'};
+        return map[status] || 'new';
+    }
+
+    function getTripStatusText(status) {
+        const map = {'NEW':'Новый','ARRIVED_LOADING':'Прибыл на погрузку','LOADED':'Погружен','IN_TRANSIT':'В пути','PROCESSED':'Обработан'};
+        return map[status] || status;
+    }
+
+    function canUpdateTripStatus(trip) {
+        const role = getCurrentRole();
+        if (role === 'LOGIST') return trip.status === 'NEW' || trip.status === 'ARRIVED_LOADING';
+        return false;
+    }
+
+    function canDeleteTrip() {
+        const role = getCurrentRole();
+        return role === 'DISPATCHER' || role === 'ADMIN';
+    }
+
+    function canProcess() {
+        const role = getCurrentRole();
+        return role === 'DISPATCHER' || role === 'ADMIN';
+    }
+
+    function canAddTrip() {
+        const role = getCurrentRole();
+        return (role === 'DISPATCHER' || role === 'ADMIN') && requestData?.status === 'IN_PROGRESS';
+    }
+
+    function checkButtonsVisibility() {
+        const addBtn = document.getElementById('addTripBtn');
+        if (addBtn) addBtn.style.display = canAddTrip() ? 'inline-flex' : 'none';
+    }
+
+    async function processRequest() {
+        await fetch(`/api/requests/${requestId}/process`, {method: 'POST'});
+        loadRequest();
+    }
+
+    async function updateTripStatus(tripId, status) {
+        await fetch(`/api/trips/${tripId}/status`, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({status})});
+        loadRequest();
+    }
+
+    async function deleteTrip(tripId) {
+        if (confirm('Удалить рейс?')) {
+            await fetch(`/api/trips/${tripId}`, {method: 'DELETE'});
+            loadRequest();
+        }
+    }
+
+    async function loadCarriers() {
+        const response = await fetch('/api/references/carriers');
+        const carriers = await response.json();
+        const select = document.getElementById('carrierId');
+        select.innerHTML = '<option value="">Выберите перевозчика</option>' + carriers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+
+    document.getElementById('carrierId')?.addEventListener('change', async (e) => {
+        const carrierId = e.target.value;
+        if (carrierId) {
+            const response = await fetch(`/api/references/carriers/${carrierId}/vehicles`);
+            vehicles = await response.json();
+            const vehicleSelect = document.getElementById('vehicleId');
+            vehicleSelect.disabled = false;
+            vehicleSelect.innerHTML = '<option value="">Выберите автомобиль</option>' + vehicles.map(v => `<option value="${v.id}" data-brand="${v.brand} ${v.model}" data-trailer="${v.trailerPlate || ''}" data-driver="${v.driverName}">${v.plateNumber} (${v.brand} ${v.model})</option>`).join('');
+        }
+    });
+
+    document.getElementById('vehicleId')?.addEventListener('change', (e) => {
+        const vehicle = vehicles.find(v => v.id == e.target.value);
+        if (vehicle) {
+            document.getElementById('vehicleBrand').value = `${vehicle.brand} ${vehicle.model}`;
+            document.getElementById('trailerPlate').value = vehicle.trailerPlate || '';
+            document.getElementById('driverName').value = vehicle.driverName || '';
+        }
+    });
+
+    function openTripModal() {
+        document.getElementById('addTripModal').style.display = 'flex';
+        loadCarriers();
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('tripDate').min = today;
+        document.getElementById('tripDate').value = today;
+        const remainingVolume = calculateRemainingVolume();
+        document.getElementById('tripVolume').value = remainingVolume >= 25 ? '25 т (кратно)' : `${remainingVolume} т (остаток)`;
+    }
+
+    function calculateRemainingVolume() {
+        const total = requestData.volume;
+        const assigned = (requestData.trips || []).reduce((sum, t) => sum + t.volume, 0);
+        return total - assigned;
+    }
+
+    async function addTrip() {
+        const remainingVolume = calculateRemainingVolume();
+        if (remainingVolume <= 0) { alert('Объем заявки полностью распределен'); closeTripModal(); return; }
+        const data = {
+            requestId: requestId,
+            carrierId: document.getElementById('carrierId').value,
+            vehicleId: document.getElementById('vehicleId').value,
+            tripDate: document.getElementById('tripDate').value
+        };
+        if (!data.carrierId || !data.vehicleId || !data.tripDate) { alert('Заполните все поля'); return; }
+        await fetch('/api/trips', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+        closeTripModal();
+        loadRequest();
+    }
+
+    function closeTripModal() { document.getElementById('addTripModal').style.display = 'none'; }
+
+    function getCurrentRole() {
+        const body = document.body;
+        if (body.getAttribute('data-role')) return body.getAttribute('data-role');
+        return 'LOGIST';
+    }
+
+    function getStatusClass(status) {
+        const map = {'NEW':'new','IN_PROGRESS':'progress','PROCESSED':'completed','COMPLETED':'completed'};
+        return map[status] || 'new';
+    }
+
+    function getStatusText(status) {
+        const map = {'NEW':'Новая','IN_PROGRESS':'В работе','PROCESSED':'Обработана','COMPLETED':'Завершена'};
+        return map[status] || status;
+    }
+
+    document.getElementById('addTripBtn')?.addEventListener('click', openTripModal);
+    document.querySelector('#addTripModal .close')?.addEventListener('click', closeTripModal);
+    window.onclick = (e) => { if (e.target === document.getElementById('addTripModal')) closeTripModal(); };
+    document.getElementById('username').innerText = localStorage.getItem('username') || 'User';
+    loadRequest();
+</script>
+</body>
+</html>
