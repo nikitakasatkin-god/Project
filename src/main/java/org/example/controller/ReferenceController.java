@@ -5,6 +5,7 @@ import org.example.repository.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/references")
@@ -58,6 +59,44 @@ public class ReferenceController {
     public List<Vehicle> getCarrierVehicles(@PathVariable Long id) {
         return carrierRepository.findById(id)
                 .map(vehicleRepository::findByCarrier)
+                .orElse(List.of());
+    }
+
+    // ДОБАВЬТЕ - получение всех автомобилей перевозчика с уникальными номерами
+    @GetMapping("/carriers/{id}/plate-numbers")
+    public List<String> getCarrierPlateNumbers(@PathVariable Long id) {
+        return carrierRepository.findById(id)
+                .map(carrier -> vehicleRepository.findByCarrier(carrier)
+                        .stream()
+                        .map(Vehicle::getPlateNumber)
+                        .distinct()
+                        .collect(Collectors.toList()))
+                .orElse(List.of());
+    }
+
+    // ДОБАВЬТЕ - получение всех прицепов перевозчика (уникальных)
+    @GetMapping("/carriers/{id}/trailers")
+    public List<String> getCarrierTrailers(@PathVariable Long id) {
+        return carrierRepository.findById(id)
+                .map(carrier -> vehicleRepository.findByCarrier(carrier)
+                        .stream()
+                        .map(Vehicle::getTrailerPlate)
+                        .filter(trailer -> trailer != null && !trailer.isEmpty())
+                        .distinct()
+                        .collect(Collectors.toList()))
+                .orElse(List.of());
+    }
+
+    // ДОБАВЬТЕ - получение всех водителей перевозчика (уникальных)
+    @GetMapping("/carriers/{id}/drivers")
+    public List<String> getCarrierDrivers(@PathVariable Long id) {
+        return carrierRepository.findById(id)
+                .map(carrier -> vehicleRepository.findByCarrier(carrier)
+                        .stream()
+                        .map(Vehicle::getDriverName)
+                        .filter(driver -> driver != null && !driver.isEmpty())
+                        .distinct()
+                        .collect(Collectors.toList()))
                 .orElse(List.of());
     }
 

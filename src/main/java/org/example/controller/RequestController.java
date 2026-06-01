@@ -19,13 +19,16 @@ public class RequestController {
 
     private final RequestRepository requestRepository;
     private final UserRepository userRepository;
+    private final DivisionRepository divisionRepository;
     private final ExternalSystemStub externalSystemStub;
 
     public RequestController(RequestRepository requestRepository,
                              UserRepository userRepository,
+                             DivisionRepository divisionRepository,
                              ExternalSystemStub externalSystemStub) {
         this.requestRepository = requestRepository;
         this.userRepository = userRepository;
+        this.divisionRepository = divisionRepository;
         this.externalSystemStub = externalSystemStub;
     }
 
@@ -67,7 +70,6 @@ public class RequestController {
     public List<Map<String, String>> getPickupPoints() {
         List<Map<String, String>> points = new java.util.ArrayList<>();
 
-        // В реальном приложении данные берутся из базы
         String[][] plants = {
                 {"Завод №1", "🏭 Завод: Завод №1"},
                 {"Завод №2", "🏭 Завод: Завод №2"},
@@ -90,7 +92,6 @@ public class RequestController {
     public List<Map<String, String>> getDeliveryPoints() {
         List<Map<String, String>> points = new java.util.ArrayList<>();
 
-        // В реальном приложении данные берутся из базы
         String[][] warehouses = {
                 {"Склад №1", "📦 Склад: Склад №1"},
                 {"Склад №2", "📦 Склад: Склад №2"},
@@ -118,7 +119,6 @@ public class RequestController {
                 return ResponseEntity.status(401).body(Map.of("error", "Пользователь не авторизован"));
             }
 
-            // Проверка обязательных полей
             List<String> missingFields = new java.util.ArrayList<>();
             if (data.get("volume") == null) missingFields.add("Объем");
             if (data.get("pickupPoint") == null) missingFields.add("Пункт погрузки");
@@ -137,6 +137,7 @@ public class RequestController {
 
             Request request = new Request();
             request.setOwner(currentUser);
+            // Устанавливаем подразделение из подразделения владельца
             request.setDivision(currentUser.getDivision());
             request.setVolume(Double.parseDouble(data.get("volume").toString()));
             request.setPickupPoint(data.get("pickupPoint").toString());
@@ -146,7 +147,6 @@ public class RequestController {
             request.setPickupStartTime(LocalTime.parse(data.get("pickupStartTime").toString()));
             request.setPickupEndTime(LocalTime.parse(data.get("pickupEndTime").toString()));
 
-            // Определяем тип продукции
             String productType = data.containsKey("productType") ?
                     data.get("productType").toString() : "BRANDED";
             request.setProductType(ProductType.valueOf(productType));
@@ -155,7 +155,6 @@ public class RequestController {
 
             Request saved = requestRepository.save(request);
 
-            // Заглушка: отправка в 1С
             externalSystemStub.syncWith1C(saved);
 
             return ResponseEntity.ok(Map.of(
@@ -178,6 +177,7 @@ public class RequestController {
         }
 
         User currentUser = getCurrentUser();
+
         if (currentUser.getRole() != Role.DISPATCHER && currentUser.getRole() != Role.ADMIN) {
             return ResponseEntity.status(403).body("Доступ запрещен");
         }
@@ -200,7 +200,6 @@ public class RequestController {
 
         User currentUser = getCurrentUser();
 
-        // Только создатель заявки (логист) или админ могут удалить новую заявку
         if (request.getStatus() == RequestStatus.NEW &&
                 (request.getOwner().getId().equals(currentUser.getId()) ||
                         currentUser.getRole() == Role.ADMIN)) {

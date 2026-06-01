@@ -7,7 +7,9 @@ public enum TripStatus {
     IN_TRANSIT("В пути"),
     ARRIVED_UNLOADING("Прибыл на выгрузку"),
     UNLOADED("Выгружен"),
-    PROCESSED("Обработан");
+    PROCESSED("Обработан"),
+    CANCELLED("Отменен"),
+    DELETED("Удален");
 
     private final String displayName;
 
