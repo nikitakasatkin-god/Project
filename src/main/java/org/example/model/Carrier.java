@@ -1,7 +1,7 @@
 package org.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +21,7 @@ public class Carrier {
     private String email;
 
     @OneToMany(mappedBy = "carrier", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Vehicle> vehicles = new ArrayList<>();
 
     // Getters and Setters

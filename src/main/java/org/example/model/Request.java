@@ -1,7 +1,7 @@
 package org.example.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -21,10 +21,11 @@ public class Request {
 
     @ManyToOne
     @JoinColumn(name = "division_id")
+    @JsonIgnore
     private Division division;
 
     @Enumerated(EnumType.STRING)
-    private ProductType productType; // BRANDED, NON_BRANDED
+    private ProductType productType;
 
     private Double volume;
 
@@ -44,6 +45,7 @@ public class Request {
     private RequestStatus status = RequestStatus.NEW;
 
     @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Trip> trips = new ArrayList<>();
 
     private LocalDateTime createdAt;
