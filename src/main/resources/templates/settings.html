@@ -81,6 +81,21 @@
             border-radius: 8px;
             cursor: pointer;
         }
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-family: inherit;
+        }
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); }
             .main-content { margin-left: 0; }
@@ -91,12 +106,12 @@
 <div class="sidebar">
     <div class="sidebar-header"><h2>Логистика</h2></div>
     <div class="sidebar-menu">
-        <div class="menu-item" onclick="location.href='/dashboard'"><div class="menu-title">🏠 Главная</div></div>
-        <div class="menu-item" onclick="location.href='/requests?type=BRANDED'"><div class="menu-title">📦 Брендовая продукция</div></div>
-        <div class="menu-item" onclick="location.href='/requests?type=NON_BRANDED'"><div class="menu-title">📦 Небрендовая продукция</div></div>
-        <div class="menu-item" onclick="location.href='/references'"><div class="menu-title">📚 Справочники</div></div>
+        <div class="menu-item" onclick="window.location.href='/dashboard'"><div class="menu-title">🏠 Главная</div></div>
+        <div class="menu-item" onclick="window.location.href='/requests?type=BRANDED'"><div class="menu-title">📦 Брендовая продукция</div></div>
+        <div class="menu-item" onclick="window.location.href='/requests?type=NON_BRANDED'"><div class="menu-title">📦 Небрендовая продукция</div></div>
+        <div class="menu-item" onclick="window.location.href='/references'"><div class="menu-title">📚 Справочники</div></div>
         <div class="menu-item" style="background:#f3f4f6"><div class="menu-title">⚙️ Настройки</div></div>
-        <div class="menu-item" onclick="location.href='/profile'"><div class="menu-title">👤 Профиль</div></div>
+        <div class="menu-item" onclick="window.location.href='/profile'"><div class="menu-title">👤 Профиль</div></div>
     </div>
 </div>
 
@@ -104,50 +119,94 @@
     <div class="top-bar">
         <h1 class="page-title">Настройки системы</h1>
         <div class="user-info">
-            <span class="user-name" th:text="${#authentication.name}">User</span>
+            <span class="user-name" id="currentUsername">Загрузка...</span>
             <a href="/logout" class="logout-btn">Выйти</a>
         </div>
     </div>
 
     <div class="settings-group">
         <h3>Параметры системы</h3>
-        <div class="setting-item"><span class="setting-label">Автоматическое завершение заявки (дней)</span><div class="setting-value"><input type="number" id="autoCompleteDays" value="7"></div></div>
-        <div class="setting-item"><span class="setting-label">Интервал синхронизации с 1С (сек)</span><div class="setting-value"><input type="number" id="syncInterval" value="300"></div></div>
-        <div class="setting-item"><span class="setting-label">Уведомления на email</span><div class="setting-value"><input type="checkbox" id="emailNotifications" checked></div></div>
+        <div class="setting-item">
+            <span class="setting-label">Автоматическое завершение заявки (дней)</span>
+            <div class="setting-value">
+                <input type="number" id="autoCompleteDays" value="7">
+            </div>
+        </div>
+        <div class="setting-item">
+            <span class="setting-label">Интервал синхронизации с 1С (сек)</span>
+            <div class="setting-value">
+                <input type="number" id="syncInterval" value="300">
+            </div>
+        </div>
+        <div class="setting-item">
+            <span class="setting-label">Уведомления на email</span>
+            <div class="setting-value">
+                <input type="checkbox" id="emailNotifications" checked>
+            </div>
+        </div>
     </div>
 
     <div class="settings-group">
         <h3>Применение обновлений</h3>
-        <div class="setting-item"><span class="setting-label">Текущая версия</span><div class="setting-value">v1.0.0</div></div>
-        <div class="setting-item"><span class="setting-label">Доступна новая версия</span><div class="setting-value">Нет</div></div>
-        <div class="setting-item"><span class="setting-label">Автоматическая проверка</span><div class="setting-value"><input type="checkbox" checked></div></div>
-        <div style="margin-top: 16px;"><button class="btn-primary" onclick="alert('Проверка обновлений (заглушка)')">Проверить обновления</button></div>
+        <div class="setting-item">
+            <span class="setting-label">Текущая версия</span>
+            <div class="setting-value">v1.0.0</div>
+        </div>
+        <div class="setting-item">
+            <span class="setting-label">Доступна новая версия</span>
+            <div class="setting-value">Нет</div>
+        </div>
+        <div class="setting-item">
+            <span class="setting-label">Автоматическая проверка</span>
+            <div class="setting-value">
+                <input type="checkbox" checked>
+            </div>
+        </div>
+        <div style="margin-top: 16px;">
+            <button class="btn-primary" onclick="alert('Проверка обновлений (заглушка)')">Проверить обновления</button>
+        </div>
     </div>
 
     <div class="settings-group">
         <h3>Сообщение о недоступности системы</h3>
-        <div class="setting-item"><span class="setting-label">Текст сообщения</span><div class="setting-value"><textarea rows="3" cols="40" id="maintenanceMsg">Система временно недоступна. Ведутся технические работы.</textarea></div></div>
-        <div style="margin-top: 16px;"><button class="btn-primary" onclick="alert('Сообщение сохранено (заглушка)')">Сохранить сообщение</button></div>
-    </div>
-
-    <div class="settings-group">
-        <h3>Пользователи</h3>
-        <div style="margin-bottom: 16px;"><button class="btn-primary" onclick="alert('Добавление пользователя (заглушка)')">+ Добавить пользователя</button></div>
-        <table class="data-table" style="width:100%">
-            <thead><tr><th>ID</th><th>Имя пользователя</th><th>ФИО</th><th>Роль</th><th>Подразделение</th><th>Статус</th></tr></thead>
-            <tbody>
-            <tr><td>1</td><td>admin</td><td>Администратор</td><td>ADMIN</td><td>Логистический центр №1</td><td>Активен</td></tr>
-            <tr><td>2</td><td>logist</td><td>Логист Иванов</td><td>LOGIST</td><td>Логистический центр №1</td><td>Активен</td></tr>
-            <tr><td>3</td><td>dispatcher</td><td>Диспетчер Петров</td><td>DISPATCHER</td><td>Логистический центр №1</td><td>Активен</td></tr>
-            </tbody>
-        </table>
+        <div class="setting-item" style="flex-direction: column; align-items: stretch;">
+            <span class="setting-label" style="margin-bottom: 8px;">Текст сообщения</span>
+            <textarea id="maintenanceMsg" rows="3" style="width: 100%;">Система временно недоступна. Ведутся технические работы.</textarea>
+        </div>
+        <div style="margin-top: 16px;">
+            <button class="btn-primary" onclick="saveMaintenanceMessage()">Сохранить сообщение</button>
+        </div>
     </div>
 </div>
 
 <script>
-    document.querySelector('.btn-primary').addEventListener('click', () => {
-        alert('Настройки сохранены (заглушка)');
-    });
+    async function loadCurrentUser() {
+        try {
+            const response = await fetch('/api/auth/current-user');
+            if (response.ok) {
+                const user = await response.json();
+                document.getElementById('currentUsername').innerText = user.username || user.fullName || 'User';
+            }
+        } catch(e) {
+            document.getElementById('currentUsername').innerText = 'User';
+        }
+    }
+
+    function saveMaintenanceMessage() {
+        const message = document.getElementById('maintenanceMsg').value;
+        localStorage.setItem('maintenanceMessage', message);
+        alert('Сообщение сохранено');
+    }
+
+    function loadMaintenanceMessage() {
+        const saved = localStorage.getItem('maintenanceMessage');
+        if (saved) {
+            document.getElementById('maintenanceMsg').value = saved;
+        }
+    }
+
+    loadCurrentUser();
+    loadMaintenanceMessage();
 </script>
 </body>
 </html>

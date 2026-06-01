@@ -22,8 +22,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/css/**", "/js/**", "/login", "/h2-console/**").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/login", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -31,13 +32,12 @@ public class SecurityConfig {
                         .defaultSuccessUrl("/dashboard", true)
                         .permitAll()
                 )
+                // УБИРАЕМ httpBasic - оставляем только formLogin
                 .logout(logout -> logout
                         .logoutSuccessUrl("/login")
                         .permitAll()
                 )
-                .userDetailsService(userDetailsService)
-                .csrf(csrf -> csrf.disable())
-                .headers(headers -> headers.frameOptions(frame -> frame.disable()));
+                .userDetailsService(userDetailsService);
 
         return http.build();
     }

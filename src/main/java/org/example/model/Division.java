@@ -17,7 +17,7 @@ public class Division {
 
     private String description;
 
-    @OneToMany(mappedBy = "division")
+    @OneToMany(mappedBy = "division", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<User> users = new ArrayList<>();
 
@@ -30,4 +30,9 @@ public class Division {
     public void setDescription(String description) { this.description = description; }
     public List<User> getUsers() { return users; }
     public void setUsers(List<User> users) { this.users = users; }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

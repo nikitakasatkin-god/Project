@@ -24,9 +24,8 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "division_id")
-    @JsonIgnore
     private Division division;
 
     private Boolean active = true;
