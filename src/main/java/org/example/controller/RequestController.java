@@ -8,6 +8,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
@@ -18,15 +19,18 @@ import java.util.Map;
 public class RequestController {
 
     private final RequestRepository requestRepository;
+    private final RequestHistoryRepository requestHistoryRepository;
     private final UserRepository userRepository;
     private final DivisionRepository divisionRepository;
     private final ExternalSystemStub externalSystemStub;
 
     public RequestController(RequestRepository requestRepository,
+                             RequestHistoryRepository requestHistoryRepository,
                              UserRepository userRepository,
                              DivisionRepository divisionRepository,
                              ExternalSystemStub externalSystemStub) {
         this.requestRepository = requestRepository;
+        this.requestHistoryRepository = requestHistoryRepository;
         this.userRepository = userRepository;
         this.divisionRepository = divisionRepository;
         this.externalSystemStub = externalSystemStub;
@@ -37,6 +41,16 @@ public class RequestController {
         return userRepository.findByUsername(username).orElse(null);
     }
 
+    private void addHistory(Request request, String status, String action, String changedBy, String userName) {
+        RequestHistory history = new RequestHistory();
+        history.setRequest(request);
+        history.setStatus(status);
+        history.setAction(action);
+        history.setChangedBy(changedBy);
+        history.setUserName(userName);
+        requestHistoryRepository.save(history);
+    }
+
     @GetMapping
     public List<Request> getRequests(@RequestParam(required = false) String type) {
         User currentUser = getCurrentUser();
@@ -45,10 +59,8 @@ public class RequestController {
         if (currentUser.getRole() == Role.ADMIN) {
             requests = requestRepository.findAll();
         } else if (currentUser.getRole() == Role.LOGIST) {
-            // Логист видит ТОЛЬКО свои заявки
             requests = requestRepository.findByOwner(currentUser);
         } else if (currentUser.getRole() == Role.DISPATCHER) {
-            // Диспетчер видит заявки своего подразделения
             requests = requestRepository.findByDivision(currentUser.getDivision());
         } else {
             requests = List.of();
@@ -64,9 +76,35 @@ public class RequestController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Request> getRequest(@PathVariable Long id) {
+    public ResponseEntity<?> getRequest(@PathVariable Long id) {
         return requestRepository.findById(id)
-                .map(ResponseEntity::ok)
+                .map(request -> {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("id", request.getId());
+                    response.put("owner", request.getOwner());
+                    response.put("division", request.getDivision());
+                    response.put("productType", request.getProductType());
+                    response.put("volume", request.getVolume());
+                    response.put("pickupPoint", request.getPickupPoint());
+                    response.put("deliveryPoint", request.getDeliveryPoint());
+                    response.put("pickupStartDate", request.getPickupStartDate());
+                    response.put("pickupEndDate", request.getPickupEndDate());
+                    response.put("pickupStartTime", request.getPickupStartTime());
+                    response.put("pickupEndTime", request.getPickupEndTime());
+                    response.put("status", request.getStatus());
+                    response.put("createdAt", request.getCreatedAt());
+                    response.put("completedAt", request.getCompletedAt());
+                    response.put("trips", request.getTrips());
+                    response.put("history", requestHistoryRepository.findByRequestOrderByChangedAtAsc(request));
+                    return ResponseEntity.ok(response);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<RequestHistory>> getRequestHistory(@PathVariable Long id) {
+        return requestRepository.findById(id)
+                .map(request -> ResponseEntity.ok(requestHistoryRepository.findByRequestOrderByChangedAtAsc(request)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -123,7 +161,6 @@ public class RequestController {
                 return ResponseEntity.status(401).body(Map.of("error", "Пользователь не авторизован"));
             }
 
-            // Только LOGIST и ADMIN могут создавать заявки
             if (currentUser.getRole() != Role.LOGIST && currentUser.getRole() != Role.ADMIN) {
                 return ResponseEntity.status(403).body(Map.of("error", "Доступ запрещен. Только логист или администратор могут создавать заявки"));
             }
@@ -163,6 +200,8 @@ public class RequestController {
 
             Request saved = requestRepository.save(request);
 
+            addHistory(saved, "NEW", "Создание заявки", "user:" + currentUser.getUsername(), currentUser.getFullName());
+
             externalSystemStub.syncWith1C(saved);
 
             return ResponseEntity.ok(Map.of(
@@ -187,7 +226,6 @@ public class RequestController {
 
             User currentUser = getCurrentUser();
 
-            // Только владелец (LOGIST) или ADMIN могут редактировать заявку в статусе NEW
             boolean isOwner = currentUser.getId().equals(request.getOwner().getId());
             boolean isAdmin = currentUser.getRole() == Role.ADMIN;
 
@@ -195,30 +233,72 @@ public class RequestController {
                 return ResponseEntity.status(403).body(Map.of("error", "Доступ запрещен. Редактирование возможно только для заявок в статусе 'Новая' и только владельцем или администратором"));
             }
 
-            // Обновляем поля
+            StringBuilder changes = new StringBuilder();
+
             if (data.containsKey("volume")) {
-                request.setVolume(Double.parseDouble(data.get("volume").toString()));
+                double oldVolume = request.getVolume();
+                double newVolume = Double.parseDouble(data.get("volume").toString());
+                if (oldVolume != newVolume) {
+                    changes.append("Объем: ").append(oldVolume).append(" → ").append(newVolume).append("; ");
+                }
+                request.setVolume(newVolume);
             }
             if (data.containsKey("pickupPoint")) {
-                request.setPickupPoint(data.get("pickupPoint").toString());
+                String oldValue = request.getPickupPoint();
+                String newValue = data.get("pickupPoint").toString();
+                if (!oldValue.equals(newValue)) {
+                    changes.append("Пункт погрузки: ").append(oldValue).append(" → ").append(newValue).append("; ");
+                }
+                request.setPickupPoint(newValue);
             }
             if (data.containsKey("deliveryPoint")) {
-                request.setDeliveryPoint(data.get("deliveryPoint").toString());
+                String oldValue = request.getDeliveryPoint();
+                String newValue = data.get("deliveryPoint").toString();
+                if (!oldValue.equals(newValue)) {
+                    changes.append("Пункт разгрузки: ").append(oldValue).append(" → ").append(newValue).append("; ");
+                }
+                request.setDeliveryPoint(newValue);
             }
             if (data.containsKey("pickupStartDate")) {
-                request.setPickupStartDate(LocalDate.parse(data.get("pickupStartDate").toString()));
+                LocalDate oldValue = request.getPickupStartDate();
+                LocalDate newValue = LocalDate.parse(data.get("pickupStartDate").toString());
+                if (!oldValue.equals(newValue)) {
+                    changes.append("Дата начала погрузки: ").append(oldValue).append(" → ").append(newValue).append("; ");
+                }
+                request.setPickupStartDate(newValue);
             }
             if (data.containsKey("pickupEndDate")) {
-                request.setPickupEndDate(LocalDate.parse(data.get("pickupEndDate").toString()));
+                LocalDate oldValue = request.getPickupEndDate();
+                LocalDate newValue = LocalDate.parse(data.get("pickupEndDate").toString());
+                if (!oldValue.equals(newValue)) {
+                    changes.append("Дата окончания погрузки: ").append(oldValue).append(" → ").append(newValue).append("; ");
+                }
+                request.setPickupEndDate(newValue);
             }
             if (data.containsKey("pickupStartTime")) {
-                request.setPickupStartTime(LocalTime.parse(data.get("pickupStartTime").toString()));
+                LocalTime oldValue = request.getPickupStartTime();
+                LocalTime newValue = LocalTime.parse(data.get("pickupStartTime").toString());
+                if (!oldValue.equals(newValue)) {
+                    changes.append("Время начала погрузки: ").append(oldValue).append(" → ").append(newValue).append("; ");
+                }
+                request.setPickupStartTime(newValue);
             }
             if (data.containsKey("pickupEndTime")) {
-                request.setPickupEndTime(LocalTime.parse(data.get("pickupEndTime").toString()));
+                LocalTime oldValue = request.getPickupEndTime();
+                LocalTime newValue = LocalTime.parse(data.get("pickupEndTime").toString());
+                if (!oldValue.equals(newValue)) {
+                    changes.append("Время окончания погрузки: ").append(oldValue).append(" → ").append(newValue).append("; ");
+                }
+                request.setPickupEndTime(newValue);
             }
 
             Request saved = requestRepository.save(request);
+
+            if (changes.length() > 0) {
+                addHistory(saved, saved.getStatus().name(), "Редактирование: " + changes.toString(),
+                        "user:" + currentUser.getUsername(), currentUser.getFullName());
+            }
+
             return ResponseEntity.ok(saved);
 
         } catch (Exception e) {
@@ -243,6 +323,10 @@ public class RequestController {
         if (request.getStatus() == RequestStatus.NEW) {
             request.setStatus(RequestStatus.IN_PROGRESS);
             requestRepository.save(request);
+
+            addHistory(request, RequestStatus.IN_PROGRESS.name(), "Заявка принята в работу",
+                    "user:" + currentUser.getUsername(), currentUser.getFullName());
+
             return ResponseEntity.ok(request);
         }
 
@@ -261,6 +345,10 @@ public class RequestController {
         if (request.getStatus() == RequestStatus.NEW &&
                 (request.getOwner().getId().equals(currentUser.getId()) ||
                         currentUser.getRole() == Role.ADMIN)) {
+
+            addHistory(request, "DELETED", "Заявка удалена",
+                    "user:" + currentUser.getUsername(), currentUser.getFullName());
+
             requestRepository.deleteById(id);
             return ResponseEntity.ok().build();
         }
