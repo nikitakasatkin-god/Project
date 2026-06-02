@@ -45,9 +45,13 @@ public class RequestController {
         if (currentUser.getRole() == Role.ADMIN) {
             requests = requestRepository.findAll();
         } else if (currentUser.getRole() == Role.LOGIST) {
+            // Логист видит ТОЛЬКО свои заявки
             requests = requestRepository.findByOwner(currentUser);
-        } else {
+        } else if (currentUser.getRole() == Role.DISPATCHER) {
+            // Диспетчер видит заявки своего подразделения
             requests = requestRepository.findByDivision(currentUser.getDivision());
+        } else {
+            requests = List.of();
         }
 
         if (type != null && !type.isEmpty()) {

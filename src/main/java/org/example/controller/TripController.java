@@ -258,21 +258,47 @@ public class TripController {
             return ResponseEntity.status(403).body("Редактирование возможно только для рейсов в статусе 'Новый'");
         }
 
+        // Обновляем перевозчика
         if (data.containsKey("carrierId")) {
             Carrier carrier = carrierRepository.findById(Long.parseLong(data.get("carrierId").toString())).orElse(null);
             if (carrier != null) {
                 trip.setCarrier(carrier);
             }
         }
+
+        // Обновляем автомобиль по vehicleId
+        if (data.containsKey("vehicleId")) {
+            String vehicleIdStr = data.get("vehicleId").toString();
+            if (vehicleIdStr != null && !vehicleIdStr.isEmpty()) {
+                Long vehicleId = Long.parseLong(vehicleIdStr);
+                Vehicle vehicle = vehicleRepository.findById(vehicleId).orElse(null);
+                if (vehicle != null) {
+                    trip.setVehiclePlate(vehicle.getPlateNumber());
+                    trip.setVehicleBrand(vehicle.getBrand() + " " + vehicle.getModel());
+                    // Если водитель не передан отдельно, берем из автомобиля
+                    if (!data.containsKey("driverName") || data.get("driverName").toString().isEmpty()) {
+                        trip.setDriverName(vehicle.getDriverName());
+                    }
+                }
+            }
+        }
+
+        // Обновляем госномер автомобиля (если передан напрямую)
         if (data.containsKey("vehiclePlate")) {
             trip.setVehiclePlate(data.get("vehiclePlate").toString());
         }
+
+        // Обновляем прицеп
         if (data.containsKey("trailerPlate")) {
             trip.setTrailerPlate(data.get("trailerPlate").toString());
         }
+
+        // Обновляем водителя
         if (data.containsKey("driverName")) {
             trip.setDriverName(data.get("driverName").toString());
         }
+
+        // Обновляем дату рейса
         if (data.containsKey("tripDate")) {
             trip.setTripDate(LocalDate.parse(data.get("tripDate").toString()));
         }

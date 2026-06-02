@@ -55,6 +55,16 @@
         .submenu-item:hover { background: #f3f4f6; color: #667eea; }
         .arrow { font-size: 12px; transition: transform 0.2s; }
         .has-submenu.open .arrow { transform: rotate(180deg); }
+
+        /* Скрытие элементов по ролям */
+        .logist-only { display: none; }
+        .dispatcher-only { display: none; }
+        .admin-only { display: none; }
+        body[data-role="ADMIN"] .admin-only { display: block; }
+        body[data-role="ADMIN"] .admin-only-flex { display: flex; }
+        body[data-role="LOGIST"] .logist-only { display: block; }
+        body[data-role="DISPATCHER"] .dispatcher-only { display: block; }
+
         .main-content { margin-left: 280px; padding: 24px; min-height: 100vh; }
         .top-bar {
             background: white;
@@ -237,36 +247,63 @@
     <div class="sidebar-header"><h2>Логистика</h2></div>
     <div class="sidebar-menu">
         <div class="menu-item" onclick="window.location.href='/dashboard'">
-            <div class="menu-title">🏠 Главная</div>
+            <div class="menu-title">Главная</div>
         </div>
         <div class="menu-item has-submenu">
             <div class="menu-title" onclick="toggleSubmenu(this)">
-                📦 Брендовая продукция
+                Брендовая продукция
                 <span class="arrow">▼</span>
             </div>
             <div class="submenu">
                 <div class="submenu-item" data-type="BRANDED" data-page="requests" onclick="changeProductType('BRANDED', 'requests')">Заявки</div>
-                <div class="submenu-item" data-type="BRANDED" data-page="trips" onclick="changeProductType('BRANDED', 'trips')">Рейсы</div>
+                <div class="submenu-item dispatcher-only admin-only" data-type="BRANDED" data-page="trips" onclick="changeProductType('BRANDED', 'trips')">Рейсы</div>
             </div>
         </div>
         <div class="menu-item has-submenu">
             <div class="menu-title" onclick="toggleSubmenu(this)">
-                📦 Небрендовая продукция
+                Небрендовая продукция
                 <span class="arrow">▼</span>
             </div>
             <div class="submenu">
                 <div class="submenu-item" data-type="NON_BRANDED" data-page="requests" onclick="changeProductType('NON_BRANDED', 'requests')">Заявки</div>
-                <div class="submenu-item" data-type="NON_BRANDED" data-page="trips" onclick="changeProductType('NON_BRANDED', 'trips')">Рейсы</div>
+                <div class="submenu-item dispatcher-only admin-only" data-type="NON_BRANDED" data-page="trips" onclick="changeProductType('NON_BRANDED', 'trips')">Рейсы</div>
             </div>
         </div>
-        <div class="menu-item" onclick="window.location.href='/references'">
-            <div class="menu-title">📚 Справочники</div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Справочники
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item admin-only" onclick="window.location.href='/references#divisions'">Подразделения</div>
+                <div class="submenu-item" onclick="window.location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
+                <div class="submenu-item" onclick="window.location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
+                <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
+                <div class="submenu-item" onclick="window.location.href='/references#plants'">Заводы</div>
+                <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
+            </div>
         </div>
-        <div class="menu-item" onclick="window.location.href='/settings'">
-            <div class="menu-title">⚙️ Настройки</div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Настройки
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Параметры</div>
+                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Применение обновлений</div>
+                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
+                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Пользователи</div>
+            </div>
         </div>
-        <div class="menu-item" onclick="window.location.href='/profile'">
-            <div class="menu-title">👤 Профиль</div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Профиль
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/profile'">ФИО</div>
+                <div class="submenu-item" onclick="window.location.href='/logout'">Выход</div>
+            </div>
         </div>
     </div>
 </div>
@@ -292,7 +329,7 @@
                 </select>
                 <input type="text" id="searchInput" placeholder="Поиск по заявкам..." class="search-input">
             </div>
-            <button class="btn-primary" id="createRequestBtn" style="display: none;">+ Создать заявку</button>
+            <button class="btn-primary logist-only" id="createRequestBtn">+ Создать заявку</button>
         </div>
         <div id="requestsContainer" class="requests-container"><div class="loading">Загрузка...</div></div>
     </div>
@@ -376,14 +413,12 @@
     let currentProductType = 'BRANDED';
     let allRequests = [];
 
-    // Определяем тип продукции из URL при загрузке
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('type') === 'NON_BRANDED') {
         currentProductType = 'NON_BRANDED';
         document.getElementById('page-title').innerText = 'Заявки (Небрендовая продукция)';
     }
 
-    // Получение текущего пользователя и его роли
     async function fetchCurrentUser() {
         try {
             const response = await fetch('/api/auth/current-user');
@@ -391,24 +426,13 @@
                 const user = await response.json();
                 currentUserRole = user.role;
                 document.getElementById('username').innerText = user.username || user.fullName || 'User';
-
-                // Показываем кнопку создания заявки только для LOGIST и ADMIN
-                const createBtn = document.getElementById('createRequestBtn');
-                if (createBtn) {
-                    if (currentUserRole === 'LOGIST' || currentUserRole === 'ADMIN') {
-                        createBtn.style.display = 'inline-flex';
-                    } else {
-                        createBtn.style.display = 'none';
-                    }
-                }
+                document.body.setAttribute('data-role', currentUserRole);
             } else {
                 document.getElementById('username').innerText = 'User';
-                document.getElementById('createRequestBtn').style.display = 'none';
             }
         } catch(e) {
             console.error('Ошибка получения пользователя:', e);
             document.getElementById('username').innerText = 'User';
-            document.getElementById('createRequestBtn').style.display = 'none';
         }
     }
 
@@ -421,7 +445,6 @@
                 plants.map(p => `<option value="${p.value}">${p.label}</option>`).join('');
         } catch(e) {
             console.error('Ошибка загрузки заводов:', e);
-            document.getElementById('pickupPoint').innerHTML = '<option value="">Выберите завод</option><option value="Завод №1">🏭 Завод №1</option><option value="Завод №2">🏭 Завод №2</option><option value="Завод №3">🏭 Завод №3</option><option value="Завод №4">🏭 Завод №4</option><option value="Завод №5">🏭 Завод №5</option>';
         }
     }
 
@@ -434,7 +457,6 @@
                 warehouses.map(w => `<option value="${w.value}">${w.label}</option>`).join('');
         } catch(e) {
             console.error('Ошибка загрузки складов:', e);
-            document.getElementById('deliveryPoint').innerHTML = '<option value="">Выберите склад</option><option value="Склад №1">📦 Склад №1</option><option value="Склад №2">📦 Склад №2</option><option value="Склад №3">📦 Склад №3</option><option value="Склад №4">📦 Склад №4</option><option value="Склад №5">📦 Склад №5</option>';
         }
     }
 
@@ -462,7 +484,7 @@
         const container = document.getElementById('requestsContainer');
         if (!requests.length) {
             container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Нет созданных заявок</div>' +
-                (currentUserRole === 'LOGIST' || currentUserRole === 'ADMIN' ? '<button class="btn-primary" onclick="openCreateModal()">Создать заявку</button>' : '') +
+                ((currentUserRole === 'LOGIST' || currentUserRole === 'ADMIN') ? '<button class="btn-primary" onclick="openCreateModal()">Создать заявку</button>' : '') +
                 '</div>';
             return;
         }
@@ -586,8 +608,6 @@
             pickupEndTime: document.getElementById('pickupEndTime').value
         };
 
-        console.log('Отправляем данные:', requestData);
-
         try {
             const response = await fetch('/api/requests', {
                 method: 'POST',
@@ -627,14 +647,12 @@
         }
     }
 
-    // Event listeners
     document.getElementById('statusFilter').addEventListener('change', () => applyFilters());
     document.getElementById('searchInput').addEventListener('input', () => applyFilters());
     document.getElementById('createRequestBtn').addEventListener('click', () => openCreateModal());
     document.querySelector('#createModal .close').addEventListener('click', closeCreateModal);
     window.onclick = (e) => { if (e.target === document.getElementById('createModal')) closeCreateModal(); };
 
-    // Инициализация
     fetchCurrentUser().then(() => {
         loadRequests();
     });

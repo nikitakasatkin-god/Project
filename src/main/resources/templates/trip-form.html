@@ -257,11 +257,9 @@
         }
     }
 
-    // Функция валидации формы
     function validateForm() {
         let isValid = true;
 
-        // Проверка перевозчика
         const carrierId = document.getElementById('carrierId').value;
         const carrierError = document.getElementById('carrierError');
         if (!carrierId) {
@@ -273,7 +271,6 @@
             document.getElementById('carrierId').classList.remove('error');
         }
 
-        // Проверка госномера автомобиля
         const vehicleId = document.getElementById('vehicleId').value;
         const vehicleError = document.getElementById('vehicleError');
         if (!vehicleId || vehicleId === '') {
@@ -285,7 +282,6 @@
             document.getElementById('vehicleId').classList.remove('error');
         }
 
-        // Проверка водителя
         const driverName = document.getElementById('driverName').value;
         const driverError = document.getElementById('driverError');
         if (!driverName || driverName === '') {
@@ -297,7 +293,6 @@
             document.getElementById('driverName').classList.remove('error');
         }
 
-        // Проверка даты рейса
         const tripDate = document.getElementById('tripDate').value;
         const tripDateError = document.getElementById('tripDateError');
         if (!tripDate) {
@@ -312,7 +307,6 @@
         return isValid;
     }
 
-    // Очистка ошибок
     function clearErrors() {
         document.querySelectorAll('.error-message').forEach(el => el.innerText = '');
         document.querySelectorAll('.form-control').forEach(el => el.classList.remove('error'));
@@ -332,7 +326,6 @@
             }
             tripData = await response.json();
 
-            // Загружаем заявку и существующие рейсы
             const requestId = tripData.requestId || (tripData.request ? tripData.request.id : null);
             if (requestId) {
                 const requestResponse = await fetch(`/api/requests/${requestId}`);
@@ -378,7 +371,6 @@
         document.getElementById('volume').value = tripData.volume + ' т';
         document.getElementById('tripDate').value = tripData.tripDate || '';
 
-        // Устанавливаем минимальную дату
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('tripDate').min = today;
     }
@@ -391,13 +383,12 @@
             select.innerHTML = '<option value="">Выберите перевозчика</option>' +
                 carriers.map(c => `<option value="${c.id}" ${tripData.carrier?.id === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
 
-            // Если перевозчик уже выбран, загружаем его данные
             if (tripData.carrier?.id) {
                 await loadVehiclesForCarrier(tripData.carrier.id);
                 await loadTrailersForCarrier(tripData.carrier.id);
                 await loadDriversForCarrier(tripData.carrier.id);
                 enableFields();
-                // Устанавливаем текущие значения
+
                 if (tripData.vehiclePlate) {
                     const vehicleSelect = document.getElementById('vehicleId');
                     for(let i = 0; i < vehicleSelect.options.length; i++) {
@@ -504,10 +495,8 @@
     }
 
     async function saveTrip() {
-        // Очищаем предыдущие ошибки
         clearErrors();
 
-        // Валидация формы
         if (!validateForm()) {
             showNotification('Пожалуйста, заполните все обязательные поля', 'error');
             return;
@@ -519,7 +508,6 @@
         const driverName = document.getElementById('driverName').value;
         const tripDate = document.getElementById('tripDate').value;
 
-        // Проверка даты (не может быть раньше сегодня)
         const today = new Date().toISOString().split('T')[0];
         if (tripDate < today) {
             document.getElementById('tripDateError').innerText = 'Дата рейса не может быть раньше сегодняшнего дня';
@@ -543,7 +531,6 @@
             updateData.driverName = driverName;
         }
 
-        // Блокируем кнопку сохранения на время отправки
         const saveBtn = document.getElementById('saveBtn');
         saveBtn.disabled = true;
         saveBtn.innerText = 'Сохранение...';
@@ -596,7 +583,6 @@
         setTimeout(() => notification.remove(), 3000);
     }
 
-    // Устанавливаем минимальную дату и добавляем валидацию при изменении
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('tripDate').min = today;
 
@@ -611,7 +597,6 @@
         }
     });
 
-    // Валидация перевозчика при изменении
     document.getElementById('carrierId').addEventListener('change', function() {
         const carrierError = document.getElementById('carrierError');
         if (!this.value) {
@@ -623,7 +608,6 @@
         }
     });
 
-    // Валидация автомобиля при изменении
     document.getElementById('vehicleId').addEventListener('change', function() {
         const vehicleError = document.getElementById('vehicleError');
         if (!this.value || this.value === '') {
@@ -635,7 +619,6 @@
         }
     });
 
-    // Валидация водителя при изменении
     document.getElementById('driverName').addEventListener('change', function() {
         const driverError = document.getElementById('driverError');
         if (!this.value || this.value === '') {
@@ -647,7 +630,6 @@
         }
     });
 
-    // Event listeners для загрузки данных перевозчика
     document.getElementById('carrierId')?.addEventListener('change', async (e) => {
         const carrierId = e.target.value;
         if (carrierId) {

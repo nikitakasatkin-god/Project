@@ -103,6 +103,15 @@
             transform: rotate(180deg);
         }
 
+        /* Скрытие элементов по ролям */
+        .logist-only { display: none; }
+        .dispatcher-only { display: none; }
+        .admin-only { display: none; }
+
+        body[data-role="ADMIN"] .admin-only { display: block; }
+        body[data-role="LOGIST"] .logist-only { display: block; }
+        body[data-role="DISPATCHER"] .dispatcher-only { display: block; }
+
         /* Main Content */
         .main-content {
             margin-left: 260px;
@@ -235,41 +244,68 @@
     </div>
     <div class="sidebar-menu">
         <div class="menu-item" onclick="window.location.href='/dashboard'">
-            <div class="menu-title">🏠 Главная</div>
+            <div class="menu-title">Главная</div>
         </div>
 
         <div class="menu-item has-submenu">
             <div class="menu-title" onclick="toggleSubmenu(this)">
-                📦 Брендовая продукция
+                Брендовая продукция
                 <span class="arrow">▼</span>
             </div>
             <div class="submenu">
                 <div class="submenu-item" onclick="window.location.href='/requests?type=BRANDED'">Заявки</div>
-                <div class="submenu-item" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
+                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
             </div>
         </div>
 
         <div class="menu-item has-submenu">
             <div class="menu-title" onclick="toggleSubmenu(this)">
-                📦 Небрендовая продукция
+                Небрендовая продукция
                 <span class="arrow">▼</span>
             </div>
             <div class="submenu">
                 <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
-                <div class="submenu-item" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
+                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
             </div>
         </div>
 
-        <div class="menu-item" onclick="window.location.href='/references'">
-            <div class="menu-title">📚 Справочники</div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Справочники
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item admin-only" onclick="window.location.href='/references#divisions'">Подразделения</div>
+                <div class="submenu-item" onclick="window.location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
+                <div class="submenu-item" onclick="window.location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
+                <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
+                <div class="submenu-item" onclick="window.location.href='/references#plants'">Заводы</div>
+                <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
+            </div>
         </div>
 
-        <div class="menu-item" onclick="window.location.href='/settings'">
-            <div class="menu-title">⚙️ Настройки</div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Настройки
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Параметры</div>
+                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Применение обновлений</div>
+                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
+                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Пользователи</div>
+            </div>
         </div>
 
-        <div class="menu-item" onclick="window.location.href='/profile'">
-            <div class="menu-title">👤 Профиль</div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Профиль
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/profile'">ФИО</div>
+                <div class="submenu-item" onclick="window.location.href='/logout'">Выход</div>
+            </div>
         </div>
     </div>
 </div>
@@ -278,7 +314,7 @@
     <div class="top-bar">
         <h1 class="page-title">Главная</h1>
         <div class="user-info">
-            <span class="user-name" sec:authentication="name">User</span>
+            <span class="user-name" id="username">Загрузка...</span>
             <a href="/logout" class="logout-btn">Выйти</a>
         </div>
     </div>
@@ -312,7 +348,8 @@
 </div>
 
 <script>
-    // Функция для раскрытия/скрытия подменю
+    let currentUserRole = '';
+
     function toggleSubmenu(element) {
         const menuItem = element.closest('.has-submenu');
         menuItem.classList.toggle('open');
@@ -337,7 +374,22 @@
         window.location.href = `/request-detail?id=${id}`;
     }
 
-    // Загрузка данных для дашборда
+    async function fetchCurrentUser() {
+        try {
+            const response = await fetch('/api/auth/current-user');
+            if (response.ok) {
+                const user = await response.json();
+                currentUserRole = user.role;
+                document.getElementById('username').innerText = user.username || user.fullName || 'User';
+                document.body.setAttribute('data-role', currentUserRole);
+            } else {
+                document.getElementById('username').innerText = 'User';
+            }
+        } catch(e) {
+            document.getElementById('username').innerText = 'User';
+        }
+    }
+
     async function loadDashboard() {
         try {
             const response = await fetch('/api/dashboard');
@@ -368,8 +420,9 @@
         }
     }
 
-    // Загрузка дашборда при старте
-    loadDashboard();
+    fetchCurrentUser().then(() => {
+        loadDashboard();
+    });
 </script>
 </body>
 </html>
