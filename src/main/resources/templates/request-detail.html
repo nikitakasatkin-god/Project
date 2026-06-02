@@ -147,6 +147,27 @@
         .status-trip-processed { background: #d1fae5; color: #059669; }
         .status-trip-cancelled { background: #fee2e2; color: #dc2626; }
 
+        /* Стили для статуса обмена */
+        .sync-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .sync-not-set {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        .sync-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .sync-completed {
+            background: #d1fae5;
+            color: #059669;
+        }
+
         /* Стили для истории */
         .history-table {
             width: 100%;
@@ -682,6 +703,34 @@
         // Админ и диспетчер могут управлять рейсами (отмена/удаление)
         const canManageTrips = currentUser?.role === 'ADMIN' || currentUser?.role === 'DISPATCHER';
 
+        // Функция для получения текста статуса обмена
+        function getSyncText(trip) {
+            if (trip.status === 'NEW' || trip.status === 'ARRIVED_LOADING') {
+                return 'Не установлен';
+            }
+            if (trip.status === 'LOADED' && !trip.syncedToDispatch) {
+                return 'Ожидает синхронизации';
+            }
+            if (trip.syncedToDispatch) {
+                return 'Синхронизирован';
+            }
+            return 'Не установлен';
+        }
+
+        // Функция для получения CSS класса статуса обмена
+        function getSyncClass(trip) {
+            if (trip.status === 'NEW' || trip.status === 'ARRIVED_LOADING') {
+                return 'sync-not-set';
+            }
+            if (trip.status === 'LOADED' && !trip.syncedToDispatch) {
+                return 'sync-pending';
+            }
+            if (trip.syncedToDispatch) {
+                return 'sync-completed';
+            }
+            return 'sync-not-set';
+        }
+
         container.innerHTML = `
             <table class="data-table">
                 <thead>
@@ -701,8 +750,8 @@
                 <tbody>
                     ${activeTrips.map(trip => {
                         let tripNumberDisplay = '';
-                        const syncText = trip.syncedToDispatch ? 'Синхронизирован' : 'Ожидает синхронизации';
-                        const syncClass = trip.syncedToDispatch ? 'sync-completed' : 'sync-pending';
+                        const syncText = getSyncText(trip);
+                        const syncClass = getSyncClass(trip);
 
                         if (trip.status === 'NEW') {
                             if (isOwner) {
