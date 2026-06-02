@@ -5,11 +5,43 @@
     <title>Заявка - Логистика</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* CSS переменные для тем */
+        :root {
+            --bg-primary: #f5f7fb;
+            --bg-secondary: #ffffff;
+            --text-primary: #1a1f36;
+            --text-secondary: #374151;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --card-bg: #ffffff;
+            --sidebar-bg: #ffffff;
+            --header-bg: #ffffff;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --input-bg: #ffffff;
+            --hover-bg: #f9fafb;
+        }
+
+        body.dark-theme {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #eeeeee;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --card-bg: #0f3460;
+            --sidebar-bg: #0f3460;
+            --header-bg: #16213e;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --input-bg: #1e2a4a;
+            --hover-bg: #1a2744;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background: #f5f7fb;
-            color: #1a1f36;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
         }
         .sidebar {
             position: fixed;
@@ -17,11 +49,12 @@
             top: 0;
             width: 260px;
             height: 100%;
-            background: white;
+            background: var(--sidebar-bg);
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             overflow-y: auto;
+            transition: background 0.3s ease;
         }
-        .sidebar-header { padding: 24px; border-bottom: 1px solid #e5e7eb; }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid var(--border-color); }
         .sidebar-header h2 {
             font-size: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -30,13 +63,13 @@
         }
         .sidebar-menu { padding: 20px 0; }
         .menu-item { padding: 12px 24px; cursor: pointer; transition: all 0.3s; }
-        .menu-item:hover { background: #f3f4f6; }
-        .menu-title { font-weight: 600; color: #374151; display: flex; justify-content: space-between; align-items: center; }
+        .menu-item:hover { background: var(--hover-bg); }
+        .menu-title { font-weight: 600; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
         .has-submenu { position: relative; }
         .submenu { margin-top: 8px; margin-left: 20px; display: none; }
         .submenu.show { display: block; }
-        .submenu-item { padding: 8px 12px; color: #6b7280; cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 14px; }
-        .submenu-item:hover { background: #f3f4f6; color: #667eea; }
+        .submenu-item { padding: 8px 12px; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 14px; }
+        .submenu-item:hover { background: var(--hover-bg); color: #667eea; }
         .arrow { font-size: 12px; transition: transform 0.2s; }
         .has-submenu.open .arrow { transform: rotate(180deg); }
 
@@ -50,51 +83,70 @@
 
         .main-content { margin-left: 260px; padding: 24px; }
         .top-bar {
-            background: white;
+            background: var(--header-bg);
             border-radius: 12px;
             padding: 16px 24px;
             margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
         }
-        .page-title { font-size: 24px; font-weight: 700; }
+        .page-title { font-size: 24px; font-weight: 700; color: var(--text-primary); }
         .user-info { display: flex; align-items: center; gap: 12px; }
-        .logout-btn { padding: 8px 16px; background: #fee; color: #c33; border-radius: 8px; text-decoration: none; font-size: 14px; }
+        .logout-btn { padding: 8px 16px; background: #fee2e2; color: #dc2626; border-radius: 8px; text-decoration: none; font-size: 14px; }
         .back-btn { background: none; border: none; font-size: 14px; color: #667eea; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--hover-bg);
+        }
         .content-panel {
-            background: white;
+            background: var(--card-bg);
             border-radius: 16px;
             padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
             margin-bottom: 20px;
         }
-        .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb; }
+        .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
         .detail-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             margin-bottom: 24px;
         }
-        .detail-item { padding: 12px; background: #f9fafb; border-radius: 12px; }
-        .detail-label { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
-        .detail-value { font-size: 16px; font-weight: 600; color: #1a1f36; }
+        .detail-item { padding: 12px; background: var(--hover-bg); border-radius: 12px; }
+        .detail-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+        .detail-value { font-size: 16px; font-weight: 600; color: var(--text-primary); }
         .detail-value.warning { color: #dc2626; font-weight: 700; }
         .detail-value.editable {
-            background: white;
-            border: 1px solid #e5e7eb;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 6px 10px;
             font-weight: normal;
             width: 100%;
             font-size: 14px;
+            color: var(--text-primary);
         }
         .detail-value.editable:focus {
             outline: none;
             border-color: #667eea;
         }
-        .action-buttons { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; }
+        .action-buttons { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; gap: 12px; flex-wrap: wrap; }
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -104,7 +156,7 @@
             cursor: pointer;
             font-weight: 500;
         }
-        .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        .btn-secondary { background: var(--hover-bg); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; cursor: pointer; }
         .btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
         .btn-warning { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
         .btn-success { background: #d1fae5; color: #059669; border: 1px solid #a7f3d0; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
@@ -129,8 +181,8 @@
         .btn-status-arrived { background: #fef3c7; color: #d97706; }
         .btn-status-loaded { background: #dbeafe; color: #2563eb; }
         .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-        .data-table th { background: #f9fafb; font-weight: 600; }
+        .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .data-table th { background: var(--hover-bg); font-weight: 600; color: var(--text-secondary); }
         .status-badge {
             padding: 4px 12px;
             border-radius: 20px;
@@ -177,18 +229,19 @@
         .history-table th, .history-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--border-color);
         }
         .history-table th {
-            background: #f9fafb;
+            background: var(--hover-bg);
             font-weight: 600;
+            color: var(--text-secondary);
         }
         .history-system {
             color: #667eea;
             font-weight: 500;
         }
         .history-user {
-            color: #374151;
+            color: var(--text-secondary);
         }
         .link-button {
             color: #667eea;
@@ -209,36 +262,38 @@
             z-index: 1000;
         }
         .modal-content {
-            background: white;
+            background: var(--card-bg);
             border-radius: 16px;
             width: 90%;
             max-width: 600px;
             max-height: 85vh;
             overflow-y: auto;
         }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e5e7eb; }
-        .modal-header h3 { font-size: 20px; }
-        .modal-header .close { font-size: 28px; cursor: pointer; color: #9ca3af; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border-color); }
+        .modal-header h3 { font-size: 20px; color: var(--text-primary); }
+        .modal-header .close { font-size: 28px; cursor: pointer; color: var(--text-muted); }
         .modal-body { padding: 24px; }
-        .modal-footer { padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 12px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; }
         .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: var(--text-secondary); }
         .form-control {
             width: 100%;
             padding: 10px 14px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 10px;
             font-size: 14px;
+            background: var(--input-bg);
+            color: var(--text-primary);
         }
         .form-control:focus { outline: none; border-color: #667eea; }
-        .form-control:disabled { background: #f3f4f6; cursor: not-allowed; }
+        .form-control:disabled { background: var(--hover-bg); cursor: not-allowed; }
         .form-control.error { border-color: #ef4444; background: #fef2f2; }
         .info-message { background: #eef2ff; padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; color: #4338ca; display: flex; align-items: center; gap: 10px; }
         .warning-message { background: #fef3c7; color: #d97706; }
         .empty-state { text-align: center; padding: 40px; }
         .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
-        .empty-text { color: #6b7280; }
-        .loading { text-align: center; padding: 40px; color: #6b7280; }
+        .empty-text { color: var(--text-muted); }
+        .loading { text-align: center; padding: 40px; color: var(--text-muted); }
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -269,9 +324,33 @@
                 <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
             </div>
         </div>
-        <div class="menu-item" onclick="window.location.href='/references'"><div class="menu-title">Справочники</div></div>
-        <div class="menu-item" onclick="window.location.href='/settings'"><div class="menu-title">Настройки</div></div>
-        <div class="menu-item" onclick="window.location.href='/profile'"><div class="menu-title">Профиль</div></div>
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Справочники<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/references#divisions'">Подразделения</div>
+                <div class="submenu-item" onclick="window.location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
+                <div class="submenu-item" onclick="window.location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
+                <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
+                <div class="submenu-item" onclick="window.location.href='/references#plants'">Заводы</div>
+                <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Настройки<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/settings'">Параметры</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Применение обновлений</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Пользователи</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Профиль<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/profile'">ФИО</div>
+                <div class="submenu-item" onclick="window.location.href='/logout'">Выход</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -281,6 +360,9 @@
         <h1 class="page-title">Заявка</h1>
         <div class="user-info">
             <span class="user-name" id="username">Загрузка...</span>
+            <button class="theme-toggle" id="themeToggle">
+                <span>🌙</span> Тема
+            </button>
             <a href="/logout" class="logout-btn">Выйти</a>
         </div>
     </div>
@@ -355,6 +437,31 @@
 </div>
 
 <script>
+    // Функции для темы
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        const themeBtn = document.getElementById('themeToggle');
+        if (document.body.classList.contains('dark-theme')) {
+            localStorage.setItem('theme', 'dark');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        } else {
+            localStorage.setItem('theme', 'light');
+            if (themeBtn) themeBtn.innerHTML = '<span>🌙</span> Тема';
+        }
+    }
+
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    initTheme();
+
     function toggleSubmenu(element) {
         const menuItem = element.closest('.has-submenu');
         menuItem.classList.toggle('open');
@@ -459,7 +566,7 @@
     function renderHistory(history) {
         const container = document.getElementById('historyContainer');
         if (!history || history.length === 0) {
-            container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b7280;">Нет истории изменений</div>';
+            container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">Нет истории изменений</div>';
             return;
         }
 
@@ -542,7 +649,6 @@
     }
 
     async function saveEdit() {
-        // Получаем значения из полей
         const volume = document.getElementById('edit_volume')?.value;
         const pickupPoint = document.getElementById('edit_pickupPoint')?.value;
         const deliveryPoint = document.getElementById('edit_deliveryPoint')?.value;
@@ -551,7 +657,6 @@
         const pickupStartTime = document.getElementById('edit_pickupStartTime')?.value;
         const pickupEndTime = document.getElementById('edit_pickupEndTime')?.value;
 
-        // Валидация обязательных полей
         const missingFields = [];
         if (!volume || volume === '') missingFields.push('Объем');
         if (!pickupPoint || pickupPoint === '') missingFields.push('Пункт погрузки');
@@ -566,13 +671,11 @@
             return;
         }
 
-        // Проверка объема
         if (parseFloat(volume) <= 0) {
             showNotification('Введите корректный объем (больше 0)', 'error');
             return;
         }
 
-        // Проверка дат
         const today = new Date().toISOString().split('T')[0];
         if (pickupStartDate < today) {
             showNotification('Дата начала погрузки не может быть раньше сегодняшнего дня', 'error');
@@ -584,7 +687,6 @@
             return;
         }
 
-        // Проверка времени
         if (pickupStartTime >= pickupEndTime) {
             showNotification('Время начала должно быть раньше времени окончания', 'error');
             return;
@@ -640,7 +742,6 @@
         const pickupEndTimeFormatted = formatTime(requestData.pickupEndTime);
 
         if (isEditMode && canEdit) {
-            // Загружаем списки для выпадающих полей
             loadPickupPointsForEdit();
             loadDeliveryPointsForEdit();
 
@@ -709,7 +810,6 @@
                 </div>
             `;
 
-            // Устанавливаем выбранные значения в select
             setTimeout(() => {
                 const pickupSelect = document.getElementById('edit_pickupPoint');
                 const deliverySelect = document.getElementById('edit_deliveryPoint');
@@ -773,14 +873,10 @@
             return;
         }
 
-        // ТОЛЬКО владелец заявки может менять статус рейса (кнопки Прибыл на погрузку/Погружен)
         const isOwner = currentUser && (currentUser.id === requestData?.owner?.id);
-        // Админ и диспетчер могут просматривать карточку рейса (ссылка)
         const canViewTrip = currentUser?.role === 'ADMIN' || currentUser?.role === 'DISPATCHER';
-        // Админ и диспетчер могут управлять рейсами (отмена/удаление)
         const canManageTrips = currentUser?.role === 'ADMIN' || currentUser?.role === 'DISPATCHER';
 
-        // Функция для получения текста статуса обмена
         function getSyncText(trip) {
             if (trip.status === 'NEW' || trip.status === 'ARRIVED_LOADING') {
                 return 'Не установлен';
@@ -794,7 +890,6 @@
             return 'Не установлен';
         }
 
-        // Функция для получения CSS класса статуса обмена
         function getSyncClass(trip) {
             if (trip.status === 'NEW' || trip.status === 'ARRIVED_LOADING') {
                 return 'sync-not-set';
@@ -871,7 +966,7 @@
                                          <button class="btn-danger" style="font-size:12px;padding:4px 12px;margin:2px;" onclick="deleteTrip(${trip.id})">Удалить</button>` : ''
                                     }
                                     ${canManageTrips && trip.status === 'CANCELLED' ?
-                                        `<span style="color:#9ca3af;font-size:12px;">Отменен</span>` : ''
+                                        `<span style="color:var(--text-muted);font-size:12px;">Отменен</span>` : ''
                                     }
                                  </span>
                             </tr>

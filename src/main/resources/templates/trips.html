@@ -5,11 +5,43 @@
     <title>Рейсы - Логистика</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* CSS переменные для тем */
+        :root {
+            --bg-primary: #f5f7fb;
+            --bg-secondary: #ffffff;
+            --text-primary: #1a1f36;
+            --text-secondary: #374151;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --card-bg: #ffffff;
+            --sidebar-bg: #ffffff;
+            --header-bg: #ffffff;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --input-bg: #ffffff;
+            --hover-bg: #f9fafb;
+        }
+
+        body.dark-theme {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #eeeeee;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --card-bg: #0f3460;
+            --sidebar-bg: #0f3460;
+            --header-bg: #16213e;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --input-bg: #1e2a4a;
+            --hover-bg: #1a2744;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background: #f5f7fb;
-            color: #1a1f36;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
         }
         .sidebar {
             position: fixed;
@@ -17,12 +49,13 @@
             top: 0;
             width: 280px;
             height: 100%;
-            background: white;
+            background: var(--sidebar-bg);
             box-shadow: 2px 0 20px rgba(0,0,0,0.05);
             overflow-y: auto;
             z-index: 100;
+            transition: background 0.3s ease;
         }
-        .sidebar-header { padding: 24px; border-bottom: 1px solid #e5e7eb; }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid var(--border-color); }
         .sidebar-header h2 {
             font-size: 22px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -31,10 +64,10 @@
         }
         .sidebar-menu { padding: 16px 0; }
         .menu-item { padding: 12px 24px; cursor: pointer; transition: all 0.2s; }
-        .menu-item:hover { background: #f9fafb; }
+        .menu-item:hover { background: var(--hover-bg); }
         .menu-title {
             font-weight: 600;
-            color: #374151;
+            color: var(--text-secondary);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -44,29 +77,39 @@
         .submenu.show { display: block; }
         .submenu-item {
             padding: 8px 12px;
-            color: #6b7280;
+            color: var(--text-muted);
             cursor: pointer;
             border-radius: 8px;
             transition: all 0.2s;
             font-size: 14px;
         }
-        .submenu-item:hover { background: #f3f4f6; color: #667eea; }
+        .submenu-item:hover { background: var(--hover-bg); color: #667eea; }
         .arrow { font-size: 12px; transition: transform 0.2s; }
         .has-submenu.open .arrow { transform: rotate(180deg); }
+
+        /* Скрытие элементов по ролям */
+        .logist-only { display: none; }
+        .dispatcher-only { display: none; }
+        .admin-only { display: none; }
+        body[data-role="ADMIN"] .admin-only { display: block; }
+        body[data-role="LOGIST"] .logist-only { display: block; }
+        body[data-role="DISPATCHER"] .dispatcher-only { display: block; }
+
         .main-content { margin-left: 280px; padding: 24px; min-height: 100vh; }
         .top-bar {
-            background: white;
+            background: var(--header-bg);
             border-radius: 16px;
             padding: 16px 24px;
             margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
         }
-        .page-title { font-size: 24px; font-weight: 700; color: #1a1f36; }
+        .page-title { font-size: 24px; font-weight: 700; color: var(--text-primary); }
         .user-info { display: flex; align-items: center; gap: 16px; }
-        .user-name { font-weight: 600; color: #374151; }
+        .user-name { font-weight: 600; color: var(--text-secondary); }
         .logout-btn {
             padding: 8px 16px;
             background: #fee2e2;
@@ -76,11 +119,28 @@
             font-size: 14px;
             font-weight: 500;
         }
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--hover-bg);
+        }
         .content-panel {
-            background: white;
+            background: var(--card-bg);
             border-radius: 20px;
             padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
         }
         .panel-header {
             display: flex;
@@ -92,8 +152,8 @@
         }
         .filter-group { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
         .btn-filter {
-            background: #f3f4f6;
-            border: 1px solid #e5e7eb;
+            background: var(--hover-bg);
+            border: 1px solid var(--border-color);
             padding: 8px 16px;
             border-radius: 10px;
             cursor: pointer;
@@ -102,9 +162,10 @@
             align-items: center;
             gap: 8px;
             transition: all 0.2s;
+            color: var(--text-secondary);
         }
         .btn-filter:hover {
-            background: #e5e7eb;
+            background: var(--bg-primary);
         }
         .btn-filter.active {
             background: #667eea;
@@ -113,11 +174,11 @@
         }
         .filter-panel {
             display: none;
-            background: #f9fafb;
+            background: var(--hover-bg);
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 20px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
         }
         .filter-panel.show {
             display: block;
@@ -136,13 +197,15 @@
         .filter-field label {
             font-size: 12px;
             font-weight: 600;
-            color: #374151;
+            color: var(--text-secondary);
         }
         .filter-field input, .filter-field select {
             padding: 8px 12px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             font-size: 13px;
+            background: var(--input-bg);
+            color: var(--text-primary);
         }
         .filter-field input:focus, .filter-field select:focus {
             outline: none;
@@ -154,15 +217,16 @@
             gap: 12px;
             margin-top: 16px;
             padding-top: 16px;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid var(--border-color);
         }
         .btn-clear {
-            background: #f3f4f6;
-            border: 1px solid #e5e7eb;
+            background: var(--hover-bg);
+            border: 1px solid var(--border-color);
             padding: 6px 12px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 13px;
+            color: var(--text-secondary);
         }
         .btn-apply {
             background: #667eea;
@@ -180,11 +244,12 @@
         .data-table th, .data-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--border-color);
         }
         .data-table th {
-            background: #f9fafb;
+            background: var(--hover-bg);
             font-weight: 600;
+            color: var(--text-secondary);
         }
         .status-badge {
             padding: 4px 12px;
@@ -247,8 +312,8 @@
         }
         .empty-state { text-align: center; padding: 60px 20px; }
         .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
-        .empty-text { font-size: 16px; color: #6b7280; margin-bottom: 20px; }
-        .loading { text-align: center; padding: 40px; color: #6b7280; }
+        .empty-text { font-size: 16px; color: var(--text-muted); margin-bottom: 20px; }
+        .loading { text-align: center; padding: 40px; color: var(--text-muted); }
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -279,9 +344,33 @@
                 <div class="submenu-item" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
             </div>
         </div>
-        <div class="menu-item" onclick="window.location.href='/references'"><div class="menu-title">Справочники</div></div>
-        <div class="menu-item" onclick="window.location.href='/settings'"><div class="menu-title">Настройки</div></div>
-        <div class="menu-item" onclick="window.location.href='/profile'"><div class="menu-title">Профиль</div></div>
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Справочники<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/references#divisions'">Подразделения</div>
+                <div class="submenu-item" onclick="window.location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
+                <div class="submenu-item" onclick="window.location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
+                <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
+                <div class="submenu-item" onclick="window.location.href='/references#plants'">Заводы</div>
+                <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Настройки<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/settings'">Параметры</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Применение обновлений</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Пользователи</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Профиль<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/profile'">ФИО</div>
+                <div class="submenu-item" onclick="window.location.href='/logout'">Выход</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -290,6 +379,9 @@
         <h1 class="page-title" id="page-title">Рейсы (Брендовая продукция)</h1>
         <div class="user-info">
             <span class="user-name" id="username">Загрузка...</span>
+            <button class="theme-toggle" id="themeToggle">
+                <span>🌙</span> Тема
+            </button>
             <a href="/logout" class="logout-btn">Выйти</a>
         </div>
     </div>
@@ -303,7 +395,6 @@
             </div>
         </div>
 
-        <!-- Панель расширенных фильтров -->
         <div id="filterPanel" class="filter-panel">
             <div class="filter-row">
                 <div class="filter-field">
@@ -369,6 +460,31 @@
 </div>
 
 <script>
+    // Функции для темы
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        const themeBtn = document.getElementById('themeToggle');
+        if (document.body.classList.contains('dark-theme')) {
+            localStorage.setItem('theme', 'dark');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        } else {
+            localStorage.setItem('theme', 'light');
+            if (themeBtn) themeBtn.innerHTML = '<span>🌙</span> Тема';
+        }
+    }
+
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    initTheme();
+
     function toggleSubmenu(element) {
         const menuItem = element.closest('.has-submenu');
         menuItem.classList.toggle('open');
@@ -397,6 +513,7 @@
                 const user = await response.json();
                 currentUserRole = user.role;
                 document.getElementById('username').innerText = user.username || user.fullName || 'User';
+                document.body.setAttribute('data-role', currentUserRole);
 
                 if (currentUserRole === 'LOGIST') {
                     document.getElementById('tripsContainer').innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-text">Доступ запрещен. Только администратор или диспетчер могут просматривать рейсы.</div></div>';
@@ -486,12 +603,10 @@
 
         let filtered = [...allTrips];
 
-        // Фильтр по статусу рейса
         if (filterStatus !== 'ALL') {
             filtered = filtered.filter(t => t.status === filterStatus);
         }
 
-        // Фильтр по статусу обмена
         if (filterSync === 'NOT_SET') {
             filtered = filtered.filter(t => t.status === 'NEW' || t.status === 'ARRIVED_LOADING');
         } else if (filterSync === 'PENDING') {
@@ -500,32 +615,21 @@
             filtered = filtered.filter(t => t.syncedToDispatch === true);
         }
 
-        // Фильтр по ID рейса
         if (filterId) {
             filtered = filtered.filter(t => t.id === parseInt(filterId));
         }
-
-        // Фильтр по ID заявки
         if (filterRequestId) {
             filtered = filtered.filter(t => t.requestId === parseInt(filterRequestId));
         }
-
-        // Фильтр по перевозчику
         if (filterCarrier) {
             filtered = filtered.filter(t => t.carrierId === parseInt(filterCarrier) || t.carrierName === filterCarrier);
         }
-
-        // Фильтр по госномеру
         if (filterVehiclePlate) {
             filtered = filtered.filter(t => t.vehiclePlate && t.vehiclePlate.toLowerCase().includes(filterVehiclePlate));
         }
-
-        // Фильтр по водителю
         if (filterDriverName) {
             filtered = filtered.filter(t => t.driverName && t.driverName.toLowerCase().includes(filterDriverName));
         }
-
-        // Фильтр по дате рейса
         if (filterDateFrom) {
             filtered = filtered.filter(t => t.tripDate && t.tripDate >= filterDateFrom);
         }

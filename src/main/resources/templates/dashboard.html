@@ -7,6 +7,37 @@
     <title>Главная - Логистика</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* CSS переменные для тем */
+        :root {
+            --bg-primary: #f5f7fb;
+            --bg-secondary: #ffffff;
+            --text-primary: #1a1f36;
+            --text-secondary: #374151;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --card-bg: #ffffff;
+            --sidebar-bg: #ffffff;
+            --header-bg: #ffffff;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --input-bg: #ffffff;
+            --hover-bg: #f9fafb;
+        }
+
+        body.dark-theme {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #eeeeee;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --card-bg: #0f3460;
+            --sidebar-bg: #0f3460;
+            --header-bg: #16213e;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --input-bg: #1e2a4a;
+            --hover-bg: #1a2744;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -15,8 +46,9 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #f5f7fb;
-            color: #1a1f36;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         /* Sidebar */
@@ -26,15 +58,16 @@
             top: 0;
             width: 260px;
             height: 100%;
-            background: white;
+            background: var(--sidebar-bg);
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             overflow-y: auto;
             z-index: 100;
+            transition: background 0.3s ease;
         }
 
         .sidebar-header {
             padding: 24px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .sidebar-header h2 {
@@ -55,12 +88,12 @@
         }
 
         .menu-item:hover {
-            background: #f3f4f6;
+            background: var(--hover-bg);
         }
 
         .menu-title {
             font-weight: 600;
-            color: #374151;
+            color: var(--text-secondary);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -82,7 +115,7 @@
 
         .submenu-item {
             padding: 8px 12px;
-            color: #6b7280;
+            color: var(--text-muted);
             cursor: pointer;
             border-radius: 8px;
             transition: all 0.2s;
@@ -90,7 +123,7 @@
         }
 
         .submenu-item:hover {
-            background: #f3f4f6;
+            background: var(--hover-bg);
             color: #667eea;
         }
 
@@ -107,7 +140,6 @@
         .logist-only { display: none; }
         .dispatcher-only { display: none; }
         .admin-only { display: none; }
-
         body[data-role="ADMIN"] .admin-only { display: block; }
         body[data-role="LOGIST"] .logist-only { display: block; }
         body[data-role="DISPATCHER"] .dispatcher-only { display: block; }
@@ -119,45 +151,67 @@
         }
 
         .top-bar {
-            background: white;
+            background: var(--header-bg);
             border-radius: 12px;
             padding: 16px 24px;
             margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
         }
 
         .page-title {
             font-size: 24px;
             font-weight: 700;
+            color: var(--text-primary);
         }
 
         .user-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
         }
 
         .user-name {
             font-weight: 600;
+            color: var(--text-secondary);
         }
 
         .logout-btn {
             padding: 8px 16px;
-            background: #fee;
-            color: #c33;
+            background: #fee2e2;
+            color: #dc2626;
             border-radius: 8px;
             text-decoration: none;
             font-size: 14px;
         }
 
+        /* Theme Toggle */
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--hover-bg);
+        }
+
         .content-panel {
-            background: white;
+            background: var(--card-bg);
             border-radius: 16px;
             padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
         }
 
         /* Cards */
@@ -169,22 +223,22 @@
         }
 
         .stat-card {
-            background: white;
+            background: var(--card-bg);
             border-radius: 16px;
             padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
         }
 
         .stat-title {
             font-size: 14px;
-            color: #6b7280;
+            color: var(--text-muted);
             margin-bottom: 8px;
         }
 
         .stat-value {
             font-size: 32px;
             font-weight: 700;
-            color: #1a1f36;
+            color: var(--text-primary);
         }
 
         /* Table */
@@ -197,13 +251,13 @@
         .data-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .data-table th {
-            background: #f9fafb;
+            background: rgba(102, 126, 234, 0.05);
             font-weight: 600;
-            color: #374151;
+            color: var(--text-secondary);
         }
 
         .status-badge {
@@ -269,13 +323,13 @@
             </div>
         </div>
 
-        <div class="menu-item has-submenu">
+        <div class="menu-item has-submenu admin-only">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Справочники
                 <span class="arrow">▼</span>
             </div>
             <div class="submenu">
-                <div class="submenu-item admin-only" onclick="window.location.href='/references#divisions'">Подразделения</div>
+                <div class="submenu-item" onclick="window.location.href='/references#divisions'">Подразделения</div>
                 <div class="submenu-item" onclick="window.location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
                 <div class="submenu-item" onclick="window.location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
                 <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
@@ -284,16 +338,16 @@
             </div>
         </div>
 
-        <div class="menu-item has-submenu">
+        <div class="menu-item has-submenu admin-only">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Настройки
                 <span class="arrow">▼</span>
             </div>
             <div class="submenu">
-                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Параметры</div>
-                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Применение обновлений</div>
-                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
-                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Пользователи</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Параметры</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Применение обновлений</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Пользователи</div>
             </div>
         </div>
 
@@ -315,6 +369,9 @@
         <h1 class="page-title">Главная</h1>
         <div class="user-info">
             <span class="user-name" id="username">Загрузка...</span>
+            <button class="theme-toggle" id="themeToggle">
+                <span>🌙</span> Тема
+            </button>
             <a href="/logout" class="logout-btn">Выйти</a>
         </div>
     </div>
@@ -348,7 +405,27 @@
 </div>
 
 <script>
-    let currentUserRole = '';
+    // Функции для темы
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        const themeBtn = document.getElementById('themeToggle');
+        if (document.body.classList.contains('dark-theme')) {
+            localStorage.setItem('theme', 'dark');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        } else {
+            localStorage.setItem('theme', 'light');
+            if (themeBtn) themeBtn.innerHTML = '<span>🌙</span> Тема';
+        }
+    }
 
     function toggleSubmenu(element) {
         const menuItem = element.closest('.has-submenu');
@@ -403,23 +480,26 @@
             if (data.recentRequests && data.recentRequests.length) {
                 tbody.innerHTML = data.recentRequests.map(req => `
                     <tr>
-                        <td>${req.id}</td>
-                        <td>${req.volume} т</td>
-                        <td>${req.pickupPoint || '-'}</td>
-                        <td>${req.deliveryPoint || '-'}</td>
-                        <td><span class="status-badge status-${getStatusClass(req.status)}">${getStatusText(req.status)}</span></td>
-                        <td><button class="link-button" onclick="viewRequest(${req.id})">Открыть</button></td>
+                        <td>${req.id}</span></span>
+                        <td>${req.volume} т</span></span>
+                        <td>${req.pickupPoint || '-'}</span></span>
+                        <td>${req.deliveryPoint || '-'}</span></span>
+                        <td><span class="status-badge status-${getStatusClass(req.status)}">${getStatusText(req.status)}</span></span>
+                        <td><button class="link-button" onclick="viewRequest(${req.id})">Открыть</button></span>
                     </tr>
                 `).join('');
             } else {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Нет заявок</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Нет заявок</span></span>';
             }
         } catch(e) {
             console.error('Ошибка загрузки дашборда:', e);
-            document.getElementById('recent-requests-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center">Ошибка загрузки</td></tr>';
+            document.getElementById('recent-requests-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center">Ошибка загрузки</span></span>';
         }
     }
 
+    let currentUserRole = '';
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    initTheme();
     fetchCurrentUser().then(() => {
         loadDashboard();
     });

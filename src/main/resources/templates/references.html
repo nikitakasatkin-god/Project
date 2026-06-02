@@ -5,11 +5,43 @@
     <title>Справочники - Логистика</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* CSS переменные для тем */
+        :root {
+            --bg-primary: #f5f7fb;
+            --bg-secondary: #ffffff;
+            --text-primary: #1a1f36;
+            --text-secondary: #374151;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --card-bg: #ffffff;
+            --sidebar-bg: #ffffff;
+            --header-bg: #ffffff;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --input-bg: #ffffff;
+            --hover-bg: #f9fafb;
+        }
+
+        body.dark-theme {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #eeeeee;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --card-bg: #0f3460;
+            --sidebar-bg: #0f3460;
+            --header-bg: #16213e;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --input-bg: #1e2a4a;
+            --hover-bg: #1a2744;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background: #f5f7fb;
-            color: #1a1f36;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
         }
         .sidebar {
             position: fixed;
@@ -17,12 +49,13 @@
             top: 0;
             width: 260px;
             height: 100%;
-            background: white;
+            background: var(--sidebar-bg);
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             overflow-y: auto;
             z-index: 100;
+            transition: background 0.3s ease;
         }
-        .sidebar-header { padding: 24px; border-bottom: 1px solid #e5e7eb; }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid var(--border-color); }
         .sidebar-header h2 {
             font-size: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -31,32 +64,62 @@
         }
         .sidebar-menu { padding: 20px 0; }
         .menu-item { padding: 12px 24px; cursor: pointer; transition: all 0.3s; }
-        .menu-item:hover { background: #f3f4f6; }
-        .menu-title { font-weight: 600; color: #374151; }
-        .main-content {
-            margin-left: 260px;
-            padding: 24px;
-            min-height: 100vh;
-        }
+        .menu-item:hover { background: var(--hover-bg); }
+        .menu-title { font-weight: 600; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
+        .has-submenu { position: relative; }
+        .submenu { margin-top: 8px; margin-left: 20px; display: none; }
+        .submenu.show { display: block; }
+        .submenu-item { padding: 8px 12px; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 14px; }
+        .submenu-item:hover { background: var(--hover-bg); color: #667eea; }
+        .arrow { font-size: 12px; transition: transform 0.2s; }
+        .has-submenu.open .arrow { transform: rotate(180deg); }
+
+        /* Скрытие элементов по ролям */
+        .logist-only { display: none; }
+        .dispatcher-only { display: none; }
+        .admin-only { display: none; }
+        body[data-role="ADMIN"] .admin-only { display: block; }
+        body[data-role="LOGIST"] .logist-only { display: block; }
+        body[data-role="DISPATCHER"] .dispatcher-only { display: block; }
+
+        .main-content { margin-left: 260px; padding: 24px; min-height: 100vh; }
         .top-bar {
-            background: white;
+            background: var(--header-bg);
             border-radius: 12px;
             padding: 16px 24px;
             margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
         }
-        .page-title { font-size: 24px; font-weight: 700; }
-        .user-info { display: flex; align-items: center; gap: 12px; }
+        .page-title { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+        .user-info { display: flex; align-items: center; gap: 16px; }
+        .user-name { font-weight: 600; color: var(--text-secondary); }
         .logout-btn {
             padding: 8px 16px;
-            background: #fee;
-            color: #c33;
+            background: #fee2e2;
+            color: #dc2626;
             border-radius: 8px;
             text-decoration: none;
             font-size: 14px;
+        }
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--hover-bg);
         }
         .tabs {
             display: flex;
@@ -66,11 +129,12 @@
         }
         .tab {
             padding: 10px 20px;
-            background: white;
-            border: 1px solid #e5e7eb;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s;
+            color: var(--text-secondary);
         }
         .tab.active {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -79,10 +143,11 @@
         }
         .tab-content {
             display: none;
-            background: white;
+            background: var(--card-bg);
             border-radius: 16px;
             padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
         }
         .tab-content.active { display: block; }
 
@@ -93,8 +158,8 @@
             margin-top: 20px;
         }
         .division-card {
-            background: white;
-            border: 1px solid #e5e7eb;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-radius: 16px;
             overflow: hidden;
             transition: all 0.2s;
@@ -105,8 +170,8 @@
         }
         .division-header {
             padding: 16px;
-            background: #f9fafb;
-            border-bottom: 1px solid #e5e7eb;
+            background: var(--hover-bg);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -114,7 +179,7 @@
         .division-name {
             font-weight: 700;
             font-size: 18px;
-            color: #1a1f36;
+            color: var(--text-primary);
         }
         .division-actions button {
             background: none;
@@ -122,12 +187,13 @@
             cursor: pointer;
             font-size: 18px;
             margin-left: 8px;
+            color: var(--text-secondary);
         }
         .division-body {
             padding: 16px;
         }
         .division-description {
-            color: #6b7280;
+            color: var(--text-muted);
             font-size: 14px;
             margin-bottom: 16px;
         }
@@ -137,7 +203,7 @@
         .users-title {
             font-weight: 600;
             font-size: 14px;
-            color: #374151;
+            color: var(--text-secondary);
             margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
@@ -148,7 +214,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 8px 12px;
-            background: #f9fafb;
+            background: var(--hover-bg);
             border-radius: 8px;
             margin-bottom: 8px;
         }
@@ -159,10 +225,11 @@
         .user-name {
             font-weight: 500;
             font-size: 14px;
+            color: var(--text-primary);
         }
         .user-role {
             font-size: 12px;
-            color: #6b7280;
+            color: var(--text-muted);
         }
         .remove-user {
             background: none;
@@ -188,11 +255,12 @@
         .data-table th, .data-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--border-color);
         }
         .data-table th {
-            background: #f9fafb;
+            background: var(--hover-bg);
             font-weight: 600;
+            color: var(--text-secondary);
         }
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -204,9 +272,9 @@
             margin-bottom: 16px;
         }
         .btn-secondary {
-            background: #f3f4f6;
-            color: #374151;
-            border: 1px solid #e5e7eb;
+            background: var(--hover-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
             padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
@@ -224,7 +292,7 @@
             z-index: 1000;
         }
         .modal-content {
-            background: white;
+            background: var(--card-bg);
             border-radius: 16px;
             padding: 24px;
             max-width: 500px;
@@ -233,19 +301,23 @@
             overflow-y: auto;
         }
         .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-secondary); }
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 10px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-primary);
         }
         .search-input {
             width: 100%;
             padding: 8px 12px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             margin-bottom: 16px;
+            background: var(--input-bg);
+            color: var(--text-primary);
         }
         .users-list-modal {
             max-height: 300px;
@@ -255,11 +327,11 @@
             display: flex;
             align-items: center;
             padding: 8px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--border-color);
             cursor: pointer;
         }
         .user-checkbox-item:hover {
-            background: #f9fafb;
+            background: var(--hover-bg);
         }
         .user-checkbox-item input {
             margin-right: 12px;
@@ -267,12 +339,12 @@
         .empty-state {
             text-align: center;
             padding: 40px;
-            color: #6b7280;
+            color: var(--text-muted);
         }
         .loading {
             text-align: center;
             padding: 40px;
-            color: #6b7280;
+            color: var(--text-muted);
         }
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
@@ -289,12 +361,51 @@
 <div class="sidebar">
     <div class="sidebar-header"><h2>Логистика</h2></div>
     <div class="sidebar-menu">
-        <div class="menu-item" onclick="window.location.href='/dashboard'"><div class="menu-title">🏠 Главная</div></div>
-        <div class="menu-item" onclick="window.location.href='/requests?type=BRANDED'"><div class="menu-title">📦 Брендовая продукция</div></div>
-        <div class="menu-item" onclick="window.location.href='/requests?type=NON_BRANDED'"><div class="menu-title">📦 Небрендовая продукция</div></div>
-        <div class="menu-item" style="background:#f3f4f6"><div class="menu-title">📚 Справочники</div></div>
-        <div class="menu-item" onclick="window.location.href='/settings'"><div class="menu-title">⚙️ Настройки</div></div>
-        <div class="menu-item" onclick="window.location.href='/profile'"><div class="menu-title">👤 Профиль</div></div>
+        <div class="menu-item" onclick="window.location.href='/dashboard'"><div class="menu-title">Главная</div></div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Брендовая продукция<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=BRANDED'">Заявки</div>
+                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Небрендовая продукция<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
+                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Справочники
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/references#divisions'">Подразделения</div>
+                <div class="submenu-item" onclick="window.location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
+                <div class="submenu-item" onclick="window.location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
+                <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
+                <div class="submenu-item" onclick="window.location.href='/references#plants'">Заводы</div>
+                <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Настройки<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/settings'">Параметры</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Применение обновлений</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Пользователи</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Профиль<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/profile'">ФИО</div>
+                <div class="submenu-item" onclick="window.location.href='/logout'">Выход</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -303,6 +414,9 @@
         <h1 class="page-title">Справочники</h1>
         <div class="user-info">
             <span class="user-name" id="currentUsername">Загрузка...</span>
+            <button class="theme-toggle" id="themeToggle">
+                <span>🌙</span> Тема
+            </button>
             <a href="/logout" class="logout-btn">Выйти</a>
         </div>
     </div>
@@ -335,7 +449,7 @@
 
     <div id="plants" class="tab-content">
         <button class="btn-primary" onclick="openPlantModal()">+ Добавить завод</button>
-        <table class="data-table"><thead><tr><th>ID</th><th>Название</th><th>Адрес</th><th>Действия</th><tr></thead><tbody id="plants-tbody"></tbody></table>
+        <table class="data-table"><thead><tr><th>ID</th><th>Название</th><th>Адрес</th><th>Действия</th></tr></thead><tbody id="plants-tbody"></tbody></table>
     </div>
 
     <div id="warehouses" class="tab-content">
@@ -359,7 +473,7 @@
     <div class="modal-content">
         <h3 id="userModalTitle">Добавление пользователя</h3>
         <div class="form-group"><label>Логин *</label><input type="text" id="userUsername" class="form-control"></div>
-        <div class="form-group"><label>Пароль <span id="passwordRequired">*</span></label><input type="password" id="userPassword" class="form-control"><small id="passwordHint" style="color:#6b7280;"></small></div>
+        <div class="form-group"><label>Пароль <span id="passwordRequired">*</span></label><input type="password" id="userPassword" class="form-control"><small id="passwordHint" style="color:var(--text-muted);"></small></div>
         <div class="form-group"><label>ФИО</label><input type="text" id="userFullName" class="form-control"></div>
         <div class="form-group"><label>Роль *</label><select id="userRole" class="form-control"><option value="ADMIN">Администратор</option><option value="LOGIST">Логист</option><option value="DISPATCHER">Диспетчер</option></select></div>
         <div class="form-group"><label>Подразделение</label><select id="userDivision" class="form-control"><option value="">Не выбрано</option></select></div>
@@ -378,6 +492,39 @@
 </div>
 
 <script>
+    // Функции для темы
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        const themeBtn = document.getElementById('themeToggle');
+        if (document.body.classList.contains('dark-theme')) {
+            localStorage.setItem('theme', 'dark');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        } else {
+            localStorage.setItem('theme', 'light');
+            if (themeBtn) themeBtn.innerHTML = '<span>🌙</span> Тема';
+        }
+    }
+
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    initTheme();
+
+    function toggleSubmenu(element) {
+        const menuItem = element.closest('.has-submenu');
+        menuItem.classList.toggle('open');
+        const submenu = menuItem.querySelector('.submenu');
+        if (submenu) submenu.classList.toggle('show');
+        if (event) event.stopPropagation();
+    }
+
     let currentDivisionId = null;
     let currentUserId = null;
     let allDivisions = [];
@@ -409,11 +556,11 @@
             if (response.ok) {
                 const user = await response.json();
                 document.getElementById('currentUsername').innerText = user.username || user.fullName || 'User';
+                document.body.setAttribute('data-role', user.role);
             }
         } catch(e) { document.getElementById('currentUsername').innerText = 'User'; }
     }
 
-    // Переключение вкладок
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', async () => {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -429,7 +576,6 @@
         });
     });
 
-    // ========== ПОДРАЗДЕЛЕНИЯ ==========
     async function loadDivisions() {
         try {
             const response = await fetch('/api/divisions');
@@ -492,25 +638,22 @@
         }
     }
 
-    // ========== ПОЛЬЗОВАТЕЛИ ==========
     async function loadUsers() {
         try {
             const response = await fetch('/api/users');
             if (!response.ok) throw new Error();
             allUsers = await response.json();
-            // Сортировка по ID (от меньшего к большему)
             allUsers.sort((a, b) => a.id - b.id);
             renderUsers();
         } catch(e) {
-            console.error(e);
-            document.getElementById('users-tbody').innerHTML = '<tr><td colspan="7" class="empty-state">Ошибка загрузки</span></span>';
+            document.getElementById('users-tbody').innerHTML = '<tr><td colspan="7" class="empty-state">Ошибка загрузки</td></tr>';
         }
     }
 
     function renderUsers() {
         const tbody = document.getElementById('users-tbody');
         if (!allUsers.length) {
-            tbody.innerHTML = '<table><td colspan="7" class="empty-state">Нет пользователей</span></span>';
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Нет пользователей</td></tr>';
             return;
         }
         tbody.innerHTML = allUsers.map(user => `<tr>
@@ -522,7 +665,7 @@
             <td>${user.active ? '🟢 Активен' : '🔴 Неактивен'}</span></span>
             <td><button class="btn-secondary" style="padding:4px 8px;" onclick="editUser(${user.id})">✏️ Редактировать</button>
                 <button class="btn-secondary" style="padding:4px 8px;" onclick="deleteUser(${user.id})">🗑️ Удалить</button></span>
-        </tr>`).join('');
+        </table>`).join('');
     }
 
     async function loadDivisionsForSelect(selectedId = null) {
@@ -583,8 +726,6 @@
 
         const data = { username, fullName, role };
         if (password && password.trim() !== '') data.password = password;
-
-        // Если выбрано "Не выбрано" (пустая строка), отправляем null для открепления
         if (divisionId && divisionId !== '' && divisionId !== 'null') {
             data.divisionId = parseInt(divisionId);
         } else {
@@ -639,7 +780,6 @@
         currentUserId = null;
     }
 
-    // ========== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ В ПОДРАЗДЕЛЕНИЯХ ==========
     async function openAddUserModal(divisionId) {
         currentDivisionId = divisionId;
         await loadUnassignedUsers();
@@ -689,8 +829,7 @@
     function closeAddUserModal() { document.getElementById('addUserModal').style.display = 'none'; document.getElementById('userSearchInput').value = ''; }
     document.getElementById('userSearchInput')?.addEventListener('input', () => loadUnassignedUsers());
 
-    // ========== ЗАГЛУШКИ ==========
-    async function loadCarriers() { try { const r = await fetch('/api/references/carriers'); const data = await r.json(); document.getElementById('carriers-tbody').innerHTML = data.map(c => `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.contactPerson || '-'}</td><td>${c.phone || '-'}</td><td><button onclick="editCarrier(${c.id})">✏️</button></td></tr>`).join(''); } catch(e) {} }
+    async function loadCarriers() { try { const r = await fetch('/api/references/carriers'); const data = await r.json(); document.getElementById('carriers-tbody').innerHTML = data.map(c => `<td>${c.id}</td><td>${c.name}</td><td>${c.contactPerson || '-'}</td><td>${c.phone || '-'}</td><td><button onclick="editCarrier(${c.id})">✏️</button></td></tr>`).join(''); } catch(e) {} }
     async function loadPlants() { try { const r = await fetch('/api/references/plants'); const data = await r.json(); document.getElementById('plants-tbody').innerHTML = data.map(p => `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.address || '-'}</td><td><button onclick="editPlant(${p.id})">✏️</button></td></tr>`).join(''); } catch(e) {} }
     async function loadWarehouses() { try { const r = await fetch('/api/references/warehouses'); const data = await r.json(); document.getElementById('warehouses-tbody').innerHTML = data.map(w => `<tr><td>${w.id}</td><td>${w.name}</td><td>${w.address || '-'}</td><td><button onclick="editWarehouse(${w.id})">✏️</button></td></tr>`).join(''); } catch(e) {} }
 
