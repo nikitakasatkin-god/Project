@@ -498,8 +498,36 @@
     }
 
     function canEditRequest() {
-        const isOwner = currentUser && (currentUser.role === 'ADMIN' || currentUser.id === requestData?.owner?.id);
+        const isOwner = currentUser && (currentUser.id === requestData?.owner?.id);
         return isOwner && requestData?.status === 'NEW';
+    }
+
+    async function loadPickupPointsForEdit() {
+        try {
+            const response = await fetch('/api/requests/reference/pickup-points');
+            const plants = await response.json();
+            const pickupSelect = document.getElementById('edit_pickupPoint');
+            if (pickupSelect) {
+                pickupSelect.innerHTML = '<option value="">Выберите пункт погрузки</option>' +
+                    plants.map(p => `<option value="${p.value}">${p.label}</option>`).join('');
+            }
+        } catch(e) {
+            console.error('Ошибка загрузки заводов:', e);
+        }
+    }
+
+    async function loadDeliveryPointsForEdit() {
+        try {
+            const response = await fetch('/api/requests/reference/delivery-points');
+            const warehouses = await response.json();
+            const deliverySelect = document.getElementById('edit_deliveryPoint');
+            if (deliverySelect) {
+                deliverySelect.innerHTML = '<option value="">Выберите пункт разгрузки</option>' +
+                    warehouses.map(w => `<option value="${w.value}">${w.label}</option>`).join('');
+            }
+        } catch(e) {
+            console.error('Ошибка загрузки складов:', e);
+        }
     }
 
     function enableEditMode() {
@@ -514,6 +542,7 @@
     }
 
     async function saveEdit() {
+        // Получаем значения из полей
         const volume = document.getElementById('edit_volume')?.value;
         const pickupPoint = document.getElementById('edit_pickupPoint')?.value;
         const deliveryPoint = document.getElementById('edit_deliveryPoint')?.value;
@@ -522,11 +551,28 @@
         const pickupStartTime = document.getElementById('edit_pickupStartTime')?.value;
         const pickupEndTime = document.getElementById('edit_pickupEndTime')?.value;
 
-        if (!volume || !pickupPoint || !deliveryPoint || !pickupStartDate || !pickupEndDate || !pickupStartTime || !pickupEndTime) {
-            showNotification('Заполните все поля', 'error');
+        // Валидация обязательных полей
+        const missingFields = [];
+        if (!volume || volume === '') missingFields.push('Объем');
+        if (!pickupPoint || pickupPoint === '') missingFields.push('Пункт погрузки');
+        if (!deliveryPoint || deliveryPoint === '') missingFields.push('Пункт разгрузки');
+        if (!pickupStartDate || pickupStartDate === '') missingFields.push('Дата начала погрузки');
+        if (!pickupEndDate || pickupEndDate === '') missingFields.push('Дата окончания погрузки');
+        if (!pickupStartTime || pickupStartTime === '') missingFields.push('Время начала погрузки');
+        if (!pickupEndTime || pickupEndTime === '') missingFields.push('Время окончания погрузки');
+
+        if (missingFields.length > 0) {
+            showNotification(`Заполните обязательные поля: ${missingFields.join(', ')}`, 'error');
             return;
         }
 
+        // Проверка объема
+        if (parseFloat(volume) <= 0) {
+            showNotification('Введите корректный объем (больше 0)', 'error');
+            return;
+        }
+
+        // Проверка дат
         const today = new Date().toISOString().split('T')[0];
         if (pickupStartDate < today) {
             showNotification('Дата начала погрузки не может быть раньше сегодняшнего дня', 'error');
@@ -538,6 +584,7 @@
             return;
         }
 
+        // Проверка времени
         if (pickupStartTime >= pickupEndTime) {
             showNotification('Время начала должно быть раньше времени окончания', 'error');
             return;
@@ -593,6 +640,10 @@
         const pickupEndTimeFormatted = formatTime(requestData.pickupEndTime);
 
         if (isEditMode && canEdit) {
+            // Загружаем списки для выпадающих полей
+            loadPickupPointsForEdit();
+            loadDeliveryPointsForEdit();
+
             container.innerHTML = `
                 <div class="detail-header">
                     <div><span class="detail-label">Заявка №</span><span class="detail-value">${requestData.id}</span></div>
@@ -600,7 +651,7 @@
                 </div>
                 <div class="detail-grid">
                     <div class="detail-item">
-                        <div class="detail-label">Объем</div>
+                        <div class="detail-label">Объем <span class="required">*</span></div>
                         <input type="number" id="edit_volume" step="0.1" class="detail-value editable" value="${requestData.volume}">
                     </div>
                     <div class="detail-item">
@@ -612,27 +663,31 @@
                         <div class="detail-value ${remainingVolume < 0 ? 'warning' : ''}">${remainingVolume} т</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Пункт погрузки</div>
-                        <input type="text" id="edit_pickupPoint" class="detail-value editable" value="${requestData.pickupPoint || ''}">
+                        <div class="detail-label">Пункт погрузки <span class="required">*</span></div>
+                        <select id="edit_pickupPoint" class="detail-value editable">
+                            <option value="">Выберите пункт погрузки</option>
+                        </select>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Дата начала погрузки</div>
+                        <div class="detail-label">Дата начала погрузки <span class="required">*</span></div>
                         <input type="date" id="edit_pickupStartDate" class="detail-value editable" value="${requestData.pickupStartDate || ''}">
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Время начала погрузки</div>
+                        <div class="detail-label">Время начала погрузки <span class="required">*</span></div>
                         <input type="time" id="edit_pickupStartTime" class="detail-value editable" value="${requestData.pickupStartTime || ''}">
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Пункт разгрузки</div>
-                        <input type="text" id="edit_deliveryPoint" class="detail-value editable" value="${requestData.deliveryPoint || ''}">
+                        <div class="detail-label">Пункт разгрузки <span class="required">*</span></div>
+                        <select id="edit_deliveryPoint" class="detail-value editable">
+                            <option value="">Выберите пункт разгрузки</option>
+                        </select>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Дата окончания погрузки</div>
+                        <div class="detail-label">Дата окончания погрузки <span class="required">*</span></div>
                         <input type="date" id="edit_pickupEndDate" class="detail-value editable" value="${requestData.pickupEndDate || ''}">
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Время окончания погрузки</div>
+                        <div class="detail-label">Время окончания погрузки <span class="required">*</span></div>
                         <input type="time" id="edit_pickupEndTime" class="detail-value editable" value="${requestData.pickupEndTime || ''}">
                     </div>
                     <div class="detail-item">
@@ -653,6 +708,28 @@
                     <button class="btn-primary" onclick="saveEdit()">Сохранить изменения</button>
                 </div>
             `;
+
+            // Устанавливаем выбранные значения в select
+            setTimeout(() => {
+                const pickupSelect = document.getElementById('edit_pickupPoint');
+                const deliverySelect = document.getElementById('edit_deliveryPoint');
+                if (pickupSelect && requestData.pickupPoint) {
+                    for(let i = 0; i < pickupSelect.options.length; i++) {
+                        if(pickupSelect.options[i].value === requestData.pickupPoint) {
+                            pickupSelect.value = requestData.pickupPoint;
+                            break;
+                        }
+                    }
+                }
+                if (deliverySelect && requestData.deliveryPoint) {
+                    for(let i = 0; i < deliverySelect.options.length; i++) {
+                        if(deliverySelect.options[i].value === requestData.deliveryPoint) {
+                            deliverySelect.value = requestData.deliveryPoint;
+                            break;
+                        }
+                    }
+                }
+            }, 100);
 
             const today = new Date().toISOString().split('T')[0];
             const startDateInput = document.getElementById('edit_pickupStartDate');
