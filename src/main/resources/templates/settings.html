@@ -51,6 +51,7 @@
             height: 100%;
             background: var(--sidebar-bg);
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            overflow-y: auto;
             transition: background 0.3s ease;
         }
         .sidebar-header { padding: 24px; border-bottom: 1px solid var(--border-color); }
@@ -134,6 +135,8 @@
             align-items: center;
             padding: 12px 0;
             border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 12px;
         }
         .setting-label { font-weight: 500; color: var(--text-secondary); }
         .setting-value input, .setting-value select {
@@ -150,6 +153,11 @@
             padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
         .btn-secondary {
             background: var(--hover-bg);
@@ -158,6 +166,24 @@
             padding: 8px 16px;
             border-radius: 8px;
             cursor: pointer;
+        }
+        .sync-status {
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .sync-status.success {
+            background: #d1fae5;
+            color: #059669;
+        }
+        .sync-status.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .sync-status.info {
+            background: #dbeafe;
+            color: #2563eb;
         }
         textarea {
             width: 100%;
@@ -168,9 +194,44 @@
             background: var(--input-bg);
             color: var(--text-primary);
         }
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .sync-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .mappings-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        .mappings-table th, .mappings-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .mappings-table th {
+            background: var(--hover-bg);
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .current-settings {
+            background: var(--hover-bg);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-size: 14px;
+        }
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); }
             .main-content { margin-left: 0; }
+            .setting-item { flex-direction: column; align-items: flex-start; }
+            .sync-buttons { flex-direction: column; }
+            .sync-buttons button { width: 100%; }
         }
     </style>
 </head>
@@ -204,7 +265,7 @@
                 <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
             </div>
         </div>
-        <div class="menu-item has-submenu admin-only">
+        <div class="menu-item has-submenu admin-only" style="background: var(--hover-bg);">
             <div class="menu-title" onclick="toggleSubmenu(this)">Настройки<span class="arrow">▼</span></div>
             <div class="submenu">
                 <div class="submenu-item" onclick="window.location.href='/settings'">Параметры</div>
@@ -235,64 +296,112 @@
         </div>
     </div>
 
-    <!-- Блоки настроек только для админа -->
-    <div class="admin-only">
-        <div class="settings-group">
-            <h3>Параметры системы</h3>
-            <div class="setting-item">
-                <span class="setting-label">Автоматическое завершение заявки (дней)</span>
-                <div class="setting-value">
-                    <input type="number" id="autoCompleteDays" value="7">
-                </div>
-            </div>
-            <div class="setting-item">
-                <span class="setting-label">Интервал синхронизации с 1С (сек)</span>
-                <div class="setting-value">
-                    <input type="number" id="syncInterval" value="300">
-                </div>
-            </div>
-            <div class="setting-item">
-                <span class="setting-label">Уведомления на email</span>
-                <div class="setting-value">
-                    <input type="checkbox" id="emailNotifications" checked>
-                </div>
+    <!-- Блок синхронизации с системой диспетчеризации -->
+    <div class="settings-group">
+        <h3>Синхронизация с системой диспетчеризации</h3>
+        <div class="setting-item">
+            <span class="setting-label">URL системы диспетчеризации</span>
+            <div class="setting-value">
+                <input type="text" id="dispatchUrl" value="http://localhost:8081" style="width: 300px;">
             </div>
         </div>
-
-        <div class="settings-group">
-            <h3>Применение обновлений</h3>
-            <div class="setting-item">
-                <span class="setting-label">Текущая версия</span>
-                <div class="setting-value">v1.0.0</div>
-            </div>
-            <div class="setting-item">
-                <span class="setting-label">Доступна новая версия</span>
-                <div class="setting-value">Нет</div>
-            </div>
-            <div class="setting-item">
-                <span class="setting-label">Автоматическая проверка</span>
-                <div class="setting-value">
-                    <input type="checkbox" checked>
-                </div>
-            </div>
-            <div style="margin-top: 16px;">
-                <button class="btn-primary" onclick="alert('Проверка обновлений (заглушка)')">Проверить обновления</button>
+        <div class="setting-item">
+            <span class="setting-label">Автоматическая синхронизация</span>
+            <div class="setting-value">
+                <input type="checkbox" id="autoSync" checked>
             </div>
         </div>
-
-        <div class="settings-group">
-            <h3>Сообщение о недоступности системы</h3>
-            <div class="setting-item" style="flex-direction: column; align-items: stretch;">
-                <span class="setting-label" style="margin-bottom: 8px;">Текст сообщения</span>
-                <textarea id="maintenanceMsg" rows="3" style="width: 100%;">Система временно недоступна. Ведутся технические работы.</textarea>
+        <div class="setting-item">
+            <span class="setting-label">Интервал синхронизации (сек)</span>
+            <div class="setting-value">
+                <input type="number" id="syncInterval" value="60" min="10" max="3600">
+                <span style="font-size: 12px; margin-left: 8px;">(мин: 10 сек, макс: 3600 сек)</span>
             </div>
-            <div style="margin-top: 16px;">
-                <button class="btn-primary" onclick="saveMaintenanceMessage()">Сохранить сообщение</button>
+        </div>
+        <div class="setting-item">
+            <span class="setting-label">Размер пакета (рейсов)</span>
+            <div class="setting-value">
+                <input type="number" id="batchSize" value="10" min="1" max="50">
+                <span style="font-size: 12px; margin-left: 8px;">(мин: 1, макс: 50)</span>
             </div>
+        </div>
+        <div class="sync-buttons" style="margin-top: 16px;">
+            <button class="btn-primary" onclick="sendTripsToDispatch()">📤 Отправить рейсы в диспетчеризацию</button>
+            <button class="btn-primary" onclick="receiveStatusesFromDispatch()">📥 Получить статусы из диспетчеризации</button>
+            <button class="btn-secondary" onclick="testDispatchConnection()">🔌 Проверить соединение</button>
+        </div>
+        <div id="syncResult" class="sync-status" style="display: none;"></div>
+        <div id="currentSettings" class="current-settings">
+            <strong>Текущие настройки:</strong><br>
+            Загрузка...
+        </div>
+        <div style="margin-top: 16px;">
+            <button class="btn-primary" onclick="saveSyncSettings()">💾 Сохранить настройки синхронизации</button>
         </div>
     </div>
 
-    <!-- Блок смены темы для всех пользователей -->
+    <!-- Блок сопоставления статусов (только для админа) -->
+    <div class="settings-group admin-only">
+        <h3>Сопоставление статусов</h3>
+        <div class="setting-item">
+            <span class="setting-label">Статусы из системы диспетчеризации</span>
+            <div class="setting-value">
+                <select id="dispatchStatusSelect" style="width: 200px;">
+                    <option value="">Загрузка...</option>
+                </select>
+                <span style="margin: 0 8px;">→</span>
+                <select id="localStatusSelect" style="width: 200px;">
+                    <option value="">Выберите локальный статус</option>
+                    <option value="NEW">Новый</option>
+                    <option value="ARRIVED_LOADING">Прибыл на погрузку</option>
+                    <option value="LOADED">Погружен</option>
+                    <option value="IN_TRANSIT">В пути</option>
+                    <option value="ARRIVED_UNLOADING">Прибыл на выгрузку</option>
+                    <option value="UNLOADED">Выгружен</option>
+                    <option value="PROCESSED">Обработан</option>
+                    <option value="CANCELLED">Отменен</option>
+                </select>
+                <button class="btn-secondary" onclick="saveStatusMapping()" style="margin-left: 12px;">Сохранить</button>
+            </div>
+        </div>
+        <div id="mappingsList"></div>
+    </div>
+
+    <!-- Блок применения обновлений (только для админа) -->
+    <div class="settings-group admin-only">
+        <h3>Применение обновлений</h3>
+        <div class="setting-item">
+            <span class="setting-label">Текущая версия</span>
+            <div class="setting-value">v1.0.0</div>
+        </div>
+        <div class="setting-item">
+            <span class="setting-label">Доступна новая версия</span>
+            <div class="setting-value">Нет</div>
+        </div>
+        <div class="setting-item">
+            <span class="setting-label">Автоматическая проверка</span>
+            <div class="setting-value">
+                <input type="checkbox" checked>
+            </div>
+        </div>
+        <div style="margin-top: 16px;">
+            <button class="btn-primary" onclick="checkUpdates()">Проверить обновления</button>
+        </div>
+    </div>
+
+    <!-- Блок сообщения о недоступности (только для админа) -->
+    <div class="settings-group admin-only">
+        <h3>Сообщение о недоступности системы</h3>
+        <div class="setting-item" style="flex-direction: column; align-items: stretch;">
+            <span class="setting-label" style="margin-bottom: 8px;">Текст сообщения</span>
+            <textarea id="maintenanceMsg" rows="3" style="width: 100%;">Система временно недоступна. Ведутся технические работы.</textarea>
+        </div>
+        <div style="margin-top: 16px;">
+            <button class="btn-primary" onclick="saveMaintenanceMessage()">Сохранить сообщение</button>
+        </div>
+    </div>
+
+    <!-- Блок оформления для всех -->
     <div class="settings-group">
         <h3>Оформление</h3>
         <div class="setting-item">
@@ -305,7 +414,7 @@
 </div>
 
 <script>
-    // Функции для темы
+    // ========== Функции для темы ==========
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -327,6 +436,10 @@
         }
     }
 
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    initTheme();
+
+    // ========== Функции меню ==========
     function toggleSubmenu(element) {
         const menuItem = element.closest('.has-submenu');
         menuItem.classList.toggle('open');
@@ -335,6 +448,7 @@
         if (event) event.stopPropagation();
     }
 
+    // ========== Загрузка текущего пользователя ==========
     async function loadCurrentUser() {
         try {
             const response = await fetch('/api/auth/current-user');
@@ -348,6 +462,307 @@
         }
     }
 
+    // ========== Отображение уведомлений ==========
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+            color: white;
+            border-radius: 10px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+            z-index: 10000;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    // ========== Функции синхронизации ==========
+    async function sendTripsToDispatch() {
+        const resultDiv = document.getElementById('syncResult');
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'sync-status info';
+        resultDiv.innerHTML = '⏳ Отправка рейсов в систему диспетчеризации...';
+
+        try {
+            const response = await fetch('/api/sync/send-trips', { method: 'POST' });
+            const data = await response.json();
+
+            if (data.success) {
+                resultDiv.className = 'sync-status success';
+                resultDiv.innerHTML = `✅ ${data.message}`;
+            } else {
+                resultDiv.className = 'sync-status error';
+                resultDiv.innerHTML = `❌ ${data.message}`;
+            }
+        } catch(e) {
+            resultDiv.className = 'sync-status error';
+            resultDiv.innerHTML = `❌ Ошибка при отправке: ${e.message}`;
+        }
+
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    async function receiveStatusesFromDispatch() {
+        const resultDiv = document.getElementById('syncResult');
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'sync-status info';
+        resultDiv.innerHTML = '⏳ Получение статусов из системы диспетчеризации...';
+
+        try {
+            const response = await fetch('/api/sync/receive-statuses', { method: 'POST' });
+            const data = await response.json();
+
+            if (data.success) {
+                resultDiv.className = 'sync-status success';
+                resultDiv.innerHTML = `✅ ${data.message}`;
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                resultDiv.className = 'sync-status error';
+                resultDiv.innerHTML = `❌ ${data.message}`;
+            }
+        } catch(e) {
+            resultDiv.className = 'sync-status error';
+            resultDiv.innerHTML = `❌ Ошибка при получении: ${e.message}`;
+        }
+
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    async function testDispatchConnection() {
+        const resultDiv = document.getElementById('syncResult');
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'sync-status info';
+        resultDiv.innerHTML = '⏳ Проверка соединения...';
+
+        const dispatchUrl = document.getElementById('dispatchUrl').value;
+
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            const response = await fetch(`${dispatchUrl}/api/statuses`, {
+                headers: {
+                    'Authorization': 'Basic ' + btoa('admin:admin123')
+                },
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (response.ok) {
+                const statuses = await response.json();
+                resultDiv.className = 'sync-status success';
+                resultDiv.innerHTML = `✅ Соединение установлено. Получено статусов: ${statuses.length}`;
+
+                const select = document.getElementById('dispatchStatusSelect');
+                select.innerHTML = '<option value="">Выберите статус</option>' +
+                    statuses.map(s => `<option value="${s.id}">${s.name} - ${s.description || ''}</option>`).join('');
+            } else {
+                resultDiv.className = 'sync-status error';
+                resultDiv.innerHTML = `❌ Ошибка соединения: ${response.status}`;
+            }
+        } catch(e) {
+            resultDiv.className = 'sync-status error';
+            resultDiv.innerHTML = `❌ Не удалось подключиться: ${e.message}`;
+        }
+
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    // ========== Управление настройками синхронизации ==========
+    async function loadSyncSettings() {
+        try {
+            const response = await fetch('/api/sync/settings');
+            if (response.ok) {
+                const settings = await response.json();
+                document.getElementById('autoSync').checked = settings.autoSyncEnabled;
+                document.getElementById('syncInterval').value = settings.syncIntervalSeconds;
+                document.getElementById('batchSize').value = settings.batchSize;
+
+                const settingsDiv = document.getElementById('currentSettings');
+                settingsDiv.innerHTML = `
+                    <strong>Текущие настройки синхронизации:</strong><br>
+                    • Автоматическая синхронизация: ${settings.autoSyncEnabled ? '✅ Включена' : '❌ Отключена'}<br>
+                    • Интервал: ${settings.syncIntervalSeconds} секунд<br>
+                    • Размер пакета: ${settings.batchSize} рейсов
+                `;
+            }
+        } catch(e) {
+            console.error('Ошибка загрузки настроек:', e);
+            const settingsDiv = document.getElementById('currentSettings');
+            settingsDiv.innerHTML = '<strong>Текущие настройки:</strong><br>Не удалось загрузить';
+        }
+    }
+
+    async function saveSyncSettings() {
+        const autoSync = document.getElementById('autoSync').checked;
+        const syncIntervalSeconds = parseInt(document.getElementById('syncInterval').value);
+        const batchSize = parseInt(document.getElementById('batchSize').value);
+
+        if (syncIntervalSeconds < 10 || syncIntervalSeconds > 3600) {
+            showNotification('Интервал должен быть от 10 до 3600 секунд', 'error');
+            return;
+        }
+
+        if (batchSize < 1 || batchSize > 50) {
+            showNotification('Размер пакета должен быть от 1 до 50', 'error');
+            return;
+        }
+
+        const settings = {
+            autoSyncEnabled: autoSync,
+            syncIntervalSeconds: syncIntervalSeconds,
+            batchSize: batchSize
+        };
+
+        const resultDiv = document.getElementById('syncResult');
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'sync-status info';
+        resultDiv.innerHTML = '⏳ Сохранение настроек...';
+
+        try {
+            const response = await fetch('/api/sync/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                resultDiv.className = 'sync-status success';
+                resultDiv.innerHTML = `✅ ${data.message}`;
+                showNotification('Настройки сохранены и применены', 'success');
+                loadSyncSettings();
+            } else {
+                resultDiv.className = 'sync-status error';
+                resultDiv.innerHTML = `❌ ${data.message}`;
+                showNotification(data.message, 'error');
+            }
+        } catch(e) {
+            resultDiv.className = 'sync-status error';
+            resultDiv.innerHTML = `❌ Ошибка: ${e.message}`;
+            showNotification('Ошибка сохранения настроек', 'error');
+        }
+
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+        }, 3000);
+    }
+
+    // ========== Функции для статусов ==========
+    async function saveStatusMapping() {
+        const dispatchStatusId = document.getElementById('dispatchStatusSelect').value;
+        const localStatus = document.getElementById('localStatusSelect').value;
+
+        if (!dispatchStatusId || !localStatus) {
+            alert('Выберите статус из системы диспетчеризации и локальный статус');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/status-mappings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    dispatchStatusId: parseInt(dispatchStatusId),
+                    localStatus: localStatus
+                })
+            });
+
+            if (response.ok) {
+                alert('Сопоставление сохранено');
+                loadMappings();
+            } else {
+                alert('Ошибка при сохранении');
+            }
+        } catch(e) {
+            alert('Ошибка: ' + e.message);
+        }
+    }
+
+    async function loadMappings() {
+        try {
+            const response = await fetch('/api/status-mappings');
+            const mappings = await response.json();
+
+            const container = document.getElementById('mappingsList');
+            if (!mappings.length) {
+                container.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-muted);">Нет настроенных сопоставлений</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="mappings-table">
+                    <thead>
+                        <tr>
+                            <th>Статус диспетчеризации</th>
+                            <th>→</th>
+                            <th>Локальный статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${mappings.map(m => `
+                            <tr>
+                                <td>${m.dispatchStatusName || `ID: ${m.dispatchStatusId}`}</td>
+                                <td>→</span></span>
+                                <td>${getLocalStatusName(m.localStatus)}</span></span>
+                                <td>
+                                    <button class="btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="deleteMapping(${m.id})">Удалить</button>
+                                 </span>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        } catch(e) {
+            console.error('Ошибка загрузки сопоставлений:', e);
+        }
+    }
+
+    function getLocalStatusName(status) {
+        const names = {
+            'NEW': 'Новый',
+            'ARRIVED_LOADING': 'Прибыл на погрузку',
+            'LOADED': 'Погружен',
+            'IN_TRANSIT': 'В пути',
+            'ARRIVED_UNLOADING': 'Прибыл на выгрузку',
+            'UNLOADED': 'Выгружен',
+            'PROCESSED': 'Обработан',
+            'CANCELLED': 'Отменен'
+        };
+        return names[status] || status;
+    }
+
+    async function deleteMapping(id) {
+        if (!confirm('Удалить сопоставление?')) return;
+
+        try {
+            const response = await fetch(`/api/status-mappings/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                alert('Сопоставление удалено');
+                loadMappings();
+            } else {
+                alert('Ошибка при удалении');
+            }
+        } catch(e) {
+            alert('Ошибка: ' + e.message);
+        }
+    }
+
+    // ========== Прочие функции ==========
     function saveMaintenanceMessage() {
         const message = document.getElementById('maintenanceMsg').value;
         localStorage.setItem('maintenanceMessage', message);
@@ -362,10 +777,25 @@
         }
     }
 
-    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
-    initTheme();
+    function checkUpdates() {
+        alert('Проверка обновлений... (заглушка)\nТекущая версия: v1.0.0');
+    }
+
+    // ========== CSS анимация ==========
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    // ========== Инициализация ==========
     loadCurrentUser();
     loadMaintenanceMessage();
+    loadMappings();
+    loadSyncSettings();
 </script>
 </body>
 </html>

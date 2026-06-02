@@ -3,7 +3,11 @@ package org.example.controller;
 import org.example.dto.TripDto;
 import org.example.model.*;
 import org.example.repository.*;
+import org.example.service.DispatchSyncService;
 import org.example.service.ExternalSystemStub;
+import org.example.service.SyncService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +23,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/trips")
 public class TripController {
 
+    private static final Logger log = LoggerFactory.getLogger(TripController.class);
+
     private final TripRepository tripRepository;
     private final TripHistoryRepository tripHistoryRepository;
     private final RequestRepository requestRepository;
@@ -26,6 +32,8 @@ public class TripController {
     private final VehicleRepository vehicleRepository;
     private final UserRepository userRepository;
     private final ExternalSystemStub externalSystemStub;
+    private final SyncService syncService;
+    private final DispatchSyncService dispatchSyncService;
 
     public TripController(TripRepository tripRepository,
                           TripHistoryRepository tripHistoryRepository,
@@ -33,7 +41,9 @@ public class TripController {
                           CarrierRepository carrierRepository,
                           VehicleRepository vehicleRepository,
                           UserRepository userRepository,
-                          ExternalSystemStub externalSystemStub) {
+                          ExternalSystemStub externalSystemStub,
+                          SyncService syncService,
+                          DispatchSyncService dispatchSyncService) {
         this.tripRepository = tripRepository;
         this.tripHistoryRepository = tripHistoryRepository;
         this.requestRepository = requestRepository;
@@ -41,6 +51,8 @@ public class TripController {
         this.vehicleRepository = vehicleRepository;
         this.userRepository = userRepository;
         this.externalSystemStub = externalSystemStub;
+        this.syncService = syncService;
+        this.dispatchSyncService = dispatchSyncService;
     }
 
     private User getCurrentUser() {
@@ -168,6 +180,18 @@ public class TripController {
             return ResponseEntity.badRequest().body("Перевозчик не найден");
         }
 
+        if (!data.containsKey("vehicleId") || data.get("vehicleId").toString().isEmpty()) {
+            return ResponseEntity.badRequest().body("Выберите госномер автомобиля");
+        }
+
+        if (!data.containsKey("driverName") || data.get("driverName").toString().isEmpty()) {
+            return ResponseEntity.badRequest().body("Выберите водителя");
+        }
+
+        if (!data.containsKey("tripDate") || data.get("tripDate").toString().isEmpty()) {
+            return ResponseEntity.badRequest().body("Выберите дату рейса");
+        }
+
         Vehicle vehicle = null;
         String vehiclePlate = "";
         String vehicleBrand = "";
@@ -184,13 +208,8 @@ public class TripController {
         String trailerPlate = data.get("trailerPlate") != null ? data.get("trailerPlate").toString() : "";
         String driverName = data.get("driverName") != null ? data.get("driverName").toString() : "";
 
-        String finalDriverName = driverName;
-        if (finalDriverName.isEmpty() && vehicle != null && vehicle.getDriverName() != null) {
-            finalDriverName = vehicle.getDriverName();
-        }
-
         final String finalVehiclePlate = vehiclePlate;
-        if (vehicle != null && !finalVehiclePlate.isEmpty()) {
+        if (!finalVehiclePlate.isEmpty()) {
             boolean vehicleAlreadyUsed = request.getTrips().stream()
                     .filter(t -> t.getStatus() != TripStatus.DELETED && t.getStatus() != TripStatus.CANCELLED)
                     .anyMatch(t -> finalVehiclePlate.equals(t.getVehiclePlate()));
@@ -199,21 +218,11 @@ public class TripController {
             }
         }
 
-        final String finalTrailerPlate = trailerPlate;
-        if (!finalTrailerPlate.isEmpty()) {
-            boolean trailerAlreadyUsed = request.getTrips().stream()
-                    .filter(t -> t.getStatus() != TripStatus.DELETED && t.getStatus() != TripStatus.CANCELLED)
-                    .anyMatch(t -> finalTrailerPlate.equals(t.getTrailerPlate()));
-            if (trailerAlreadyUsed) {
-                return ResponseEntity.badRequest().body("Этот прицеп уже назначен на другой рейс по данной заявке");
-            }
-        }
-
-        final String finalDriverNameForCheck = finalDriverName;
-        if (!finalDriverNameForCheck.isEmpty()) {
+        final String finalDriverName = driverName;
+        if (!finalDriverName.isEmpty()) {
             boolean driverAlreadyUsed = request.getTrips().stream()
                     .filter(t -> t.getStatus() != TripStatus.DELETED && t.getStatus() != TripStatus.CANCELLED)
-                    .anyMatch(t -> finalDriverNameForCheck.equals(t.getDriverName()));
+                    .anyMatch(t -> finalDriverName.equals(t.getDriverName()));
             if (driverAlreadyUsed) {
                 return ResponseEntity.badRequest().body("Этот водитель уже назначен на другой рейс по данной заявке");
             }
@@ -227,7 +236,7 @@ public class TripController {
         trip.setVehiclePlate(vehiclePlate);
         trip.setTrailerPlate(trailerPlate);
         trip.setVehicleBrand(vehicleBrand);
-        trip.setDriverName(finalDriverName);
+        trip.setDriverName(driverName);
         trip.setTripDate(LocalDate.parse(data.get("tripDate").toString()));
         trip.setVolume(tripVolume);
         trip.setStatus(TripStatus.NEW);
@@ -258,7 +267,6 @@ public class TripController {
             return ResponseEntity.status(403).body("Редактирование возможно только для рейсов в статусе 'Новый'");
         }
 
-        // Обновляем перевозчика
         if (data.containsKey("carrierId")) {
             Carrier carrier = carrierRepository.findById(Long.parseLong(data.get("carrierId").toString())).orElse(null);
             if (carrier != null) {
@@ -266,7 +274,6 @@ public class TripController {
             }
         }
 
-        // Обновляем автомобиль по vehicleId
         if (data.containsKey("vehicleId")) {
             String vehicleIdStr = data.get("vehicleId").toString();
             if (vehicleIdStr != null && !vehicleIdStr.isEmpty()) {
@@ -275,7 +282,6 @@ public class TripController {
                 if (vehicle != null) {
                     trip.setVehiclePlate(vehicle.getPlateNumber());
                     trip.setVehicleBrand(vehicle.getBrand() + " " + vehicle.getModel());
-                    // Если водитель не передан отдельно, берем из автомобиля
                     if (!data.containsKey("driverName") || data.get("driverName").toString().isEmpty()) {
                         trip.setDriverName(vehicle.getDriverName());
                     }
@@ -283,22 +289,18 @@ public class TripController {
             }
         }
 
-        // Обновляем госномер автомобиля (если передан напрямую)
         if (data.containsKey("vehiclePlate")) {
             trip.setVehiclePlate(data.get("vehiclePlate").toString());
         }
 
-        // Обновляем прицеп
         if (data.containsKey("trailerPlate")) {
             trip.setTrailerPlate(data.get("trailerPlate").toString());
         }
 
-        // Обновляем водителя
         if (data.containsKey("driverName")) {
             trip.setDriverName(data.get("driverName").toString());
         }
 
-        // Обновляем дату рейса
         if (data.containsKey("tripDate")) {
             trip.setTripDate(LocalDate.parse(data.get("tripDate").toString()));
         }
@@ -327,28 +329,45 @@ public class TripController {
             return ResponseEntity.badRequest().body("Неизвестный статус: " + newStatusStr);
         }
 
+        log.info("=== ОБНОВЛЕНИЕ СТАТУСА РЕЙСА {} ===", id);
+        log.info("Текущий статус: {}", trip.getStatus());
+        log.info("Новый статус: {}", newStatus);
+        log.info("Пользователь: {} ({})", currentUser.getUsername(), currentUser.getRole());
+
+        // ========== LOGIST ==========
         if (currentUser.getRole() == Role.LOGIST) {
             if (trip.getStatus() == TripStatus.NEW && newStatus == TripStatus.ARRIVED_LOADING) {
                 trip.setStatus(TripStatus.ARRIVED_LOADING);
                 tripRepository.save(trip);
                 addHistory(trip, "ARRIVED_LOADING", "user:" + currentUser.getUsername(), currentUser.getFullName());
+                log.info("✅ Рейс {} изменен на ARRIVED_LOADING", trip.getId());
                 return ResponseEntity.ok(trip);
             }
+
             if (trip.getStatus() == TripStatus.ARRIVED_LOADING && newStatus == TripStatus.LOADED) {
+                log.info("🚛 ЛОГИСТ переводит рейс {} в LOADED (без мгновенной отправки)", trip.getId());
+
                 trip.setStatus(TripStatus.LOADED);
                 tripRepository.save(trip);
                 addHistory(trip, "LOADED", "user:" + currentUser.getUsername(), currentUser.getFullName());
+
+                // НЕ ОТПРАВЛЯЕМ СРАЗУ - планировщик сделает это позже
                 externalSystemStub.sendToDispatchSystem(trip);
+
+                log.info("✅ Рейс {} переведен в LOADED. Ожидает отправки планировщиком", trip.getId());
                 return ResponseEntity.ok(trip);
             }
+
             return ResponseEntity.status(403).body("Невозможно обновить статус");
         }
 
-        if (currentUser.getRole() == Role.DISPATCHER || currentUser.getRole() == Role.ADMIN) {
+        // ========== ADMIN ==========
+        if (currentUser.getRole() == Role.ADMIN) {
             if (newStatus == TripStatus.CANCELLED && trip.getStatus() == TripStatus.NEW) {
                 trip.setStatus(TripStatus.CANCELLED);
                 tripRepository.save(trip);
                 addHistory(trip, "CANCELLED", "user:" + currentUser.getUsername(), currentUser.getFullName());
+                log.info("❌ Рейс {} отменен администратором", trip.getId());
                 return ResponseEntity.ok(trip);
             }
 
@@ -356,12 +375,28 @@ public class TripController {
                 trip.setStatus(TripStatus.DELETED);
                 tripRepository.save(trip);
                 addHistory(trip, "DELETED", "user:" + currentUser.getUsername(), currentUser.getFullName());
+                log.info("🗑️ Рейс {} удален администратором", trip.getId());
+                return ResponseEntity.ok(trip);
+            }
+
+            if (newStatus == TripStatus.LOADED && trip.getStatus() != TripStatus.LOADED) {
+                log.info("🚛 АДМИН переводит рейс {} в LOADED (без мгновенной отправки)", trip.getId());
+
+                trip.setStatus(TripStatus.LOADED);
+                tripRepository.save(trip);
+                addHistory(trip, "LOADED", "user:" + currentUser.getUsername(), currentUser.getFullName());
+
+                // НЕ ОТПРАВЛЯЕМ СРАЗУ - планировщик сделает это позже
+                externalSystemStub.sendToDispatchSystem(trip);
+
+                log.info("✅ Рейс {} переведен в LOADED. Ожидает отправки планировщиком", trip.getId());
                 return ResponseEntity.ok(trip);
             }
 
             trip.setStatus(newStatus);
             tripRepository.save(trip);
             addHistory(trip, newStatusStr, "user:" + currentUser.getUsername(), currentUser.getFullName());
+            log.info("✅ Рейс {} изменен на {} администратором", trip.getId(), newStatus);
 
             Request request = trip.getRequest();
             boolean allProcessed = request.getTrips().stream()
@@ -371,6 +406,50 @@ public class TripController {
             if (allProcessed) {
                 request.setStatus(RequestStatus.PROCESSED);
                 requestRepository.save(request);
+                log.info("✅ Все рейсы заявки {} обработаны", request.getId());
+            }
+
+            return ResponseEntity.ok(trip);
+        }
+
+        // ========== DISPATCHER ==========
+        if (currentUser.getRole() == Role.DISPATCHER) {
+            if (newStatus == TripStatus.LOADED) {
+                log.warn("⚠️ Диспетчер {} пытается установить статус LOADED для рейса {} - доступ запрещен",
+                        currentUser.getUsername(), trip.getId());
+                return ResponseEntity.status(403).body("Диспетчер не может установить статус 'Погружен'");
+            }
+
+            if (newStatus == TripStatus.CANCELLED && trip.getStatus() == TripStatus.NEW) {
+                trip.setStatus(TripStatus.CANCELLED);
+                tripRepository.save(trip);
+                addHistory(trip, "CANCELLED", "user:" + currentUser.getUsername(), currentUser.getFullName());
+                log.info("❌ Рейс {} отменен диспетчером", trip.getId());
+                return ResponseEntity.ok(trip);
+            }
+
+            if (newStatus == TripStatus.DELETED && trip.getStatus() == TripStatus.NEW) {
+                trip.setStatus(TripStatus.DELETED);
+                tripRepository.save(trip);
+                addHistory(trip, "DELETED", "user:" + currentUser.getUsername(), currentUser.getFullName());
+                log.info("🗑️ Рейс {} удален диспетчером", trip.getId());
+                return ResponseEntity.ok(trip);
+            }
+
+            trip.setStatus(newStatus);
+            tripRepository.save(trip);
+            addHistory(trip, newStatusStr, "user:" + currentUser.getUsername(), currentUser.getFullName());
+            log.info("✅ Рейс {} изменен на {} диспетчером", trip.getId(), newStatus);
+
+            Request request = trip.getRequest();
+            boolean allProcessed = request.getTrips().stream()
+                    .filter(t -> t.getStatus() != TripStatus.DELETED && t.getStatus() != TripStatus.CANCELLED)
+                    .allMatch(t -> t.getStatus() == TripStatus.PROCESSED);
+
+            if (allProcessed) {
+                request.setStatus(RequestStatus.PROCESSED);
+                requestRepository.save(request);
+                log.info("✅ Все рейсы заявки {} обработаны", request.getId());
             }
 
             return ResponseEntity.ok(trip);
@@ -387,11 +466,16 @@ public class TripController {
         }
 
         if (!trip.getSyncedToDispatch()) {
-            trip.setSyncedToDispatch(true);
-            trip.setSyncedAt(LocalDateTime.now());
-            tripRepository.save(trip);
-            addHistory(trip, "SYNCED_TO_DISPATCH", "system", "Система диспетчеризации");
-            return ResponseEntity.ok(Map.of("success", true, "message", "Рейс синхронизирован с системой диспетчеризации"));
+            boolean sent = dispatchSyncService.sendTripToDispatch(trip);
+            if (sent) {
+                trip.setSyncedToDispatch(true);
+                trip.setSyncedAt(LocalDateTime.now());
+                tripRepository.save(trip);
+                addHistory(trip, "SYNCED_TO_DISPATCH", "system", "Система диспетчеризации");
+                return ResponseEntity.ok(Map.of("success", true, "message", "Рейс синхронизирован с системой диспетчеризации"));
+            } else {
+                return ResponseEntity.status(500).body(Map.of("success", false, "message", "Ошибка синхронизации с системой диспетчеризации"));
+            }
         }
 
         return ResponseEntity.ok(Map.of("success", false, "message", "Рейс уже синхронизирован"));
@@ -415,5 +499,18 @@ public class TripController {
         }
 
         return ResponseEntity.status(403).body("Удаление недоступно. Рейс не в статусе 'Новый' или недостаточно прав.");
+    }
+
+    @PostMapping("/dispatch/update-status")
+    public ResponseEntity<?> updateStatusFromDispatch(@RequestBody Map<String, Object> data) {
+        Long tripId = Long.parseLong(data.get("tripId").toString());
+        String status = data.get("status").toString();
+        Long statusId = Long.parseLong(data.get("statusId").toString());
+
+        boolean updated = syncService.updateTripStatus(tripId, status, statusId);
+        if (updated) {
+            return ResponseEntity.ok(Map.of("success", true));
+        }
+        return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Не удалось обновить статус"));
     }
 }
