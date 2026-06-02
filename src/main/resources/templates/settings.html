@@ -5,11 +5,43 @@
     <title>Настройки - Логистика</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* CSS переменные для тем */
+        :root {
+            --bg-primary: #f5f7fb;
+            --bg-secondary: #ffffff;
+            --text-primary: #1a1f36;
+            --text-secondary: #374151;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --card-bg: #ffffff;
+            --sidebar-bg: #ffffff;
+            --header-bg: #ffffff;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --input-bg: #ffffff;
+            --hover-bg: #f9fafb;
+        }
+
+        body.dark-theme {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #eeeeee;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --card-bg: #0f3460;
+            --sidebar-bg: #0f3460;
+            --header-bg: #16213e;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --input-bg: #1e2a4a;
+            --hover-bg: #1a2744;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background: #f5f7fb;
-            color: #1a1f36;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
         }
         .sidebar {
             position: fixed;
@@ -17,10 +49,11 @@
             top: 0;
             width: 260px;
             height: 100%;
-            background: white;
+            background: var(--sidebar-bg);
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            transition: background 0.3s ease;
         }
-        .sidebar-header { padding: 24px; border-bottom: 1px solid #e5e7eb; }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid var(--border-color); }
         .sidebar-header h2 {
             font-size: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -29,49 +62,86 @@
         }
         .sidebar-menu { padding: 20px 0; }
         .menu-item { padding: 12px 24px; cursor: pointer; transition: all 0.3s; }
-        .menu-item:hover { background: #f3f4f6; }
-        .menu-title { font-weight: 600; color: #374151; }
-        .main-content {
-            margin-left: 260px;
-            padding: 24px;
-        }
+        .menu-item:hover { background: var(--hover-bg); }
+        .menu-title { font-weight: 600; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
+        .has-submenu { position: relative; }
+        .submenu { margin-top: 8px; margin-left: 20px; display: none; }
+        .submenu.show { display: block; }
+        .submenu-item { padding: 8px 12px; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 14px; }
+        .submenu-item:hover { background: var(--hover-bg); color: #667eea; }
+        .arrow { font-size: 12px; transition: transform 0.2s; }
+        .has-submenu.open .arrow { transform: rotate(180deg); }
+
+        /* Скрытие элементов по ролям */
+        .logist-only { display: none; }
+        .dispatcher-only { display: none; }
+        .admin-only { display: none; }
+        body[data-role="ADMIN"] .admin-only { display: block; }
+        body[data-role="LOGIST"] .logist-only { display: block; }
+        body[data-role="DISPATCHER"] .dispatcher-only { display: block; }
+
+        .main-content { margin-left: 260px; padding: 24px; }
         .top-bar {
-            background: white;
+            background: var(--header-bg);
             border-radius: 12px;
             padding: 16px 24px;
             margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
         }
-        .page-title { font-size: 24px; font-weight: 700; }
-        .user-info { display: flex; align-items: center; gap: 12px; }
+        .page-title { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+        .user-info { display: flex; align-items: center; gap: 16px; }
+        .user-name { font-weight: 600; color: var(--text-secondary); }
         .logout-btn {
             padding: 8px 16px;
-            background: #fee;
-            color: #c33;
+            background: #fee2e2;
+            color: #dc2626;
             border-radius: 8px;
             text-decoration: none;
+            font-size: 14px;
+        }
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--hover-bg);
         }
         .settings-group {
-            background: white;
+            background: var(--card-bg);
             border-radius: 16px;
             padding: 24px;
             margin-bottom: 24px;
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
         }
-        .settings-group h3 { margin-bottom: 16px; }
+        .settings-group h3 { margin-bottom: 16px; color: var(--text-primary); }
         .setting-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 12px 0;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--border-color);
         }
-        .setting-label { font-weight: 500; }
+        .setting-label { font-weight: 500; color: var(--text-secondary); }
         .setting-value input, .setting-value select {
             padding: 8px 12px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-primary);
         }
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -82,9 +152,9 @@
             cursor: pointer;
         }
         .btn-secondary {
-            background: #f3f4f6;
-            color: #374151;
-            border: 1px solid #e5e7eb;
+            background: var(--hover-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
             padding: 8px 16px;
             border-radius: 8px;
             cursor: pointer;
@@ -92,9 +162,11 @@
         textarea {
             width: 100%;
             padding: 10px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             font-family: inherit;
+            background: var(--input-bg);
+            color: var(--text-primary);
         }
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); }
@@ -106,12 +178,48 @@
 <div class="sidebar">
     <div class="sidebar-header"><h2>Логистика</h2></div>
     <div class="sidebar-menu">
-        <div class="menu-item" onclick="window.location.href='/dashboard'"><div class="menu-title">🏠 Главная</div></div>
-        <div class="menu-item" onclick="window.location.href='/requests?type=BRANDED'"><div class="menu-title">📦 Брендовая продукция</div></div>
-        <div class="menu-item" onclick="window.location.href='/requests?type=NON_BRANDED'"><div class="menu-title">📦 Небрендовая продукция</div></div>
-        <div class="menu-item" onclick="window.location.href='/references'"><div class="menu-title">📚 Справочники</div></div>
-        <div class="menu-item" style="background:#f3f4f6"><div class="menu-title">⚙️ Настройки</div></div>
-        <div class="menu-item" onclick="window.location.href='/profile'"><div class="menu-title">👤 Профиль</div></div>
+        <div class="menu-item" onclick="window.location.href='/dashboard'"><div class="menu-title">Главная</div></div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Брендовая продукция<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=BRANDED'">Заявки</div>
+                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Небрендовая продукция<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
+                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Справочники<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/references#divisions'">Подразделения</div>
+                <div class="submenu-item" onclick="window.location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
+                <div class="submenu-item" onclick="window.location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
+                <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
+                <div class="submenu-item" onclick="window.location.href='/references#plants'">Заводы</div>
+                <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Настройки<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/settings'">Параметры</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Применение обновлений</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Пользователи</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Профиль<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/profile'">ФИО</div>
+                <div class="submenu-item" onclick="window.location.href='/logout'">Выход</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -120,72 +228,120 @@
         <h1 class="page-title">Настройки системы</h1>
         <div class="user-info">
             <span class="user-name" id="currentUsername">Загрузка...</span>
+            <button class="theme-toggle" id="themeToggle">
+                <span>🌙</span> Тема
+            </button>
             <a href="/logout" class="logout-btn">Выйти</a>
         </div>
     </div>
 
-    <div class="settings-group">
-        <h3>Параметры системы</h3>
-        <div class="setting-item">
-            <span class="setting-label">Автоматическое завершение заявки (дней)</span>
-            <div class="setting-value">
-                <input type="number" id="autoCompleteDays" value="7">
+    <!-- Блоки настроек только для админа -->
+    <div class="admin-only">
+        <div class="settings-group">
+            <h3>Параметры системы</h3>
+            <div class="setting-item">
+                <span class="setting-label">Автоматическое завершение заявки (дней)</span>
+                <div class="setting-value">
+                    <input type="number" id="autoCompleteDays" value="7">
+                </div>
+            </div>
+            <div class="setting-item">
+                <span class="setting-label">Интервал синхронизации с 1С (сек)</span>
+                <div class="setting-value">
+                    <input type="number" id="syncInterval" value="300">
+                </div>
+            </div>
+            <div class="setting-item">
+                <span class="setting-label">Уведомления на email</span>
+                <div class="setting-value">
+                    <input type="checkbox" id="emailNotifications" checked>
+                </div>
             </div>
         </div>
-        <div class="setting-item">
-            <span class="setting-label">Интервал синхронизации с 1С (сек)</span>
-            <div class="setting-value">
-                <input type="number" id="syncInterval" value="300">
+
+        <div class="settings-group">
+            <h3>Применение обновлений</h3>
+            <div class="setting-item">
+                <span class="setting-label">Текущая версия</span>
+                <div class="setting-value">v1.0.0</div>
+            </div>
+            <div class="setting-item">
+                <span class="setting-label">Доступна новая версия</span>
+                <div class="setting-value">Нет</div>
+            </div>
+            <div class="setting-item">
+                <span class="setting-label">Автоматическая проверка</span>
+                <div class="setting-value">
+                    <input type="checkbox" checked>
+                </div>
+            </div>
+            <div style="margin-top: 16px;">
+                <button class="btn-primary" onclick="alert('Проверка обновлений (заглушка)')">Проверить обновления</button>
             </div>
         </div>
-        <div class="setting-item">
-            <span class="setting-label">Уведомления на email</span>
-            <div class="setting-value">
-                <input type="checkbox" id="emailNotifications" checked>
+
+        <div class="settings-group">
+            <h3>Сообщение о недоступности системы</h3>
+            <div class="setting-item" style="flex-direction: column; align-items: stretch;">
+                <span class="setting-label" style="margin-bottom: 8px;">Текст сообщения</span>
+                <textarea id="maintenanceMsg" rows="3" style="width: 100%;">Система временно недоступна. Ведутся технические работы.</textarea>
+            </div>
+            <div style="margin-top: 16px;">
+                <button class="btn-primary" onclick="saveMaintenanceMessage()">Сохранить сообщение</button>
             </div>
         </div>
     </div>
 
+    <!-- Блок смены темы для всех пользователей -->
     <div class="settings-group">
-        <h3>Применение обновлений</h3>
+        <h3>Оформление</h3>
         <div class="setting-item">
-            <span class="setting-label">Текущая версия</span>
-            <div class="setting-value">v1.0.0</div>
-        </div>
-        <div class="setting-item">
-            <span class="setting-label">Доступна новая версия</span>
-            <div class="setting-value">Нет</div>
-        </div>
-        <div class="setting-item">
-            <span class="setting-label">Автоматическая проверка</span>
+            <span class="setting-label">Тема оформления</span>
             <div class="setting-value">
-                <input type="checkbox" checked>
+                <button class="btn-secondary" onclick="toggleTheme()">Сменить тему (светлая/темная)</button>
             </div>
-        </div>
-        <div style="margin-top: 16px;">
-            <button class="btn-primary" onclick="alert('Проверка обновлений (заглушка)')">Проверить обновления</button>
-        </div>
-    </div>
-
-    <div class="settings-group">
-        <h3>Сообщение о недоступности системы</h3>
-        <div class="setting-item" style="flex-direction: column; align-items: stretch;">
-            <span class="setting-label" style="margin-bottom: 8px;">Текст сообщения</span>
-            <textarea id="maintenanceMsg" rows="3" style="width: 100%;">Система временно недоступна. Ведутся технические работы.</textarea>
-        </div>
-        <div style="margin-top: 16px;">
-            <button class="btn-primary" onclick="saveMaintenanceMessage()">Сохранить сообщение</button>
         </div>
     </div>
 </div>
 
 <script>
+    // Функции для темы
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        const themeBtn = document.getElementById('themeToggle');
+        if (document.body.classList.contains('dark-theme')) {
+            localStorage.setItem('theme', 'dark');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        } else {
+            localStorage.setItem('theme', 'light');
+            if (themeBtn) themeBtn.innerHTML = '<span>🌙</span> Тема';
+        }
+    }
+
+    function toggleSubmenu(element) {
+        const menuItem = element.closest('.has-submenu');
+        menuItem.classList.toggle('open');
+        const submenu = menuItem.querySelector('.submenu');
+        if (submenu) submenu.classList.toggle('show');
+        if (event) event.stopPropagation();
+    }
+
     async function loadCurrentUser() {
         try {
             const response = await fetch('/api/auth/current-user');
             if (response.ok) {
                 const user = await response.json();
                 document.getElementById('currentUsername').innerText = user.username || user.fullName || 'User';
+                document.body.setAttribute('data-role', user.role);
             }
         } catch(e) {
             document.getElementById('currentUsername').innerText = 'User';
@@ -201,10 +357,13 @@
     function loadMaintenanceMessage() {
         const saved = localStorage.getItem('maintenanceMessage');
         if (saved) {
-            document.getElementById('maintenanceMsg').value = saved;
+            const msgField = document.getElementById('maintenanceMsg');
+            if (msgField) msgField.value = saved;
         }
     }
 
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    initTheme();
     loadCurrentUser();
     loadMaintenanceMessage();
 </script>

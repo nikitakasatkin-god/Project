@@ -7,11 +7,43 @@
     <title>Заявки - Логистика</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* CSS переменные для тем */
+        :root {
+            --bg-primary: #f5f7fb;
+            --bg-secondary: #ffffff;
+            --text-primary: #1a1f36;
+            --text-secondary: #374151;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --card-bg: #ffffff;
+            --sidebar-bg: #ffffff;
+            --header-bg: #ffffff;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --input-bg: #ffffff;
+            --hover-bg: #f9fafb;
+        }
+
+        body.dark-theme {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #eeeeee;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --card-bg: #0f3460;
+            --sidebar-bg: #0f3460;
+            --header-bg: #16213e;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --input-bg: #1e2a4a;
+            --hover-bg: #1a2744;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background: #f5f7fb;
-            color: #1a1f36;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
         }
         .sidebar {
             position: fixed;
@@ -19,12 +51,13 @@
             top: 0;
             width: 280px;
             height: 100%;
-            background: white;
+            background: var(--sidebar-bg);
             box-shadow: 2px 0 20px rgba(0,0,0,0.05);
             overflow-y: auto;
             z-index: 100;
+            transition: background 0.3s ease;
         }
-        .sidebar-header { padding: 24px; border-bottom: 1px solid #e5e7eb; }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid var(--border-color); }
         .sidebar-header h2 {
             font-size: 22px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -33,10 +66,10 @@
         }
         .sidebar-menu { padding: 16px 0; }
         .menu-item { padding: 12px 24px; cursor: pointer; transition: all 0.2s; }
-        .menu-item:hover { background: #f9fafb; }
+        .menu-item:hover { background: var(--hover-bg); }
         .menu-title {
             font-weight: 600;
-            color: #374151;
+            color: var(--text-secondary);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -46,13 +79,13 @@
         .submenu.show { display: block; }
         .submenu-item {
             padding: 8px 12px;
-            color: #6b7280;
+            color: var(--text-muted);
             cursor: pointer;
             border-radius: 8px;
             transition: all 0.2s;
             font-size: 14px;
         }
-        .submenu-item:hover { background: #f3f4f6; color: #667eea; }
+        .submenu-item:hover { background: var(--hover-bg); color: #667eea; }
         .arrow { font-size: 12px; transition: transform 0.2s; }
         .has-submenu.open .arrow { transform: rotate(180deg); }
 
@@ -67,18 +100,19 @@
 
         .main-content { margin-left: 280px; padding: 24px; min-height: 100vh; }
         .top-bar {
-            background: white;
+            background: var(--header-bg);
             border-radius: 16px;
             padding: 16px 24px;
             margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
         }
-        .page-title { font-size: 24px; font-weight: 700; color: #1a1f36; }
+        .page-title { font-size: 24px; font-weight: 700; color: var(--text-primary); }
         .user-info { display: flex; align-items: center; gap: 16px; }
-        .user-name { font-weight: 600; color: #374151; }
+        .user-name { font-weight: 600; color: var(--text-secondary); }
         .logout-btn {
             padding: 8px 16px;
             background: #fee2e2;
@@ -88,11 +122,28 @@
             font-size: 14px;
             font-weight: 500;
         }
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--hover-bg);
+        }
         .content-panel {
-            background: white;
+            background: var(--card-bg);
             border-radius: 20px;
             padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
         }
         .panel-header {
             display: flex;
@@ -104,8 +155,8 @@
         }
         .filter-group { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
         .btn-filter {
-            background: #f3f4f6;
-            border: 1px solid #e5e7eb;
+            background: var(--hover-bg);
+            border: 1px solid var(--border-color);
             padding: 8px 16px;
             border-radius: 10px;
             cursor: pointer;
@@ -114,9 +165,10 @@
             align-items: center;
             gap: 8px;
             transition: all 0.2s;
+            color: var(--text-secondary);
         }
         .btn-filter:hover {
-            background: #e5e7eb;
+            background: var(--bg-primary);
         }
         .btn-filter.active {
             background: #667eea;
@@ -125,11 +177,11 @@
         }
         .filter-panel {
             display: none;
-            background: #f9fafb;
+            background: var(--hover-bg);
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 20px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
         }
         .filter-panel.show {
             display: block;
@@ -148,13 +200,15 @@
         .filter-field label {
             font-size: 12px;
             font-weight: 600;
-            color: #374151;
+            color: var(--text-secondary);
         }
         .filter-field input, .filter-field select {
             padding: 8px 12px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             font-size: 13px;
+            background: var(--input-bg);
+            color: var(--text-primary);
         }
         .filter-field input:focus, .filter-field select:focus {
             outline: none;
@@ -166,15 +220,16 @@
             gap: 12px;
             margin-top: 16px;
             padding-top: 16px;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid var(--border-color);
         }
         .btn-clear {
-            background: #f3f4f6;
-            border: 1px solid #e5e7eb;
+            background: var(--hover-bg);
+            border: 1px solid var(--border-color);
             padding: 6px 12px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 13px;
+            color: var(--text-secondary);
         }
         .btn-apply {
             background: #667eea;
@@ -203,8 +258,8 @@
             gap: 20px;
         }
         .request-card {
-            background: white;
-            border: 1px solid #e5e7eb;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-radius: 16px;
             transition: all 0.2s;
             overflow: hidden;
@@ -212,13 +267,13 @@
         .request-card:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.08); transform: translateY(-2px); }
         .request-card-header {
             padding: 16px;
-            background: #f9fafb;
+            background: var(--hover-bg);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--border-color);
         }
-        .request-id { font-weight: 700; font-size: 16px; color: #1a1f36; }
+        .request-id { font-weight: 700; font-size: 16px; color: var(--text-primary); }
         .status-badge {
             padding: 4px 12px;
             border-radius: 20px;
@@ -236,17 +291,17 @@
             margin-bottom: 10px;
             font-size: 14px;
         }
-        .info-label { color: #6b7280; }
+        .info-label { color: var(--text-muted); }
         .request-card-footer {
             padding: 12px 16px;
-            background: #f9fafb;
-            border-top: 1px solid #e5e7eb;
+            background: var(--hover-bg);
+            border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .link-button { color: #667eea; text-decoration: none; font-weight: 500; background: none; border: none; cursor: pointer; }
-        .delete-btn { background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px 8px; border-radius: 6px; }
+        .delete-btn { background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px 8px; border-radius: 6px; color: var(--text-secondary); }
         .modal {
             display: none;
             position: fixed;
@@ -260,7 +315,7 @@
             z-index: 1000;
         }
         .modal-content {
-            background: white;
+            background: var(--card-bg);
             border-radius: 20px;
             width: 90%;
             max-width: 650px;
@@ -272,14 +327,14 @@
             justify-content: space-between;
             align-items: center;
             padding: 20px 24px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--border-color);
         }
-        .modal-header h3 { font-size: 20px; }
-        .modal-header .close { font-size: 28px; cursor: pointer; color: #9ca3af; }
+        .modal-header h3 { font-size: 20px; color: var(--text-primary); }
+        .modal-header .close { font-size: 28px; cursor: pointer; color: var(--text-muted); }
         .modal-body { padding: 24px; }
         .modal-footer {
             padding: 16px 24px;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: flex-end;
             gap: 12px;
@@ -291,20 +346,22 @@
             margin-bottom: 16px;
         }
         .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: var(--text-secondary); }
         .form-control {
             width: 100%;
             padding: 10px 14px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 10px;
             font-size: 14px;
             transition: border 0.2s;
+            background: var(--input-bg);
+            color: var(--text-primary);
         }
         .form-control:focus { outline: none; border-color: #667eea; }
         .empty-state { text-align: center; padding: 60px 20px; }
         .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
-        .empty-text { font-size: 16px; color: #6b7280; margin-bottom: 20px; }
-        .loading { text-align: center; padding: 40px; color: #6b7280; }
+        .empty-text { font-size: 16px; color: var(--text-muted); margin-bottom: 20px; }
+        .loading { text-align: center; padding: 40px; color: var(--text-muted); }
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -344,13 +401,13 @@
                 <div class="submenu-item dispatcher-only admin-only" data-type="NON_BRANDED" data-page="trips" onclick="changeProductType('NON_BRANDED', 'trips')">Рейсы</div>
             </div>
         </div>
-        <div class="menu-item has-submenu">
+        <div class="menu-item has-submenu admin-only">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Справочники
                 <span class="arrow">▼</span>
             </div>
             <div class="submenu">
-                <div class="submenu-item admin-only" onclick="window.location.href='/references#divisions'">Подразделения</div>
+                <div class="submenu-item" onclick="window.location.href='/references#divisions'">Подразделения</div>
                 <div class="submenu-item" onclick="window.location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
                 <div class="submenu-item" onclick="window.location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
                 <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
@@ -358,16 +415,16 @@
                 <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
             </div>
         </div>
-        <div class="menu-item has-submenu">
+        <div class="menu-item has-submenu admin-only">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Настройки
                 <span class="arrow">▼</span>
             </div>
             <div class="submenu">
-                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Параметры</div>
-                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Применение обновлений</div>
-                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
-                <div class="submenu-item admin-only" onclick="window.location.href='/settings'">Пользователи</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Параметры</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Применение обновлений</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Пользователи</div>
             </div>
         </div>
         <div class="menu-item has-submenu">
@@ -388,6 +445,9 @@
         <h1 class="page-title" id="page-title">Заявки (Брендовая продукция)</h1>
         <div class="user-info">
             <span class="user-name" id="username">Загрузка...</span>
+            <button class="theme-toggle" id="themeToggle">
+                <span>🌙</span> Тема
+            </button>
             <a href="/logout" class="logout-btn">Выйти</a>
         </div>
     </div>
@@ -402,7 +462,6 @@
             <button class="btn-primary logist-only admin-only" id="createRequestBtn">+ Создать заявку</button>
         </div>
 
-        <!-- Панель расширенных фильтров -->
         <div id="filterPanel" class="filter-panel">
             <div class="filter-row">
                 <div class="filter-field">
@@ -458,7 +517,6 @@
     </div>
 </div>
 
-<!-- Модальное окно создания заявки -->
 <div id="createModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -517,6 +575,31 @@
 </div>
 
 <script>
+    // Функции для темы
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        const themeBtn = document.getElementById('themeToggle');
+        if (document.body.classList.contains('dark-theme')) {
+            localStorage.setItem('theme', 'dark');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        } else {
+            localStorage.setItem('theme', 'light');
+            if (themeBtn) themeBtn.innerHTML = '<span>🌙</span> Тема';
+        }
+    }
+
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    initTheme();
+
     function toggleSubmenu(element) {
         const menuItem = element.closest('.has-submenu');
         menuItem.classList.toggle('open');
@@ -549,13 +632,10 @@
                 fetch('/api/references/plants').then(r => r.json()),
                 fetch('/api/references/warehouses').then(r => r.json())
             ]);
-
             const pickupSelect = document.getElementById('filterPickupPoint');
             const deliverySelect = document.getElementById('filterDeliveryPoint');
-
             const plantOptions = plants.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
             const warehouseOptions = warehouses.map(w => `<option value="${w.name}">${w.name}</option>`).join('');
-
             pickupSelect.innerHTML = '<option value="">Все</option>' + plantOptions;
             deliverySelect.innerHTML = '<option value="">Все</option>' + warehouseOptions;
         } catch(e) {
@@ -660,26 +740,21 @@
         if (filterStatus !== 'ALL') {
             filtered = filtered.filter(r => r.status === filterStatus);
         }
-
         if (filterId) {
             filtered = filtered.filter(r => r.id === parseInt(filterId));
         }
-
         if (filterVolumeFrom) {
             filtered = filtered.filter(r => r.volume >= parseFloat(filterVolumeFrom));
         }
         if (filterVolumeTo) {
             filtered = filtered.filter(r => r.volume <= parseFloat(filterVolumeTo));
         }
-
         if (filterPickupPoint) {
             filtered = filtered.filter(r => r.pickupPoint === filterPickupPoint);
         }
-
         if (filterDeliveryPoint) {
             filtered = filtered.filter(r => r.deliveryPoint === filterDeliveryPoint);
         }
-
         if (filterDateFrom) {
             filtered = filtered.filter(r => r.createdAt && r.createdAt.split('T')[0] >= filterDateFrom);
         }

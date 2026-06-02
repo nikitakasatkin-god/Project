@@ -5,11 +5,43 @@
     <title>Редактирование рейса - Логистика</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* CSS переменные для тем */
+        :root {
+            --bg-primary: #f5f7fb;
+            --bg-secondary: #ffffff;
+            --text-primary: #1a1f36;
+            --text-secondary: #374151;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --card-bg: #ffffff;
+            --sidebar-bg: #ffffff;
+            --header-bg: #ffffff;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --input-bg: #ffffff;
+            --hover-bg: #f9fafb;
+        }
+
+        body.dark-theme {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #eeeeee;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --card-bg: #0f3460;
+            --sidebar-bg: #0f3460;
+            --header-bg: #16213e;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --input-bg: #1e2a4a;
+            --hover-bg: #1a2744;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
-            background: #f5f7fb;
-            color: #1a1f36;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
         }
         .sidebar {
             position: fixed;
@@ -17,11 +49,12 @@
             top: 0;
             width: 260px;
             height: 100%;
-            background: white;
+            background: var(--sidebar-bg);
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             overflow-y: auto;
+            transition: background 0.3s ease;
         }
-        .sidebar-header { padding: 24px; border-bottom: 1px solid #e5e7eb; }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid var(--border-color); }
         .sidebar-header h2 {
             font-size: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -30,35 +63,60 @@
         }
         .sidebar-menu { padding: 20px 0; }
         .menu-item { padding: 12px 24px; cursor: pointer; transition: all 0.3s; }
-        .menu-item:hover { background: #f3f4f6; }
-        .menu-title { font-weight: 600; color: #374151; display: flex; justify-content: space-between; align-items: center; }
+        .menu-item:hover { background: var(--hover-bg); }
+        .menu-title { font-weight: 600; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
         .has-submenu { position: relative; }
         .submenu { margin-top: 8px; margin-left: 20px; display: none; }
         .submenu.show { display: block; }
-        .submenu-item { padding: 8px 12px; color: #6b7280; cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 14px; }
-        .submenu-item:hover { background: #f3f4f6; color: #667eea; }
+        .submenu-item { padding: 8px 12px; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 14px; }
+        .submenu-item:hover { background: var(--hover-bg); color: #667eea; }
         .arrow { font-size: 12px; transition: transform 0.2s; }
         .has-submenu.open .arrow { transform: rotate(180deg); }
         .main-content { margin-left: 260px; padding: 24px; }
         .top-bar {
-            background: white;
+            background: var(--header-bg);
             border-radius: 12px;
             padding: 16px 24px;
             margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
         }
-        .page-title { font-size: 24px; font-weight: 700; }
+        .page-title { font-size: 24px; font-weight: 700; color: var(--text-primary); }
         .user-info { display: flex; align-items: center; gap: 12px; }
-        .logout-btn { padding: 8px 16px; background: #fee; color: #c33; border-radius: 8px; text-decoration: none; font-size: 14px; }
+        .logout-btn {
+            padding: 8px 16px;
+            background: #fee2e2;
+            color: #dc2626;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--hover-bg);
+        }
         .back-btn { background: none; border: none; font-size: 14px; color: #667eea; cursor: pointer; display: flex; align-items: center; gap: 4px; }
         .content-panel {
-            background: white;
+            background: var(--card-bg);
             border-radius: 16px;
             padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
             margin-bottom: 20px;
         }
         .form-container {
@@ -66,20 +124,22 @@
             margin: 0 auto;
         }
         .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #374151; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: var(--text-secondary); }
         .form-group label .required { color: #ef4444; }
         .form-control {
             width: 100%;
             padding: 10px 14px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 10px;
             font-size: 14px;
             transition: border 0.2s;
+            background: var(--input-bg);
+            color: var(--text-primary);
         }
         .form-control:focus { outline: none; border-color: #667eea; }
-        .form-control:disabled { background: #f3f4f6; cursor: not-allowed; }
+        .form-control:disabled { background: var(--hover-bg); cursor: not-allowed; }
         .form-control.error { border-color: #ef4444; background: #fef2f2; }
-        .readonly-field { background: #f3f4f6; }
+        .readonly-field { background: var(--hover-bg); }
         .error-message {
             color: #ef4444;
             font-size: 12px;
@@ -92,14 +152,13 @@
             margin-bottom: 20px;
             font-size: 14px;
             color: #4338ca;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .info-message.warning {
             background: #fef3c7;
             color: #d97706;
-        }
-        .info-message.success {
-            background: #d1fae5;
-            color: #059669;
         }
         .form-actions {
             display: flex;
@@ -107,7 +166,7 @@
             gap: 12px;
             margin-top: 24px;
             padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid var(--border-color);
         }
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -123,14 +182,14 @@
             cursor: not-allowed;
         }
         .btn-secondary {
-            background: #f3f4f6;
-            color: #374151;
-            border: 1px solid #e5e7eb;
+            background: var(--hover-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
             padding: 10px 24px;
             border-radius: 8px;
             cursor: pointer;
         }
-        .loading { text-align: center; padding: 40px; color: #6b7280; }
+        .loading { text-align: center; padding: 40px; color: var(--text-muted); }
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -150,18 +209,18 @@
             <div class="menu-title" onclick="toggleSubmenu(this)">Брендовая продукция<span class="arrow">▼</span></div>
             <div class="submenu">
                 <div class="submenu-item" onclick="window.location.href='/requests?type=BRANDED'">Заявки</div>
-                <div class="submenu-item" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
+                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
             </div>
         </div>
         <div class="menu-item has-submenu">
             <div class="menu-title" onclick="toggleSubmenu(this)">Небрендовая продукция<span class="arrow">▼</span></div>
             <div class="submenu">
                 <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
-                <div class="submenu-item" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
+                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
             </div>
         </div>
-        <div class="menu-item" onclick="window.location.href='/references'"><div class="menu-title">Справочники</div></div>
-        <div class="menu-item" onclick="window.location.href='/settings'"><div class="menu-title">Настройки</div></div>
+        <div class="menu-item admin-only" onclick="window.location.href='/references'"><div class="menu-title">Справочники</div></div>
+        <div class="menu-item admin-only" onclick="window.location.href='/settings'"><div class="menu-title">Настройки</div></div>
         <div class="menu-item" onclick="window.location.href='/profile'"><div class="menu-title">Профиль</div></div>
     </div>
 </div>
@@ -172,6 +231,9 @@
         <h1 class="page-title">Редактирование рейса</h1>
         <div class="user-info">
             <span class="user-name" id="username">Загрузка...</span>
+            <button class="theme-toggle" id="themeToggle">
+                <span>🌙</span> Тема
+            </button>
             <a href="/logout" class="logout-btn">Выйти</a>
         </div>
     </div>
@@ -226,6 +288,31 @@
 </div>
 
 <script>
+    // Функции для темы
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        const themeBtn = document.getElementById('themeToggle');
+        if (document.body.classList.contains('dark-theme')) {
+            localStorage.setItem('theme', 'dark');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        } else {
+            localStorage.setItem('theme', 'light');
+            if (themeBtn) themeBtn.innerHTML = '<span>🌙</span> Тема';
+        }
+    }
+
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    initTheme();
+
     function toggleSubmenu(element) {
         const menuItem = element.closest('.has-submenu');
         menuItem.classList.toggle('open');
@@ -249,6 +336,7 @@
             if (response.ok) {
                 currentUser = await response.json();
                 document.getElementById('username').innerText = currentUser.username || currentUser.fullName || 'User';
+                document.body.setAttribute('data-role', currentUser.role);
             } else {
                 document.getElementById('username').innerText = 'User';
             }
