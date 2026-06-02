@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактирование рейса - Логистика</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fb;
+            color: #1a1f36;
+        }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100%;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            overflow-y: auto;
+        }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid #e5e7eb; }
+        .sidebar-header h2 {
+            font-size: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .sidebar-menu { padding: 20px 0; }
+        .menu-item { padding: 12px 24px; cursor: pointer; transition: all 0.3s; }
+        .menu-item:hover { background: #f3f4f6; }
+        .menu-title { font-weight: 600; color: #374151; display: flex; justify-content: space-between; align-items: center; }
+        .has-submenu { position: relative; }
+        .submenu { margin-top: 8px; margin-left: 20px; display: none; }
+        .submenu.show { display: block; }
+        .submenu-item { padding: 8px 12px; color: #6b7280; cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 14px; }
+        .submenu-item:hover { background: #f3f4f6; color: #667eea; }
+        .arrow { font-size: 12px; transition: transform 0.2s; }
+        .has-submenu.open .arrow { transform: rotate(180deg); }
+        .main-content { margin-left: 260px; padding: 24px; }
+        .top-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .page-title { font-size: 24px; font-weight: 700; }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .logout-btn { padding: 8px 16px; background: #fee; color: #c33; border-radius: 8px; text-decoration: none; font-size: 14px; }
+        .back-btn { background: none; border: none; font-size: 14px; color: #667eea; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .content-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #374151; }
+        .form-group label .required { color: #ef4444; }
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border 0.2s;
+        }
+        .form-control:focus { outline: none; border-color: #667eea; }
+        .form-control:disabled { background: #f3f4f6; cursor: not-allowed; }
+        .form-control.error { border-color: #ef4444; background: #fef2f2; }
+        .readonly-field { background: #f3f4f6; }
+        .error-message {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .info-message {
+            background: #eef2ff;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #4338ca;
+        }
+        .info-message.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .info-message.success {
+            background: #d1fae5;
+            color: #059669;
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            padding: 10px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .loading { text-align: center; padding: 40px; color: #6b7280; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-header"><h2>Логистика</h2></div>
+    <div class="sidebar-menu">
+        <div class="menu-item" onclick="window.location.href='/dashboard'"><div class="menu-title">Главная</div></div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Брендовая продукция<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=BRANDED'">Заявки</div>
+                <div class="submenu-item" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Небрендовая продукция<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
+                <div class="submenu-item" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
+            </div>
+        </div>
+        <div class="menu-item" onclick="window.location.href='/references'"><div class="menu-title">Справочники</div></div>
+        <div class="menu-item" onclick="window.location.href='/settings'"><div class="menu-title">Настройки</div></div>
+        <div class="menu-item" onclick="window.location.href='/profile'"><div class="menu-title">Профиль</div></div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="top-bar">
+        <button class="back-btn" onclick="history.back()">← Назад</button>
+        <h1 class="page-title">Редактирование рейса</h1>
+        <div class="user-info">
+            <span class="user-name" id="username">Загрузка...</span>
+            <a href="/logout" class="logout-btn">Выйти</a>
+        </div>
+    </div>
+
+    <div class="content-panel">
+        <div class="form-container">
+            <div id="infoMessage" class="info-message" style="display: none;"></div>
+            <form id="tripForm">
+                <div class="form-group">
+                    <label>Объем (тонн)</label>
+                    <input type="text" id="volume" class="form-control readonly-field" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Перевозчик <span class="required">*</span></label>
+                    <select id="carrierId" class="form-control" required>
+                        <option value="">Выберите перевозчика</option>
+                    </select>
+                    <div class="error-message" id="carrierError"></div>
+                </div>
+                <div class="form-group">
+                    <label>Госномер автомобиля <span class="required">*</span></label>
+                    <select id="vehicleId" class="form-control" disabled required>
+                        <option value="">Не выбран</option>
+                    </select>
+                    <div class="error-message" id="vehicleError"></div>
+                </div>
+                <div class="form-group">
+                    <label>Госномер прицепа</label>
+                    <select id="trailerPlate" class="form-control" disabled>
+                        <option value="">Не выбран</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Водитель <span class="required">*</span></label>
+                    <select id="driverName" class="form-control" disabled required>
+                        <option value="">Не выбран</option>
+                    </select>
+                    <div class="error-message" id="driverError"></div>
+                </div>
+                <div class="form-group">
+                    <label>Дата рейса <span class="required">*</span></label>
+                    <input type="date" id="tripDate" class="form-control" required>
+                    <div class="error-message" id="tripDateError"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="cancelForm()">Отмена</button>
+                    <button type="button" class="btn-primary" id="saveBtn" onclick="saveTrip()">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleSubmenu(element) {
+        const menuItem = element.closest('.has-submenu');
+        menuItem.classList.toggle('open');
+        const submenu = menuItem.querySelector('.submenu');
+        if (submenu) submenu.classList.toggle('show');
+        if (event) event.stopPropagation();
+    }
+
+    let tripId = null;
+    let tripData = null;
+    let currentUser = null;
+    let requestData = null;
+    let existingTrips = [];
+    let vehicles = [];
+    let trailers = [];
+    let drivers = [];
+
+    async function fetchCurrentUser() {
+        try {
+            const response = await fetch('/api/auth/current-user');
+            if (response.ok) {
+                currentUser = await response.json();
+                document.getElementById('username').innerText = currentUser.username || currentUser.fullName || 'User';
+            } else {
+                document.getElementById('username').innerText = 'User';
+            }
+        } catch(e) {
+            document.getElementById('username').innerText = 'User';
+        }
+    }
+
+    // Функция валидации формы
+    function validateForm() {
+        let isValid = true;
+
+        // Проверка перевозчика
+        const carrierId = document.getElementById('carrierId').value;
+        const carrierError = document.getElementById('carrierError');
+        if (!carrierId) {
+            carrierError.innerText = 'Выберите перевозчика';
+            document.getElementById('carrierId').classList.add('error');
+            isValid = false;
+        } else {
+            carrierError.innerText = '';
+            document.getElementById('carrierId').classList.remove('error');
+        }
+
+        // Проверка госномера автомобиля
+        const vehicleId = document.getElementById('vehicleId').value;
+        const vehicleError = document.getElementById('vehicleError');
+        if (!vehicleId || vehicleId === '') {
+            vehicleError.innerText = 'Выберите госномер автомобиля';
+            document.getElementById('vehicleId').classList.add('error');
+            isValid = false;
+        } else {
+            vehicleError.innerText = '';
+            document.getElementById('vehicleId').classList.remove('error');
+        }
+
+        // Проверка водителя
+        const driverName = document.getElementById('driverName').value;
+        const driverError = document.getElementById('driverError');
+        if (!driverName || driverName === '') {
+            driverError.innerText = 'Выберите водителя';
+            document.getElementById('driverName').classList.add('error');
+            isValid = false;
+        } else {
+            driverError.innerText = '';
+            document.getElementById('driverName').classList.remove('error');
+        }
+
+        // Проверка даты рейса
+        const tripDate = document.getElementById('tripDate').value;
+        const tripDateError = document.getElementById('tripDateError');
+        if (!tripDate) {
+            tripDateError.innerText = 'Выберите дату рейса';
+            document.getElementById('tripDate').classList.add('error');
+            isValid = false;
+        } else {
+            tripDateError.innerText = '';
+            document.getElementById('tripDate').classList.remove('error');
+        }
+
+        return isValid;
+    }
+
+    // Очистка ошибок
+    function clearErrors() {
+        document.querySelectorAll('.error-message').forEach(el => el.innerText = '');
+        document.querySelectorAll('.form-control').forEach(el => el.classList.remove('error'));
+    }
+
+    async function loadTrip() {
+        const urlParams = new URLSearchParams(window.location.search);
+        tripId = urlParams.get('id');
+        if (!tripId) {
+            window.location.href = '/trips';
+            return;
+        }
+        try {
+            const response = await fetch(`/api/trips/${tripId}`);
+            if (!response.ok) {
+                throw new Error('Ошибка загрузки');
+            }
+            tripData = await response.json();
+
+            // Загружаем заявку и существующие рейсы
+            const requestId = tripData.requestId || (tripData.request ? tripData.request.id : null);
+            if (requestId) {
+                const requestResponse = await fetch(`/api/requests/${requestId}`);
+                requestData = await requestResponse.json();
+
+                const tripsResponse = await fetch(`/api/trips/request/${requestId}`);
+                existingTrips = await tripsResponse.json();
+            }
+
+            if (tripData.status !== 'NEW') {
+                document.getElementById('infoMessage').style.display = 'block';
+                document.getElementById('infoMessage').innerHTML = 'Редактирование недоступно. Рейс в статусе: ' + getStatusText(tripData.status);
+                document.getElementById('infoMessage').className = 'info-message warning';
+                document.getElementById('carrierId').disabled = true;
+                document.getElementById('vehicleId').disabled = true;
+                document.getElementById('trailerPlate').disabled = true;
+                document.getElementById('driverName').disabled = true;
+                document.getElementById('tripDate').disabled = true;
+                document.getElementById('saveBtn').disabled = true;
+            }
+
+            fillForm();
+            loadCarriers();
+        } catch(e) {
+            console.error(e);
+            document.querySelector('.form-container').innerHTML = '<div class="loading">Ошибка загрузки рейса</div>';
+        }
+    }
+
+    function getStatusText(status) {
+        const map = {
+            'NEW': 'Новый',
+            'ARRIVED_LOADING': 'Прибыл на погрузку',
+            'LOADED': 'Погружен',
+            'IN_TRANSIT': 'В пути',
+            'PROCESSED': 'Обработан',
+            'CANCELLED': 'Отменен'
+        };
+        return map[status] || status;
+    }
+
+    function fillForm() {
+        document.getElementById('volume').value = tripData.volume + ' т';
+        document.getElementById('tripDate').value = tripData.tripDate || '';
+
+        // Устанавливаем минимальную дату
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('tripDate').min = today;
+    }
+
+    async function loadCarriers() {
+        try {
+            const response = await fetch('/api/references/carriers');
+            const carriers = await response.json();
+            const select = document.getElementById('carrierId');
+            select.innerHTML = '<option value="">Выберите перевозчика</option>' +
+                carriers.map(c => `<option value="${c.id}" ${tripData.carrier?.id === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
+
+            // Если перевозчик уже выбран, загружаем его данные
+            if (tripData.carrier?.id) {
+                await loadVehiclesForCarrier(tripData.carrier.id);
+                await loadTrailersForCarrier(tripData.carrier.id);
+                await loadDriversForCarrier(tripData.carrier.id);
+                enableFields();
+                // Устанавливаем текущие значения
+                if (tripData.vehiclePlate) {
+                    const vehicleSelect = document.getElementById('vehicleId');
+                    for(let i = 0; i < vehicleSelect.options.length; i++) {
+                        if(vehicleSelect.options[i].text.startsWith(tripData.vehiclePlate)) {
+                            vehicleSelect.value = vehicleSelect.options[i].value;
+                            break;
+                        }
+                    }
+                }
+                if (tripData.trailerPlate) {
+                    const trailerSelect = document.getElementById('trailerPlate');
+                    for(let i = 0; i < trailerSelect.options.length; i++) {
+                        if(trailerSelect.options[i].value === tripData.trailerPlate) {
+                            trailerSelect.value = tripData.trailerPlate;
+                            break;
+                        }
+                    }
+                }
+                if (tripData.driverName) {
+                    const driverSelect = document.getElementById('driverName');
+                    for(let i = 0; i < driverSelect.options.length; i++) {
+                        if(driverSelect.options[i].value === tripData.driverName) {
+                            driverSelect.value = tripData.driverName;
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch(e) {
+            console.error('Ошибка загрузки перевозчиков:', e);
+        }
+    }
+
+    async function loadVehiclesForCarrier(carrierId) {
+        try {
+            const response = await fetch(`/api/references/carriers/${carrierId}/vehicles`);
+            vehicles = await response.json();
+
+            const usedVehiclePlates = existingTrips
+                .filter(t => t.status !== 'DELETED' && t.status !== 'CANCELLED' && t.id != tripId)
+                .map(t => t.vehiclePlate).filter(p => p && p !== '');
+
+            const availableVehicles = vehicles.filter(v => !usedVehiclePlates.includes(v.plateNumber));
+
+            const vehicleSelect = document.getElementById('vehicleId');
+            vehicleSelect.innerHTML = '<option value="">Не выбран</option>' +
+                availableVehicles.map(v => `<option value="${v.id}">${v.plateNumber} (${v.brand} ${v.model})</option>`).join('');
+        } catch(e) {
+            console.error('Ошибка загрузки автомобилей:', e);
+        }
+    }
+
+    async function loadTrailersForCarrier(carrierId) {
+        try {
+            const response = await fetch(`/api/references/carriers/${carrierId}/trailers`);
+            trailers = await response.json();
+
+            const usedTrailers = existingTrips
+                .filter(t => t.status !== 'DELETED' && t.status !== 'CANCELLED' && t.id != tripId)
+                .map(t => t.trailerPlate).filter(p => p && p !== '');
+
+            const availableTrailers = trailers.filter(t => !usedTrailers.includes(t));
+
+            const trailerSelect = document.getElementById('trailerPlate');
+            trailerSelect.innerHTML = '<option value="">Не выбран</option>' +
+                availableTrailers.map(t => `<option value="${t}">${t}</option>`).join('');
+        } catch(e) {
+            console.error('Ошибка загрузки прицепов:', e);
+        }
+    }
+
+    async function loadDriversForCarrier(carrierId) {
+        try {
+            const response = await fetch(`/api/references/carriers/${carrierId}/drivers`);
+            drivers = await response.json();
+
+            const usedDrivers = existingTrips
+                .filter(t => t.status !== 'DELETED' && t.status !== 'CANCELLED' && t.id != tripId)
+                .map(t => t.driverName).filter(d => d && d !== '');
+
+            const availableDrivers = drivers.filter(d => !usedDrivers.includes(d));
+
+            const driverSelect = document.getElementById('driverName');
+            driverSelect.innerHTML = '<option value="">Не выбран</option>' +
+                availableDrivers.map(d => `<option value="${d}">${d}</option>`).join('');
+        } catch(e) {
+            console.error('Ошибка загрузки водителей:', e);
+        }
+    }
+
+    function enableFields() {
+        document.getElementById('vehicleId').disabled = false;
+        document.getElementById('trailerPlate').disabled = false;
+        document.getElementById('driverName').disabled = false;
+    }
+
+    function disableFields() {
+        document.getElementById('vehicleId').disabled = true;
+        document.getElementById('trailerPlate').disabled = true;
+        document.getElementById('driverName').disabled = true;
+        document.getElementById('vehicleId').innerHTML = '<option value="">Не выбран</option>';
+        document.getElementById('trailerPlate').innerHTML = '<option value="">Не выбран</option>';
+        document.getElementById('driverName').innerHTML = '<option value="">Не выбран</option>';
+    }
+
+    async function saveTrip() {
+        // Очищаем предыдущие ошибки
+        clearErrors();
+
+        // Валидация формы
+        if (!validateForm()) {
+            showNotification('Пожалуйста, заполните все обязательные поля', 'error');
+            return;
+        }
+
+        const carrierId = document.getElementById('carrierId').value;
+        const vehicleId = document.getElementById('vehicleId').value;
+        const trailerPlate = document.getElementById('trailerPlate').value;
+        const driverName = document.getElementById('driverName').value;
+        const tripDate = document.getElementById('tripDate').value;
+
+        // Проверка даты (не может быть раньше сегодня)
+        const today = new Date().toISOString().split('T')[0];
+        if (tripDate < today) {
+            document.getElementById('tripDateError').innerText = 'Дата рейса не может быть раньше сегодняшнего дня';
+            document.getElementById('tripDate').classList.add('error');
+            showNotification('Дата рейса не может быть раньше сегодняшнего дня', 'error');
+            return;
+        }
+
+        const updateData = {
+            carrierId: parseInt(carrierId),
+            tripDate: tripDate
+        };
+
+        if (vehicleId && vehicleId !== '') {
+            updateData.vehicleId = parseInt(vehicleId);
+        }
+        if (trailerPlate && trailerPlate !== '') {
+            updateData.trailerPlate = trailerPlate;
+        }
+        if (driverName && driverName !== '') {
+            updateData.driverName = driverName;
+        }
+
+        // Блокируем кнопку сохранения на время отправки
+        const saveBtn = document.getElementById('saveBtn');
+        saveBtn.disabled = true;
+        saveBtn.innerText = 'Сохранение...';
+
+        try {
+            const response = await fetch(`/api/trips/${tripId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updateData)
+            });
+
+            if (response.ok) {
+                showNotification('Рейс успешно обновлен', 'success');
+                setTimeout(() => {
+                    window.location.href = '/trips?type=' + (requestData?.productType || 'BRANDED');
+                }, 1000);
+            } else {
+                const error = await response.text();
+                showNotification(error || 'Ошибка при обновлении', 'error');
+                saveBtn.disabled = false;
+                saveBtn.innerText = 'Сохранить';
+            }
+        } catch(e) {
+            showNotification('Ошибка при обновлении: ' + e.message, 'error');
+            saveBtn.disabled = false;
+            saveBtn.innerText = 'Сохранить';
+        }
+    }
+
+    function cancelForm() {
+        window.location.href = '/trips';
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#10b981' : '#ef4444'};
+            color: white;
+            border-radius: 10px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+            z-index: 10000;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    // Устанавливаем минимальную дату и добавляем валидацию при изменении
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('tripDate').min = today;
+
+    document.getElementById('tripDate').addEventListener('change', function() {
+        const tripDateError = document.getElementById('tripDateError');
+        if (this.value < today) {
+            tripDateError.innerText = 'Дата рейса не может быть раньше сегодняшнего дня';
+            this.classList.add('error');
+        } else {
+            tripDateError.innerText = '';
+            this.classList.remove('error');
+        }
+    });
+
+    // Валидация перевозчика при изменении
+    document.getElementById('carrierId').addEventListener('change', function() {
+        const carrierError = document.getElementById('carrierError');
+        if (!this.value) {
+            carrierError.innerText = 'Выберите перевозчика';
+            this.classList.add('error');
+        } else {
+            carrierError.innerText = '';
+            this.classList.remove('error');
+        }
+    });
+
+    // Валидация автомобиля при изменении
+    document.getElementById('vehicleId').addEventListener('change', function() {
+        const vehicleError = document.getElementById('vehicleError');
+        if (!this.value || this.value === '') {
+            vehicleError.innerText = 'Выберите госномер автомобиля';
+            this.classList.add('error');
+        } else {
+            vehicleError.innerText = '';
+            this.classList.remove('error');
+        }
+    });
+
+    // Валидация водителя при изменении
+    document.getElementById('driverName').addEventListener('change', function() {
+        const driverError = document.getElementById('driverError');
+        if (!this.value || this.value === '') {
+            driverError.innerText = 'Выберите водителя';
+            this.classList.add('error');
+        } else {
+            driverError.innerText = '';
+            this.classList.remove('error');
+        }
+    });
+
+    // Event listeners для загрузки данных перевозчика
+    document.getElementById('carrierId')?.addEventListener('change', async (e) => {
+        const carrierId = e.target.value;
+        if (carrierId) {
+            await Promise.all([
+                loadVehiclesForCarrier(carrierId),
+                loadTrailersForCarrier(carrierId),
+                loadDriversForCarrier(carrierId)
+            ]);
+            enableFields();
+        } else {
+            disableFields();
+        }
+    });
+
+    fetchCurrentUser().then(() => {
+        loadTrip();
+    });
+</script>
+</body>
+</html>

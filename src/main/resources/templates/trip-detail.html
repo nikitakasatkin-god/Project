@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Рейс - Логистика</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fb;
+            color: #1a1f36;
+        }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100%;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            overflow-y: auto;
+        }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid #e5e7eb; }
+        .sidebar-header h2 {
+            font-size: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .sidebar-menu { padding: 20px 0; }
+        .menu-item { padding: 12px 24px; cursor: pointer; transition: all 0.3s; }
+        .menu-item:hover { background: #f3f4f6; }
+        .menu-title { font-weight: 600; color: #374151; display: flex; justify-content: space-between; align-items: center; }
+        .has-submenu { position: relative; }
+        .submenu { margin-top: 8px; margin-left: 20px; display: none; }
+        .submenu.show { display: block; }
+        .submenu-item { padding: 8px 12px; color: #6b7280; cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 14px; }
+        .submenu-item:hover { background: #f3f4f6; color: #667eea; }
+        .arrow { font-size: 12px; transition: transform 0.2s; }
+        .has-submenu.open .arrow { transform: rotate(180deg); }
+        .main-content { margin-left: 260px; padding: 24px; }
+        .top-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .page-title { font-size: 24px; font-weight: 700; }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .logout-btn { padding: 8px 16px; background: #fee; color: #c33; border-radius: 8px; text-decoration: none; font-size: 14px; }
+        .back-btn { background: none; border: none; font-size: 14px; color: #667eea; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .content-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb; }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .detail-item { padding: 12px; background: #f9fafb; border-radius: 12px; }
+        .detail-label { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+        .detail-value { font-size: 16px; font-weight: 600; color: #1a1f36; }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .status-trip-new { background: #f3f4f6; color: #6b7280; }
+        .status-trip-arrived_loading { background: #fef3c7; color: #d97706; }
+        .status-trip-loaded { background: #dbeafe; color: #2563eb; }
+        .status-trip-processed { background: #d1fae5; color: #059669; }
+        .status-trip-cancelled { background: #fee2e2; color: #dc2626; }
+        .sync-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .sync-not-set { background: #f3f4f6; color: #6b7280; }
+        .sync-pending { background: #fef3c7; color: #d97706; }
+        .sync-completed { background: #d1fae5; color: #059669; }
+        .action-buttons { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        .btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        .btn-warning { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        .history-table th, .history-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .history-table th {
+            background: #f9fafb;
+            font-weight: 600;
+        }
+        .link-button {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .history-system { color: #667eea; font-weight: 500; }
+        .history-user { color: #374151; }
+        .loading { text-align: center; padding: 40px; color: #6b7280; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; }
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-header"><h2>Логистика</h2></div>
+    <div class="sidebar-menu">
+        <div class="menu-item" onclick="window.location.href='/dashboard'"><div class="menu-title">Главная</div></div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Брендовая продукция<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=BRANDED'">Заявки</div>
+                <div class="submenu-item" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Небрендовая продукция<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
+                <div class="submenu-item" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
+            </div>
+        </div>
+        <div class="menu-item" onclick="window.location.href='/references'"><div class="menu-title">Справочники</div></div>
+        <div class="menu-item" onclick="window.location.href='/settings'"><div class="menu-title">Настройки</div></div>
+        <div class="menu-item" onclick="window.location.href='/profile'"><div class="menu-title">Профиль</div></div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="top-bar">
+        <button class="back-btn" onclick="history.back()">← Назад</button>
+        <h1 class="page-title">Рейс</h1>
+        <div class="user-info">
+            <span class="user-name" id="username">Загрузка...</span>
+            <a href="/logout" class="logout-btn">Выйти</a>
+        </div>
+    </div>
+
+    <div class="content-panel" id="tripInfo">
+        <div class="loading">Загрузка...</div>
+    </div>
+
+    <div class="content-panel" id="historyPanel">
+        <h3>История изменений</h3>
+        <div id="historyContainer"></div>
+    </div>
+</div>
+
+<script>
+    function toggleSubmenu(element) {
+        const menuItem = element.closest('.has-submenu');
+        menuItem.classList.toggle('open');
+        const submenu = menuItem.querySelector('.submenu');
+        if (submenu) submenu.classList.toggle('show');
+        if (event) event.stopPropagation();
+    }
+
+    let tripId = null;
+    let tripData = null;
+    let currentUser = null;
+
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        var parts = dateString.split('-');
+        if (parts.length === 3) {
+            return parts[2] + '.' + parts[1] + '.' + parts[0];
+        }
+        return dateString;
+    }
+
+    function formatDateTime(dateTimeStr) {
+        if (!dateTimeStr) return '-';
+        const date = new Date(dateTimeStr);
+        return date.toLocaleString('ru-RU');
+    }
+
+    function getStatusText(status) {
+        const map = {
+            'NEW': 'Новый',
+            'ARRIVED_LOADING': 'Прибыл на погрузку',
+            'LOADED': 'Погружен',
+            'IN_TRANSIT': 'В пути',
+            'PROCESSED': 'Обработан',
+            'CANCELLED': 'Отменен',
+            'DELETED': 'Удален'
+        };
+        return map[status] || status;
+    }
+
+    function getStatusClass(status) {
+        const map = {
+            'NEW': 'new',
+            'ARRIVED_LOADING': 'arrived_loading',
+            'LOADED': 'loaded',
+            'IN_TRANSIT': 'loaded',
+            'PROCESSED': 'processed',
+            'CANCELLED': 'cancelled'
+        };
+        return map[status] || 'new';
+    }
+
+    function getSyncText(trip) {
+        if (trip.status === 'NEW' || trip.status === 'ARRIVED_LOADING') {
+            return 'Не установлен';
+        }
+        if (trip.status === 'LOADED' && !trip.syncedToDispatch) {
+            return 'Ожидает синхронизации';
+        }
+        if (trip.syncedToDispatch) {
+            return 'Синхронизирован';
+        }
+        return 'Не установлен';
+    }
+
+    function getSyncClass(trip) {
+        if (trip.status === 'NEW' || trip.status === 'ARRIVED_LOADING') {
+            return 'sync-not-set';
+        }
+        if (trip.status === 'LOADED' && !trip.syncedToDispatch) {
+            return 'sync-pending';
+        }
+        if (trip.syncedToDispatch) {
+            return 'sync-completed';
+        }
+        return 'sync-not-set';
+    }
+
+    async function fetchCurrentUser() {
+        try {
+            const response = await fetch('/api/auth/current-user');
+            if (response.ok) {
+                currentUser = await response.json();
+                document.getElementById('username').innerText = currentUser.username || currentUser.fullName || 'User';
+            } else {
+                document.getElementById('username').innerText = 'User';
+            }
+        } catch(e) {
+            document.getElementById('username').innerText = 'User';
+        }
+    }
+
+    async function loadTrip() {
+        const urlParams = new URLSearchParams(window.location.search);
+        tripId = urlParams.get('id');
+        if (!tripId) {
+            window.location.href = '/trips';
+            return;
+        }
+        try {
+            const response = await fetch(`/api/trips/${tripId}`);
+            if (!response.ok) {
+                if (response.status === 403) {
+                    document.getElementById('tripInfo').innerHTML = '<div class="loading">Доступ запрещен</div>';
+                    return;
+                }
+                throw new Error('Ошибка загрузки');
+            }
+            tripData = await response.json();
+            renderTripInfo();
+            loadHistory();
+        } catch(e) {
+            console.error(e);
+            document.getElementById('tripInfo').innerHTML = '<div class="loading">Ошибка загрузки рейса</div>';
+        }
+    }
+
+    function editTrip() {
+        window.location.href = `/trip-form?id=${tripId}`;
+    }
+
+    function renderTripInfo() {
+        const container = document.getElementById('tripInfo');
+        const isEditable = (currentUser?.role === 'ADMIN' || currentUser?.role === 'DISPATCHER') && tripData.status === 'NEW';
+        const canSync = tripData.status === 'LOADED' && !tripData.syncedToDispatch;
+
+        const tripDateFormatted = formatDate(tripData.tripDate);
+        const syncText = getSyncText(tripData);
+        const syncClass = getSyncClass(tripData);
+
+        const requestId = tripData.requestId || '?';
+
+        container.innerHTML = `
+            <div class="detail-header">
+                <div><span class="detail-label">Рейс №</span><span class="detail-value">${tripData.id}</span></div>
+                <div><span class="status-badge status-trip-${getStatusClass(tripData.status)}">${getStatusText(tripData.status)}</span></div>
+            </div>
+            <div class="detail-grid">
+                <div class="detail-item"><div class="detail-label">Заявка</div><div class="detail-value"><a href="/request-detail?id=${requestId}" class="link-button">Заявка №${requestId}</a></div></div>
+                <div class="detail-item"><div class="detail-label">Перевозчик</div><div class="detail-value">${tripData.carrier?.name || tripData.carrierName || '-'}</div></div>
+                <div class="detail-item"><div class="detail-label">Госномер автомобиля</div><div class="detail-value">${tripData.vehiclePlate || '-'}</div></div>
+                <div class="detail-item"><div class="detail-label">Госномер прицепа</div><div class="detail-value">${tripData.trailerPlate || '-'}</div></div>
+                <div class="detail-item"><div class="detail-label">Марка автомобиля</div><div class="detail-value">${tripData.vehicleBrand || '-'}</div></div>
+                <div class="detail-item"><div class="detail-label">Водитель</div><div class="detail-value">${tripData.driverName || '-'}</div></div>
+                <div class="detail-item"><div class="detail-label">Дата рейса</div><div class="detail-value">${tripDateFormatted}</div></div>
+                <div class="detail-item"><div class="detail-label">Объем</div><div class="detail-value">${tripData.volume} т</div></div>
+                <div class="detail-item"><div class="detail-label">Статус обмена</div><div class="detail-value"><span class="sync-badge ${syncClass}">${syncText}</span></div></div>
+                <div class="detail-item"><div class="detail-label">Дата создания</div><div class="detail-value">${formatDateTime(tripData.createdAt)}</div></div>
+            </div>
+            <div class="action-buttons">
+                ${isEditable ? `<button class="btn-secondary" onclick="editTrip()">Редактировать рейс</button>` : ''}
+                ${canSync ? `<button class="btn-primary" onclick="syncTrip()">Синхронизировать с системой диспетчеризации</button>` : ''}
+                ${tripData.status === 'NEW' && (currentUser?.role === 'ADMIN' || currentUser?.role === 'DISPATCHER') ?
+                    `<button class="btn-warning" onclick="cancelTrip()">Отменить рейс</button>` : ''}
+            </div>
+        `;
+    }
+
+    async function loadHistory() {
+        try {
+            const response = await fetch(`/api/trips/${tripId}/history`);
+            if (!response.ok) throw new Error('Ошибка загрузки истории');
+            const history = await response.json();
+            renderHistory(history);
+        } catch(e) {
+            console.error(e);
+            document.getElementById('historyContainer').innerHTML = '<div class="loading">Ошибка загрузки истории</div>';
+        }
+    }
+
+    function renderHistory(history) {
+        const container = document.getElementById('historyContainer');
+        if (!history || history.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b7280;">Нет истории изменений</div>';
+            return;
+        }
+
+        container.innerHTML = `
+            <table class="history-table">
+                <thead>
+                    <tr><th>Дата и время</th><th>Статус</th><th>Кто изменил</th></tr>
+                </thead>
+                <tbody>
+                    ${history.map(h => `
+                        <tr>
+                            <td>${formatDateTime(h.changedAt)}</span></span>
+                            <td>${getStatusText(h.status)}</span></span>
+                            <td><span class="${h.changedBy === 'system' ? 'history-system' : 'history-user'}">${h.userName || (h.changedBy === 'system' ? 'Система' : h.changedBy)}</span></span>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+
+    async function syncTrip() {
+        try {
+            const response = await fetch(`/api/trips/${tripId}/sync`, { method: 'POST' });
+            const result = await response.json();
+            if (response.ok) {
+                showNotification(result.message || 'Рейс синхронизирован', 'success');
+                loadTrip();
+            } else {
+                showNotification(result.message || 'Ошибка синхронизации', 'error');
+            }
+        } catch(e) {
+            showNotification('Ошибка синхронизации', 'error');
+        }
+    }
+
+    async function cancelTrip() {
+        if (confirm('Отменить рейс? Рейс будет помечен как отмененный.')) {
+            try {
+                const response = await fetch(`/api/trips/${tripId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'CANCELLED' })
+                });
+                if (response.ok) {
+                    showNotification('Рейс отменен', 'success');
+                    loadTrip();
+                } else {
+                    const error = await response.text();
+                    showNotification(error || 'Ошибка при отмене', 'error');
+                }
+            } catch(e) {
+                showNotification('Ошибка при отмене', 'error');
+            }
+        }
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+            color: white;
+            border-radius: 10px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    fetchCurrentUser().then(() => {
+        loadTrip();
+    });
+</script>
+</body>
+</html>
