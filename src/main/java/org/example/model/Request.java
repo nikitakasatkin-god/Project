@@ -48,6 +48,11 @@ public class Request {
     @JsonIgnore
     private List<Trip> trips = new ArrayList<>();
 
+    @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("changedAt ASC")
+    @JsonIgnore
+    private List<RequestHistory> history = new ArrayList<>();
+
     private LocalDateTime createdAt;
 
     private LocalDateTime completedAt;
@@ -57,7 +62,6 @@ public class Request {
         createdAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public User getOwner() { return owner; }
@@ -84,6 +88,8 @@ public class Request {
     public void setStatus(RequestStatus status) { this.status = status; }
     public List<Trip> getTrips() { return trips; }
     public void setTrips(List<Trip> trips) { this.trips = trips; }
+    public List<RequestHistory> getHistory() { return history; }
+    public void setHistory(List<RequestHistory> history) { this.history = history; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getCompletedAt() { return completedAt; }

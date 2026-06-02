@@ -3,7 +3,9 @@ package org.example.controller;
 import org.example.model.Request;
 import org.example.model.RequestStatus;
 import org.example.model.Role;
+import org.example.model.Trip;
 import org.example.model.User;
+import org.example.model.Carrier;
 import org.example.repository.CarrierRepository;
 import org.example.repository.RequestRepository;
 import org.example.repository.TripRepository;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,18 +52,50 @@ public class DashboardController {
         User currentUser = getCurrentUser();
 
         List<Request> requests;
+        List<Trip> trips;
+        List<Carrier> carriers;
 
-        // Фильтруем заявки в зависимости от роли
+        // Фильтруем данные в зависимости от роли
         if (currentUser.getRole() == Role.ADMIN) {
+            // Админ видит всё
             requests = requestRepository.findAll();
+            trips = tripRepository.findAll();
+            carriers = carrierRepository.findAll();
         } else if (currentUser.getRole() == Role.LOGIST) {
-            // Логист видит ТОЛЬКО свои заявки
+            // Логист видит только свои заявки
             requests = requestRepository.findByOwner(currentUser);
+            // Логист видит рейсы только по своим заявкам
+            List<Long> requestIds = requests.stream().map(Request::getId).collect(Collectors.toList());
+            trips = tripRepository.findAll().stream()
+                    .filter(t -> requestIds.contains(t.getRequest().getId()))
+                    .collect(Collectors.toList());
+            // Логист видит перевозчиков, которые участвуют в его рейсах
+            List<Long> carrierIds = trips.stream()
+                    .map(t -> t.getCarrier() != null ? t.getCarrier().getId() : null)
+                    .filter(id -> id != null)
+                    .distinct()
+                    .collect(Collectors.toList());
+            carriers = carrierRepository.findAll().stream()
+                    .filter(c -> carrierIds.contains(c.getId()))
+                    .collect(Collectors.toList());
         } else if (currentUser.getRole() == Role.DISPATCHER) {
             // Диспетчер видит заявки своего подразделения
             requests = requestRepository.findByDivision(currentUser.getDivision());
+            // Диспетчер видит рейсы только по заявкам своего подразделения
+            trips = tripRepository.findByRequest_Division(currentUser.getDivision());
+            // Диспетчер видит перевозчиков, которые работают с его подразделением
+            List<Long> carrierIds = trips.stream()
+                    .map(t -> t.getCarrier() != null ? t.getCarrier().getId() : null)
+                    .filter(id -> id != null)
+                    .distinct()
+                    .collect(Collectors.toList());
+            carriers = carrierRepository.findAll().stream()
+                    .filter(c -> carrierIds.contains(c.getId()))
+                    .collect(Collectors.toList());
         } else {
             requests = List.of();
+            trips = List.of();
+            carriers = List.of();
         }
 
         // Активные заявки (в работе)
@@ -69,17 +104,18 @@ public class DashboardController {
                 .count();
         data.put("activeRequests", activeRequests);
 
-        // Рейсы сегодня
-        long todayTrips = tripRepository.findAll().stream()
+        // Рейсы сегодня (только отфильтрованные по роли)
+        long todayTrips = trips.stream()
                 .filter(t -> t.getTripDate() != null && t.getTripDate().equals(LocalDate.now()))
                 .count();
         data.put("todayTrips", todayTrips);
 
-        // Количество перевозчиков
-        data.put("carriersCount", carrierRepository.count());
+        // Количество перевозчиков (только отфильтрованные по роли)
+        data.put("carriersCount", (long) carriers.size());
 
-        // Последние 5 заявок (с учетом роли)
+        // Последние 5 заявок (сортировка по ID - сначала новые)
         List<Request> recentRequests = requests.stream()
+                .sorted(Comparator.comparing(Request::getId).reversed())
                 .limit(5)
                 .collect(Collectors.toList());
         data.put("recentRequests", recentRequests);
