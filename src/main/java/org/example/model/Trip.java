@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "trips")
@@ -14,7 +16,7 @@ public class Trip {
 
     @ManyToOne
     @JoinColumn(name = "request_id")
-    @JsonIgnore
+    @JsonIgnore  // ДОБАВЬТЕ ЭТУ АННОТАЦИЮ
     private Request request;
 
     @ManyToOne
@@ -36,9 +38,18 @@ public class Trip {
     @Enumerated(EnumType.STRING)
     private TripStatus status = TripStatus.NEW;
 
+    private Boolean syncedToDispatch = false;
+
+    private LocalDateTime syncedAt;
+
     private Integer sequenceNumber;
 
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("changedAt ASC")
+    @JsonIgnore  // ДОБАВЬТЕ ЭТУ АННОТАЦИЮ, чтобы избежать циклической ссылки через историю
+    private List<TripHistory> history = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -66,8 +77,14 @@ public class Trip {
     public void setVolume(Double volume) { this.volume = volume; }
     public TripStatus getStatus() { return status; }
     public void setStatus(TripStatus status) { this.status = status; }
+    public Boolean getSyncedToDispatch() { return syncedToDispatch; }
+    public void setSyncedToDispatch(Boolean syncedToDispatch) { this.syncedToDispatch = syncedToDispatch; }
+    public LocalDateTime getSyncedAt() { return syncedAt; }
+    public void setSyncedAt(LocalDateTime syncedAt) { this.syncedAt = syncedAt; }
     public Integer getSequenceNumber() { return sequenceNumber; }
     public void setSequenceNumber(Integer sequenceNumber) { this.sequenceNumber = sequenceNumber; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public List<TripHistory> getHistory() { return history; }
+    public void setHistory(List<TripHistory> history) { this.history = history; }
 }

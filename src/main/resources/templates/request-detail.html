@@ -577,29 +577,52 @@
                         <th>Дата</th>
                         <th>Объем</th>
                         <th>Статус</th>
+                        <th>Статус обмена</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${activeTrips.map(trip => {
-                        let statusButton = '';
-                        if (isOwner) {
-                            if (trip.status === 'NEW') {
-                                statusButton = `<button class="trip-status-btn btn-status-new" onclick="updateTripStatus(${trip.id}, 'ARRIVED_LOADING')">${trip.sequenceNumber || trip.id} → Прибыл на погрузку</button>`;
-                            } else if (trip.status === 'ARRIVED_LOADING') {
-                                statusButton = `<button class="trip-status-btn btn-status-arrived" onclick="updateTripStatus(${trip.id}, 'LOADED')">${trip.sequenceNumber || trip.id} → Погружен</button>`;
-                            } else if (trip.status === 'LOADED') {
-                                statusButton = `<span class="trip-status-btn btn-status-loaded" style="display:inline-block; cursor:default;">${trip.sequenceNumber || trip.id} → Погружен (ожидает синхронизации)</span>`;
+                        let tripNumberDisplay = '';
+                        const syncText = trip.syncedToDispatch ? 'Синхронизирован' : 'Ожидает синхронизации';
+                        const syncClass = trip.syncedToDispatch ? 'sync-completed' : 'sync-pending';
+
+                        // Определяем отображение номера рейса в зависимости от статуса и роли
+                        if (trip.status === 'NEW') {
+                            // Для владельца (логист или админ) - кнопка "Прибыл на погрузку"
+                            if (isOwner) {
+                                tripNumberDisplay = `<button class="trip-status-btn btn-status-new" onclick="updateTripStatus(${trip.id}, 'ARRIVED_LOADING')">${trip.sequenceNumber || trip.id} → Прибыл на погрузку</button>`;
                             } else {
-                                statusButton = `<span style="font-weight:600;">${trip.sequenceNumber || trip.id}</span>`;
+                                // Для диспетчера - ссылка на карточку рейса
+                                tripNumberDisplay = `<a href="/trip-detail?id=${trip.id}" class="link-button" style="font-weight:600;">${trip.sequenceNumber || trip.id}</a>`;
+                            }
+                        } else if (trip.status === 'ARRIVED_LOADING') {
+                            // Для владельца (логист или админ) - кнопка "Погружен"
+                            if (isOwner) {
+                                tripNumberDisplay = `<button class="trip-status-btn btn-status-arrived" onclick="updateTripStatus(${trip.id}, 'LOADED')">${trip.sequenceNumber || trip.id} → Погружен</button>`;
+                            } else {
+                                // Для диспетчера - ссылка на карточку рейса
+                                tripNumberDisplay = `<a href="/trip-detail?id=${trip.id}" class="link-button" style="font-weight:600;">${trip.sequenceNumber || trip.id}</a>`;
+                            }
+                        } else if (trip.status === 'LOADED') {
+                            // Для админа и диспетчера - ссылка, для логиста - просто текст
+                            if (currentUser?.role === 'ADMIN' || currentUser?.role === 'DISPATCHER') {
+                                tripNumberDisplay = `<a href="/trip-detail?id=${trip.id}" class="link-button" style="font-weight:600;">${trip.sequenceNumber || trip.id}</a>`;
+                            } else {
+                                tripNumberDisplay = `<span style="font-weight:600;">${trip.sequenceNumber || trip.id}</span>`;
                             }
                         } else {
-                            statusButton = `<span style="font-weight:600;">${trip.sequenceNumber || trip.id}</span>`;
+                            // Для всех остальных статусов - просто текст (для владельца) или ссылка (для диспетчера/админа)
+                            if (currentUser?.role === 'ADMIN' || currentUser?.role === 'DISPATCHER') {
+                                tripNumberDisplay = `<a href="/trip-detail?id=${trip.id}" class="link-button" style="font-weight:600;">${trip.sequenceNumber || trip.id}</a>`;
+                            } else {
+                                tripNumberDisplay = `<span style="font-weight:600;">${trip.sequenceNumber || trip.id}</span>`;
+                            }
                         }
 
                         return `
                             <tr>
-                                <td>${statusButton}</td>
+                                <td>${tripNumberDisplay}</td>
                                 <td>${trip.carrier?.name || '-'}</td>
                                 <td>${trip.vehiclePlate || '-'}</td>
                                 <td>${trip.trailerPlate || '-'}</td>
@@ -607,6 +630,7 @@
                                 <td>${trip.tripDate}</td>
                                 <td>${trip.volume} т</span></td>
                                 <td><span class="status-badge status-trip-${getTripStatusClass(trip.status)}">${getTripStatusText(trip.status)}</span></td>
+                                <td><span class="sync-badge ${syncClass}">${syncText}</span></td>
                                 <td>
                                     ${isDispatcher && trip.status === 'NEW' ?
                                         `<button class="btn-warning" style="font-size:12px;padding:4px 12px;margin:2px;" onclick="cancelTrip(${trip.id})">Отменить</button>

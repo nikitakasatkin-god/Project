@@ -68,6 +68,22 @@ public class ApplicationController {
         return "request-detail";
     }
 
+    @GetMapping("/trip-detail")
+    public String tripDetail(@RequestParam(required = false) Long id, Model model) {
+        if (id != null) {
+            model.addAttribute("tripId", id);
+        }
+        return "trip-detail";
+    }
+
+    @GetMapping("/trip-form")
+    public String tripForm(@RequestParam(required = false) Long id, Model model) {
+        if (id != null) {
+            model.addAttribute("tripId", id);
+        }
+        return "trip-form";
+    }
+
     @GetMapping("/request-form")
     public String requestForm(@RequestParam(required = false) Long id, Model model) {
         if (id != null) {
