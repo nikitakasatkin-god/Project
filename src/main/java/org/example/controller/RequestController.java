@@ -119,6 +119,11 @@ public class RequestController {
                 return ResponseEntity.status(401).body(Map.of("error", "Пользователь не авторизован"));
             }
 
+            // Только LOGIST и ADMIN могут создавать заявки
+            if (currentUser.getRole() != Role.LOGIST && currentUser.getRole() != Role.ADMIN) {
+                return ResponseEntity.status(403).body(Map.of("error", "Доступ запрещен. Только логист или администратор могут создавать заявки"));
+            }
+
             List<String> missingFields = new java.util.ArrayList<>();
             if (data.get("volume") == null) missingFields.add("Объем");
             if (data.get("pickupPoint") == null) missingFields.add("Пункт погрузки");
@@ -137,7 +142,6 @@ public class RequestController {
 
             Request request = new Request();
             request.setOwner(currentUser);
-            // Устанавливаем подразделение из подразделения владельца
             request.setDivision(currentUser.getDivision());
             request.setVolume(Double.parseDouble(data.get("volume").toString()));
             request.setPickupPoint(data.get("pickupPoint").toString());
@@ -169,6 +173,56 @@ public class RequestController {
         }
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateRequest(@PathVariable Long id, @RequestBody Map<String, Object> data) {
+        try {
+            Request request = requestRepository.findById(id).orElse(null);
+            if (request == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            User currentUser = getCurrentUser();
+
+            // Только владелец (LOGIST) или ADMIN могут редактировать заявку в статусе NEW
+            boolean isOwner = currentUser.getId().equals(request.getOwner().getId());
+            boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+
+            if ((!isOwner && !isAdmin) || request.getStatus() != RequestStatus.NEW) {
+                return ResponseEntity.status(403).body(Map.of("error", "Доступ запрещен. Редактирование возможно только для заявок в статусе 'Новая' и только владельцем или администратором"));
+            }
+
+            // Обновляем поля
+            if (data.containsKey("volume")) {
+                request.setVolume(Double.parseDouble(data.get("volume").toString()));
+            }
+            if (data.containsKey("pickupPoint")) {
+                request.setPickupPoint(data.get("pickupPoint").toString());
+            }
+            if (data.containsKey("deliveryPoint")) {
+                request.setDeliveryPoint(data.get("deliveryPoint").toString());
+            }
+            if (data.containsKey("pickupStartDate")) {
+                request.setPickupStartDate(LocalDate.parse(data.get("pickupStartDate").toString()));
+            }
+            if (data.containsKey("pickupEndDate")) {
+                request.setPickupEndDate(LocalDate.parse(data.get("pickupEndDate").toString()));
+            }
+            if (data.containsKey("pickupStartTime")) {
+                request.setPickupStartTime(LocalTime.parse(data.get("pickupStartTime").toString()));
+            }
+            if (data.containsKey("pickupEndTime")) {
+                request.setPickupEndTime(LocalTime.parse(data.get("pickupEndTime").toString()));
+            }
+
+            Request saved = requestRepository.save(request);
+            return ResponseEntity.ok(saved);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/{id}/process")
     public ResponseEntity<?> processRequest(@PathVariable Long id) {
         Request request = requestRepository.findById(id).orElse(null);
@@ -179,7 +233,7 @@ public class RequestController {
         User currentUser = getCurrentUser();
 
         if (currentUser.getRole() != Role.DISPATCHER && currentUser.getRole() != Role.ADMIN) {
-            return ResponseEntity.status(403).body("Доступ запрещен");
+            return ResponseEntity.status(403).body("Доступ запрещен. Только диспетчер или администратор могут обработать заявку");
         }
 
         if (request.getStatus() == RequestStatus.NEW) {

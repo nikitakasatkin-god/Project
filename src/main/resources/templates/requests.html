@@ -220,6 +220,7 @@
         .empty-state { text-align: center; padding: 60px 20px; }
         .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
         .empty-text { font-size: 16px; color: #6b7280; margin-bottom: 20px; }
+        .loading { text-align: center; padding: 40px; color: #6b7280; }
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -244,8 +245,8 @@
                 <span class="arrow">▼</span>
             </div>
             <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/requests?type=BRANDED'">Заявки</div>
-                <div class="submenu-item" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
+                <div class="submenu-item" data-type="BRANDED" data-page="requests" onclick="changeProductType('BRANDED', 'requests')">Заявки</div>
+                <div class="submenu-item" data-type="BRANDED" data-page="trips" onclick="changeProductType('BRANDED', 'trips')">Рейсы</div>
             </div>
         </div>
         <div class="menu-item has-submenu">
@@ -254,8 +255,8 @@
                 <span class="arrow">▼</span>
             </div>
             <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
-                <div class="submenu-item" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
+                <div class="submenu-item" data-type="NON_BRANDED" data-page="requests" onclick="changeProductType('NON_BRANDED', 'requests')">Заявки</div>
+                <div class="submenu-item" data-type="NON_BRANDED" data-page="trips" onclick="changeProductType('NON_BRANDED', 'trips')">Рейсы</div>
             </div>
         </div>
         <div class="menu-item" onclick="window.location.href='/references'">
@@ -274,7 +275,7 @@
     <div class="top-bar">
         <h1 class="page-title" id="page-title">Заявки (Брендовая продукция)</h1>
         <div class="user-info">
-            <span class="user-name" sec:authentication="name"></span>
+            <span class="user-name" id="username">Загрузка...</span>
             <a href="/logout" class="logout-btn">Выйти</a>
         </div>
     </div>
@@ -291,7 +292,7 @@
                 </select>
                 <input type="text" id="searchInput" placeholder="Поиск по заявкам..." class="search-input">
             </div>
-            <button class="btn-primary" id="createRequestBtn">+ Создать заявку</button>
+            <button class="btn-primary" id="createRequestBtn" style="display: none;">+ Создать заявку</button>
         </div>
         <div id="requestsContainer" class="requests-container"><div class="loading">Загрузка...</div></div>
     </div>
@@ -366,6 +367,12 @@
         event.stopPropagation();
     }
 
+    function changeProductType(type, page) {
+        currentProductType = type;
+        window.location.href = `/${page}?type=${type}`;
+    }
+
+    let currentUserRole = '';
     let currentProductType = 'BRANDED';
     let allRequests = [];
 
@@ -374,6 +381,35 @@
     if (urlParams.get('type') === 'NON_BRANDED') {
         currentProductType = 'NON_BRANDED';
         document.getElementById('page-title').innerText = 'Заявки (Небрендовая продукция)';
+    }
+
+    // Получение текущего пользователя и его роли
+    async function fetchCurrentUser() {
+        try {
+            const response = await fetch('/api/auth/current-user');
+            if (response.ok) {
+                const user = await response.json();
+                currentUserRole = user.role;
+                document.getElementById('username').innerText = user.username || user.fullName || 'User';
+
+                // Показываем кнопку создания заявки только для LOGIST и ADMIN
+                const createBtn = document.getElementById('createRequestBtn');
+                if (createBtn) {
+                    if (currentUserRole === 'LOGIST' || currentUserRole === 'ADMIN') {
+                        createBtn.style.display = 'inline-flex';
+                    } else {
+                        createBtn.style.display = 'none';
+                    }
+                }
+            } else {
+                document.getElementById('username').innerText = 'User';
+                document.getElementById('createRequestBtn').style.display = 'none';
+            }
+        } catch(e) {
+            console.error('Ошибка получения пользователя:', e);
+            document.getElementById('username').innerText = 'User';
+            document.getElementById('createRequestBtn').style.display = 'none';
+        }
     }
 
     async function loadPickupPoints() {
@@ -385,7 +421,7 @@
                 plants.map(p => `<option value="${p.value}">${p.label}</option>`).join('');
         } catch(e) {
             console.error('Ошибка загрузки заводов:', e);
-            document.getElementById('pickupPoint').innerHTML = '<option value="">Выберите завод</option><option value="Завод №1">🏭 Завод №1</option><option value="Завод №2">🏭 Завод №2</option>';
+            document.getElementById('pickupPoint').innerHTML = '<option value="">Выберите завод</option><option value="Завод №1">🏭 Завод №1</option><option value="Завод №2">🏭 Завод №2</option><option value="Завод №3">🏭 Завод №3</option><option value="Завод №4">🏭 Завод №4</option><option value="Завод №5">🏭 Завод №5</option>';
         }
     }
 
@@ -398,7 +434,7 @@
                 warehouses.map(w => `<option value="${w.value}">${w.label}</option>`).join('');
         } catch(e) {
             console.error('Ошибка загрузки складов:', e);
-            document.getElementById('deliveryPoint').innerHTML = '<option value="">Выберите склад</option><option value="Склад №1">📦 Склад №1</option><option value="Склад №2">📦 Склад №2</option>';
+            document.getElementById('deliveryPoint').innerHTML = '<option value="">Выберите склад</option><option value="Склад №1">📦 Склад №1</option><option value="Склад №2">📦 Склад №2</option><option value="Склад №3">📦 Склад №3</option><option value="Склад №4">📦 Склад №4</option><option value="Склад №5">📦 Склад №5</option>';
         }
     }
 
@@ -425,7 +461,9 @@
     function renderRequests(requests) {
         const container = document.getElementById('requestsContainer');
         if (!requests.length) {
-            container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Нет созданных заявок</div><button class="btn-primary" onclick="openCreateModal()">Создать заявку</button></div>';
+            container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Нет созданных заявок</div>' +
+                (currentUserRole === 'LOGIST' || currentUserRole === 'ADMIN' ? '<button class="btn-primary" onclick="openCreateModal()">Создать заявку</button>' : '') +
+                '</div>';
             return;
         }
         container.innerHTML = `
@@ -444,7 +482,7 @@
                         </div>
                         <div class="request-card-footer">
                             <button class="link-button" onclick="viewRequest(${req.id})">Подробнее →</button>
-                            ${req.status === 'NEW' ? `<button class="delete-btn" onclick="deleteRequest(${req.id})">🗑️</button>` : ''}
+                            ${req.status === 'NEW' && (currentUserRole === 'LOGIST' || currentUserRole === 'ADMIN') ? `<button class="delete-btn" onclick="deleteRequest(${req.id})">🗑️</button>` : ''}
                         </div>
                     </div>
                 `).join('')}
@@ -589,13 +627,17 @@
         }
     }
 
+    // Event listeners
     document.getElementById('statusFilter').addEventListener('change', () => applyFilters());
     document.getElementById('searchInput').addEventListener('input', () => applyFilters());
     document.getElementById('createRequestBtn').addEventListener('click', () => openCreateModal());
     document.querySelector('#createModal .close').addEventListener('click', closeCreateModal);
     window.onclick = (e) => { if (e.target === document.getElementById('createModal')) closeCreateModal(); };
 
-    loadRequests();
+    // Инициализация
+    fetchCurrentUser().then(() => {
+        loadRequests();
+    });
 </script>
 </body>
 </html>

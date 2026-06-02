@@ -72,7 +72,20 @@
         .detail-label { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
         .detail-value { font-size: 16px; font-weight: 600; color: #1a1f36; }
         .detail-value.warning { color: #dc2626; font-weight: 700; }
-        .action-buttons { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb; }
+        .detail-value.editable {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-weight: normal;
+            width: 100%;
+            font-size: 14px;
+        }
+        .detail-value.editable:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .action-buttons { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; }
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -85,6 +98,7 @@
         .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
         .btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
         .btn-warning { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        .btn-success { background: #d1fae5; color: #059669; border: 1px solid #a7f3d0; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
         .trip-status-btn {
             background: none;
             border: none;
@@ -283,6 +297,8 @@
     let drivers = [];
     let currentUser = null;
     let existingTrips = [];
+    let isEditMode = false;
+    let originalData = {};
 
     function formatDate(dateString) {
         if (!dateString) return '-';
@@ -290,6 +306,11 @@
         if (parts.length === 3) {
             return parts[2] + '.' + parts[1] + '.' + parts[0];
         }
+        return dateString;
+    }
+
+    function formatDateForInput(dateString) {
+        if (!dateString) return '';
         return dateString;
     }
 
@@ -322,6 +343,7 @@
         try {
             const response = await fetch(`/api/requests/${requestId}`);
             requestData = await response.json();
+            originalData = JSON.parse(JSON.stringify(requestData));
             await loadTrips();
             renderRequestInfo();
             checkButtonsVisibility();
@@ -341,9 +363,87 @@
         }
     }
 
+    function canEditRequest() {
+        const isOwner = currentUser && (currentUser.role === 'ADMIN' || currentUser.id === requestData?.owner?.id);
+        return isOwner && requestData?.status === 'NEW';
+    }
+
+    function enableEditMode() {
+        isEditMode = true;
+        renderRequestInfo();
+    }
+
+    function cancelEdit() {
+        isEditMode = false;
+        requestData = JSON.parse(JSON.stringify(originalData));
+        renderRequestInfo();
+    }
+
+    async function saveEdit() {
+        const volume = document.getElementById('edit_volume')?.value;
+        const pickupPoint = document.getElementById('edit_pickupPoint')?.value;
+        const deliveryPoint = document.getElementById('edit_deliveryPoint')?.value;
+        const pickupStartDate = document.getElementById('edit_pickupStartDate')?.value;
+        const pickupEndDate = document.getElementById('edit_pickupEndDate')?.value;
+        const pickupStartTime = document.getElementById('edit_pickupStartTime')?.value;
+        const pickupEndTime = document.getElementById('edit_pickupEndTime')?.value;
+
+        if (!volume || !pickupPoint || !deliveryPoint || !pickupStartDate || !pickupEndDate || !pickupStartTime || !pickupEndTime) {
+            showNotification('Заполните все поля', 'error');
+            return;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        if (pickupStartDate < today) {
+            showNotification('Дата начала погрузки не может быть раньше сегодняшнего дня', 'error');
+            return;
+        }
+
+        if (pickupStartDate > pickupEndDate) {
+            showNotification('Дата начала не может быть позже даты окончания', 'error');
+            return;
+        }
+
+        if (pickupStartTime >= pickupEndTime) {
+            showNotification('Время начала должно быть раньше времени окончания', 'error');
+            return;
+        }
+
+        const updateData = {
+            volume: parseFloat(volume),
+            pickupPoint: pickupPoint,
+            deliveryPoint: deliveryPoint,
+            pickupStartDate: pickupStartDate,
+            pickupEndDate: pickupEndDate,
+            pickupStartTime: pickupStartTime,
+            pickupEndTime: pickupEndTime
+        };
+
+        try {
+            const response = await fetch(`/api/requests/${requestId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updateData)
+            });
+
+            if (response.ok) {
+                showNotification('Заявка обновлена', 'success');
+                isEditMode = false;
+                await loadRequest();
+            } else {
+                const error = await response.text();
+                showNotification(error || 'Ошибка при обновлении', 'error');
+            }
+        } catch(e) {
+            console.error(e);
+            showNotification('Ошибка при обновлении', 'error');
+        }
+    }
+
     function renderRequestInfo() {
         const container = document.getElementById('requestInfo');
         const showProcessButton = (requestData.status === 'NEW' && (currentUser?.role === 'DISPATCHER' || currentUser?.role === 'ADMIN'));
+        const canEdit = canEditRequest();
 
         const totalVolume = requestData.volume;
         const assignedVolume = (existingTrips || [])
@@ -353,37 +453,104 @@
 
         const divisionName = requestData.owner?.division?.name || requestData.division?.name || 'Не указано';
 
-        // Форматируем даты и время
-        const pickupStartDate = formatDate(requestData.pickupStartDate);
-        const pickupEndDate = formatDate(requestData.pickupEndDate);
-        const pickupStartTime = formatTime(requestData.pickupStartTime);
-        const pickupEndTime = formatTime(requestData.pickupEndTime);
+        const pickupStartDateFormatted = formatDate(requestData.pickupStartDate);
+        const pickupEndDateFormatted = formatDate(requestData.pickupEndDate);
+        const pickupStartTimeFormatted = formatTime(requestData.pickupStartTime);
+        const pickupEndTimeFormatted = formatTime(requestData.pickupEndTime);
 
-        container.innerHTML = `
-            <div class="detail-header">
-                <div><span class="detail-label">Заявка №</span><span class="detail-value">${requestData.id}</span></div>
-                <div><span class="status-badge status-${getStatusClass(requestData.status)}">${getStatusText(requestData.status)}</span></div>
-            </div>
-            <div class="detail-grid">
-                <div class="detail-item"><div class="detail-label">Объем</div><div class="detail-value">${totalVolume} т</div></div>
-                <div class="detail-item"><div class="detail-label">Распределено</div><div class="detail-value">${assignedVolume} т</div></div>
-                <div class="detail-item"><div class="detail-label">Остаток</div><div class="detail-value ${remainingVolume < 0 ? 'warning' : ''}">${remainingVolume} т</div></div>
-                <div class="detail-item"><div class="detail-label">Пункт погрузки</div><div class="detail-value">${requestData.pickupPoint || '-'}</div></div>
-                <div class="detail-item"><div class="detail-label">Дата начала погрузки</div><div class="detail-value">${pickupStartDate}</div></div>
-                <div class="detail-item"><div class="detail-label">Время начала погрузки</div><div class="detail-value">${pickupStartTime}</div></div>
-                <div class="detail-item"><div class="detail-label">Пункт разгрузки</div><div class="detail-value">${requestData.deliveryPoint || '-'}</div></div>
-                <div class="detail-item"><div class="detail-label">Дата окончания погрузки</div><div class="detail-value">${pickupEndDate}</div></div>
-                <div class="detail-item"><div class="detail-label">Время окончания погрузки</div><div class="detail-value">${pickupEndTime}</div></div>
-                <div class="detail-item"><div class="detail-label">Владелец</div><div class="detail-value">${requestData.owner?.username || 'Не указан'}</div></div>
-                <div class="detail-item"><div class="detail-label">Подразделение</div><div class="detail-value">${divisionName}</div></div>
-                <div class="detail-item"><div class="detail-label">Дата создания</div><div class="detail-value">${formatDateTime(requestData.createdAt)}</div></div>
-            </div>
-            ${showProcessButton ? `
-                <div class="action-buttons">
-                    <button class="btn-primary" onclick="processRequest()">Обработать заявку</button>
+        if (isEditMode && canEdit) {
+            container.innerHTML = `
+                <div class="detail-header">
+                    <div><span class="detail-label">Заявка №</span><span class="detail-value">${requestData.id}</span></div>
+                    <div><span class="status-badge status-${getStatusClass(requestData.status)}">${getStatusText(requestData.status)}</span></div>
                 </div>
-            ` : ''}
-        `;
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Объем</div>
+                        <input type="number" id="edit_volume" step="0.1" class="detail-value editable" value="${requestData.volume}">
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Распределено</div>
+                        <div class="detail-value">${assignedVolume} т</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Остаток</div>
+                        <div class="detail-value ${remainingVolume < 0 ? 'warning' : ''}">${remainingVolume} т</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Пункт погрузки</div>
+                        <input type="text" id="edit_pickupPoint" class="detail-value editable" value="${requestData.pickupPoint || ''}">
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Дата начала погрузки</div>
+                        <input type="date" id="edit_pickupStartDate" class="detail-value editable" value="${requestData.pickupStartDate || ''}">
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Время начала погрузки</div>
+                        <input type="time" id="edit_pickupStartTime" class="detail-value editable" value="${requestData.pickupStartTime || ''}">
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Пункт разгрузки</div>
+                        <input type="text" id="edit_deliveryPoint" class="detail-value editable" value="${requestData.deliveryPoint || ''}">
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Дата окончания погрузки</div>
+                        <input type="date" id="edit_pickupEndDate" class="detail-value editable" value="${requestData.pickupEndDate || ''}">
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Время окончания погрузки</div>
+                        <input type="time" id="edit_pickupEndTime" class="detail-value editable" value="${requestData.pickupEndTime || ''}">
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Владелец</div>
+                        <div class="detail-value">${requestData.owner?.username || 'Не указан'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Подразделение</div>
+                        <div class="detail-value">${divisionName}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Дата создания</div>
+                        <div class="detail-value">${formatDateTime(requestData.createdAt)}</div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn-secondary" onclick="cancelEdit()">Отмена</button>
+                    <button class="btn-primary" onclick="saveEdit()">Сохранить изменения</button>
+                </div>
+            `;
+
+            const today = new Date().toISOString().split('T')[0];
+            const startDateInput = document.getElementById('edit_pickupStartDate');
+            const endDateInput = document.getElementById('edit_pickupEndDate');
+            if (startDateInput) startDateInput.min = today;
+            if (endDateInput) endDateInput.min = today;
+        } else {
+            container.innerHTML = `
+                <div class="detail-header">
+                    <div><span class="detail-label">Заявка №</span><span class="detail-value">${requestData.id}</span></div>
+                    <div><span class="status-badge status-${getStatusClass(requestData.status)}">${getStatusText(requestData.status)}</span></div>
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-item"><div class="detail-label">Объем</div><div class="detail-value">${totalVolume} т</div></div>
+                    <div class="detail-item"><div class="detail-label">Распределено</div><div class="detail-value">${assignedVolume} т</div></div>
+                    <div class="detail-item"><div class="detail-label">Остаток</div><div class="detail-value ${remainingVolume < 0 ? 'warning' : ''}">${remainingVolume} т</div></div>
+                    <div class="detail-item"><div class="detail-label">Пункт погрузки</div><div class="detail-value">${requestData.pickupPoint || '-'}</div></div>
+                    <div class="detail-item"><div class="detail-label">Дата начала погрузки</div><div class="detail-value">${pickupStartDateFormatted}</div></div>
+                    <div class="detail-item"><div class="detail-label">Время начала погрузки</div><div class="detail-value">${pickupStartTimeFormatted}</div></div>
+                    <div class="detail-item"><div class="detail-label">Пункт разгрузки</div><div class="detail-value">${requestData.deliveryPoint || '-'}</div></div>
+                    <div class="detail-item"><div class="detail-label">Дата окончания погрузки</div><div class="detail-value">${pickupEndDateFormatted}</div></div>
+                    <div class="detail-item"><div class="detail-label">Время окончания погрузки</div><div class="detail-value">${pickupEndTimeFormatted}</div></div>
+                    <div class="detail-item"><div class="detail-label">Владелец</div><div class="detail-value">${requestData.owner?.username || 'Не указан'}</div></div>
+                    <div class="detail-item"><div class="detail-label">Подразделение</div><div class="detail-value">${divisionName}</div></div>
+                    <div class="detail-item"><div class="detail-label">Дата создания</div><div class="detail-value">${formatDateTime(requestData.createdAt)}</div></div>
+                </div>
+                <div class="action-buttons">
+                    ${canEdit ? `<button class="btn-primary" onclick="enableEditMode()">✏️ Редактировать заявку</button>` : ''}
+                    ${showProcessButton ? `<button class="btn-primary" onclick="processRequest()">Обработать заявку</button>` : ''}
+                </div>
+            `;
+        }
     }
 
     function renderTrips(trips) {
