@@ -102,15 +102,89 @@
             flex-wrap: wrap;
             gap: 16px;
         }
-        .filter-group { display: flex; gap: 12px; flex-wrap: wrap; }
-        .filter-select, .search-input {
-            padding: 8px 16px;
+        .filter-group { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+        .btn-filter {
+            background: #f3f4f6;
             border: 1px solid #e5e7eb;
+            padding: 8px 16px;
             border-radius: 10px;
+            cursor: pointer;
             font-size: 14px;
-            background: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
         }
-        .search-input { width: 250px; }
+        .btn-filter:hover {
+            background: #e5e7eb;
+        }
+        .btn-filter.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .filter-panel {
+            display: none;
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .filter-panel.show {
+            display: block;
+        }
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .filter-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .filter-field label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .filter-field input, .filter-field select {
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .filter-field input:focus, .filter-field select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .btn-clear {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn-apply {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -239,6 +313,7 @@
             .sidebar { transform: translateX(-100%); }
             .main-content { margin-left: 0; }
             .form-row { grid-template-columns: 1fr; }
+            .filter-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -320,17 +395,65 @@
     <div class="content-panel">
         <div class="panel-header">
             <div class="filter-group">
-                <select id="statusFilter" class="filter-select">
-                    <option value="ALL">Все статусы</option>
-                    <option value="NEW">Новые</option>
-                    <option value="IN_PROGRESS">В работе</option>
-                    <option value="PROCESSED">Обработаны</option>
-                    <option value="COMPLETED">Завершены</option>
-                </select>
-                <input type="text" id="searchInput" placeholder="Поиск по заявкам..." class="search-input">
+                <button class="btn-filter" id="filterBtn">
+                    <span>🔍</span> Фильтр
+                </button>
             </div>
             <button class="btn-primary logist-only admin-only" id="createRequestBtn">+ Создать заявку</button>
         </div>
+
+        <!-- Панель расширенных фильтров -->
+        <div id="filterPanel" class="filter-panel">
+            <div class="filter-row">
+                <div class="filter-field">
+                    <label>Статус</label>
+                    <select id="filterStatus">
+                        <option value="ALL">Все</option>
+                        <option value="NEW">Новая</option>
+                        <option value="IN_PROGRESS">В работе</option>
+                        <option value="PROCESSED">Обработана</option>
+                        <option value="COMPLETED">Завершена</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>ID заявки</label>
+                    <input type="number" id="filterId" placeholder="Номер заявки">
+                </div>
+                <div class="filter-field">
+                    <label>Объем от (тонн)</label>
+                    <input type="number" id="filterVolumeFrom" step="0.1" placeholder="От">
+                </div>
+                <div class="filter-field">
+                    <label>Объем до (тонн)</label>
+                    <input type="number" id="filterVolumeTo" step="0.1" placeholder="До">
+                </div>
+                <div class="filter-field">
+                    <label>Пункт погрузки</label>
+                    <select id="filterPickupPoint">
+                        <option value="">Все</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>Пункт разгрузки</label>
+                    <select id="filterDeliveryPoint">
+                        <option value="">Все</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>Дата создания от</label>
+                    <input type="date" id="filterDateFrom">
+                </div>
+                <div class="filter-field">
+                    <label>Дата создания до</label>
+                    <input type="date" id="filterDateTo">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn-clear" onclick="clearFilters()">Сбросить фильтры</button>
+                <button class="btn-apply" onclick="applyAdvancedFilters()">Применить</button>
+            </div>
+        </div>
+
         <div id="requestsContainer" class="requests-container"><div class="loading">Загрузка...</div></div>
     </div>
 </div>
@@ -412,11 +535,62 @@
     let currentUserRole = '';
     let currentProductType = 'BRANDED';
     let allRequests = [];
+    let filterPanelVisible = false;
 
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('type') === 'NON_BRANDED') {
         currentProductType = 'NON_BRANDED';
         document.getElementById('page-title').innerText = 'Заявки (Небрендовая продукция)';
+    }
+
+    async function loadFilterPoints() {
+        try {
+            const [plants, warehouses] = await Promise.all([
+                fetch('/api/references/plants').then(r => r.json()),
+                fetch('/api/references/warehouses').then(r => r.json())
+            ]);
+
+            const pickupSelect = document.getElementById('filterPickupPoint');
+            const deliverySelect = document.getElementById('filterDeliveryPoint');
+
+            const plantOptions = plants.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+            const warehouseOptions = warehouses.map(w => `<option value="${w.name}">${w.name}</option>`).join('');
+
+            pickupSelect.innerHTML = '<option value="">Все</option>' + plantOptions;
+            deliverySelect.innerHTML = '<option value="">Все</option>' + warehouseOptions;
+        } catch(e) {
+            console.error('Ошибка загрузки пунктов для фильтра:', e);
+        }
+    }
+
+    document.getElementById('filterBtn')?.addEventListener('click', function() {
+        filterPanelVisible = !filterPanelVisible;
+        const panel = document.getElementById('filterPanel');
+        const btn = document.getElementById('filterBtn');
+        if (filterPanelVisible) {
+            panel.classList.add('show');
+            btn.classList.add('active');
+            loadFilterPoints();
+        } else {
+            panel.classList.remove('show');
+            btn.classList.remove('active');
+        }
+    });
+
+    function clearFilters() {
+        document.getElementById('filterStatus').value = 'ALL';
+        document.getElementById('filterId').value = '';
+        document.getElementById('filterVolumeFrom').value = '';
+        document.getElementById('filterVolumeTo').value = '';
+        document.getElementById('filterPickupPoint').value = '';
+        document.getElementById('filterDeliveryPoint').value = '';
+        document.getElementById('filterDateFrom').value = '';
+        document.getElementById('filterDateTo').value = '';
+        applyFilters();
+    }
+
+    function applyAdvancedFilters() {
+        applyFilters();
     }
 
     async function fetchCurrentUser() {
@@ -472,11 +646,47 @@
     }
 
     function applyFilters() {
-        const statusFilter = document.getElementById('statusFilter').value;
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const filterStatus = document.getElementById('filterStatus').value;
+        const filterId = document.getElementById('filterId').value;
+        const filterVolumeFrom = document.getElementById('filterVolumeFrom').value;
+        const filterVolumeTo = document.getElementById('filterVolumeTo').value;
+        const filterPickupPoint = document.getElementById('filterPickupPoint').value;
+        const filterDeliveryPoint = document.getElementById('filterDeliveryPoint').value;
+        const filterDateFrom = document.getElementById('filterDateFrom').value;
+        const filterDateTo = document.getElementById('filterDateTo').value;
+
         let filtered = [...allRequests];
-        if (statusFilter !== 'ALL') filtered = filtered.filter(r => r.status === statusFilter);
-        if (searchTerm) filtered = filtered.filter(r => r.id.toString().includes(searchTerm) || (r.pickupPoint && r.pickupPoint.toLowerCase().includes(searchTerm)));
+
+        if (filterStatus !== 'ALL') {
+            filtered = filtered.filter(r => r.status === filterStatus);
+        }
+
+        if (filterId) {
+            filtered = filtered.filter(r => r.id === parseInt(filterId));
+        }
+
+        if (filterVolumeFrom) {
+            filtered = filtered.filter(r => r.volume >= parseFloat(filterVolumeFrom));
+        }
+        if (filterVolumeTo) {
+            filtered = filtered.filter(r => r.volume <= parseFloat(filterVolumeTo));
+        }
+
+        if (filterPickupPoint) {
+            filtered = filtered.filter(r => r.pickupPoint === filterPickupPoint);
+        }
+
+        if (filterDeliveryPoint) {
+            filtered = filtered.filter(r => r.deliveryPoint === filterDeliveryPoint);
+        }
+
+        if (filterDateFrom) {
+            filtered = filtered.filter(r => r.createdAt && r.createdAt.split('T')[0] >= filterDateFrom);
+        }
+        if (filterDateTo) {
+            filtered = filtered.filter(r => r.createdAt && r.createdAt.split('T')[0] <= filterDateTo);
+        }
+
         renderRequests(filtered);
     }
 
@@ -647,8 +857,6 @@
         }
     }
 
-    document.getElementById('statusFilter').addEventListener('change', () => applyFilters());
-    document.getElementById('searchInput').addEventListener('input', () => applyFilters());
     document.getElementById('createRequestBtn').addEventListener('click', () => openCreateModal());
     document.querySelector('#createModal .close').addEventListener('click', closeCreateModal);
     window.onclick = (e) => { if (e.target === document.getElementById('createModal')) closeCreateModal(); };
