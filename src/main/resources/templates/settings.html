@@ -274,6 +274,7 @@
             <div class="menu-title" onclick="toggleSubmenu(this)">Настройки<span class="arrow">▼</span></div>
             <div class="submenu">
                 <div class="submenu-item" onclick="window.location.href='/settings'">Параметры</div>
+                <div class="submenu-item" onclick="window.location.href='/settings'">Интеграция с 1С</div>
                 <div class="submenu-item" onclick="window.location.href='/settings'">Применение обновлений</div>
                 <div class="submenu-item" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
                 <div class="submenu-item" onclick="window.location.href='/settings'">Пользователи</div>
@@ -305,7 +306,6 @@
     <div class="settings-group">
         <h3>Синхронизация с системой диспетчеризации</h3>
 
-        <!-- Настройки отправки рейсов -->
         <h4 style="margin: 16px 0 8px 0;">Отправка рейсов в диспетчеризацию</h4>
         <div class="setting-item">
             <span class="setting-label">Автоматическая отправка</span>
@@ -330,7 +330,6 @@
 
         <hr>
 
-        <!-- Настройки получения статусов -->
         <h4 style="margin: 16px 0 8px 0;">Получение статусов из диспетчеризации</h4>
         <div class="setting-item">
             <span class="setting-label">Автоматическое получение статусов</span>
@@ -348,25 +347,59 @@
 
         <hr>
 
-        <!-- Кнопки ручного управления -->
         <div class="sync-buttons">
             <button class="btn-primary" onclick="sendTripsToDispatch()">Отправить рейсы в диспетчеризацию</button>
             <button class="btn-primary" onclick="receiveStatusesFromDispatch()">Получить статусы из диспетчеризации</button>
             <button class="btn-warning" onclick="testDispatchConnection()">Проверить соединение</button>
         </div>
 
-        <!-- Результат операции -->
         <div id="syncResult" class="sync-status" style="display: none;"></div>
 
-        <!-- Текущие настройки -->
         <div id="currentSettings" class="current-settings">
             <strong>Текущие настройки синхронизации:</strong><br>
             Загрузка...
         </div>
 
-        <!-- Кнопка сохранения -->
         <div style="margin-top: 16px;">
             <button class="btn-success" onclick="saveAndApplySyncSettings()">Применить настройки синхронизации</button>
+        </div>
+    </div>
+
+    <!-- Блок интеграции с 1С -->
+    <div class="settings-group admin-only">
+        <h3>Интеграция с 1С</h3>
+
+        <div class="setting-item">
+            <span class="setting-label">Интеграция с 1С</span>
+            <div class="setting-value">
+                <input type="checkbox" id="onecIntegrationEnabled">
+                <span style="font-size: 12px; margin-left: 8px; color: var(--text-muted);">
+                    При включении редактирование справочников (подразделения, заводы, склады, перевозчики) будет запрещено. Данные будут синхронизироваться из 1С.
+                </span>
+            </div>
+        </div>
+
+        <div class="setting-item" id="onecSettings" style="display: none;">
+            <div class="setting-label">Настройки подключения к 1С</div>
+            <div class="setting-value" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                <input type="text" id="onecUrl" placeholder="URL API 1С" style="width: 100%;">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="onecUsername" placeholder="Логин" style="flex: 1;">
+                    <input type="password" id="onecPassword" placeholder="Пароль" style="flex: 1;">
+                </div>
+                <input type="number" id="onecSyncInterval" placeholder="Интервал синхронизации (сек)" style="width: 100%;" value="60" min="10" max="3600">
+            </div>
+        </div>
+
+        <div class="sync-buttons" id="onecButtons" style="display: none;">
+            <button class="btn-primary" onclick="syncFromOneC()">Синхронизировать с 1С (ручная)</button>
+            <button class="btn-secondary" onclick="testOneCConnection()">Проверить соединение</button>
+        </div>
+
+        <div id="onecResult" class="sync-status" style="display: none;"></div>
+
+        <div style="margin-top: 16px;">
+            <button class="btn-success" onclick="saveOneCSettings()">Сохранить настройки 1С</button>
         </div>
     </div>
 
@@ -450,56 +483,7 @@
         setTimeout(() => notification.remove(), 3000);
     }
 
-    // ========== Проверка соединения с диспетчеризацией ==========
-    async function testDispatchConnection() {
-        const resultDiv = document.getElementById('syncResult');
-        resultDiv.style.display = 'block';
-        resultDiv.className = 'sync-status info';
-        resultDiv.innerHTML = 'Проверка соединения с системой диспетчеризации...';
-
-        // URL системы диспетчеризации (порт 8081)
-        const dispatchUrl = 'http://localhost:8081';
-
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-            const response = await fetch(`${dispatchUrl}/api/statuses`, {
-                signal: controller.signal,
-                headers: {
-                    'Authorization': 'Basic ' + btoa('admin:admin123')
-                }
-            });
-
-            clearTimeout(timeoutId);
-
-            if (response.ok) {
-                resultDiv.className = 'sync-status success';
-                resultDiv.innerHTML = `✅ Соединение с системой диспетчеризации установлено.`;
-                showNotification('Система диспетчеризации доступна', 'success');
-            } else {
-                resultDiv.className = 'sync-status error';
-                resultDiv.innerHTML = `❌ Система диспетчеризации недоступна. Ошибка: ${response.status}`;
-                showNotification('Система диспетчеризации недоступна', 'error');
-            }
-        } catch(e) {
-            if (e.name === 'AbortError') {
-                resultDiv.className = 'sync-status error';
-                resultDiv.innerHTML = `❌ Система диспетчеризации не отвечает (таймаут 5 сек)`;
-                showNotification('Система диспетчеризации не отвечает', 'error');
-            } else {
-                resultDiv.className = 'sync-status error';
-                resultDiv.innerHTML = `❌ Система диспетчеризации недоступна. Ошибка: ${e.message}`;
-                showNotification('Система диспетчеризации недоступна', 'error');
-            }
-        }
-
-        setTimeout(() => {
-            resultDiv.style.display = 'none';
-        }, 5000);
-    }
-
-    // ========== Функции синхронизации ==========
+    // ========== Функции синхронизации с диспетчеризацией ==========
     async function sendTripsToDispatch() {
         const resultDiv = document.getElementById('syncResult');
         resultDiv.style.display = 'block';
@@ -561,7 +545,37 @@
         }, 5000);
     }
 
-    // ========== Сохранение и применение настроек ==========
+    async function testDispatchConnection() {
+        const resultDiv = document.getElementById('syncResult');
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'sync-status info';
+        resultDiv.innerHTML = 'Проверка соединения...';
+
+        try {
+            const response = await fetch('/api/sync/dispatch-statuses');
+
+            if (response.ok) {
+                const statuses = await response.json();
+                resultDiv.className = 'sync-status success';
+                resultDiv.innerHTML = `✅ Соединение установлено. Получено статусов: ${statuses.length}`;
+                showNotification('Соединение с диспетчеризацией установлено', 'success');
+            } else {
+                resultDiv.className = 'sync-status error';
+                resultDiv.innerHTML = `❌ Ошибка соединения: ${response.status}`;
+                showNotification('Не удалось подключиться к диспетчеризации', 'error');
+            }
+        } catch(e) {
+            resultDiv.className = 'sync-status error';
+            resultDiv.innerHTML = `❌ Не удалось подключиться: ${e.message}`;
+            showNotification('Ошибка подключения к системе диспетчеризации', 'error');
+        }
+
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    // ========== Настройки синхронизации ==========
     async function saveAndApplySyncSettings() {
         const sendEnabled = document.getElementById('sendEnabled').checked;
         const sendIntervalSeconds = parseInt(document.getElementById('sendInterval').value);
@@ -621,7 +635,6 @@
         }
     }
 
-    // ========== Загрузка текущих настроек ==========
     async function loadSyncSettings() {
         try {
             const response = await fetch('/api/sync/settings');
@@ -651,9 +664,175 @@
         }
     }
 
+    // ========== Функции интеграции с 1С ==========
+    function updateOneCSettingsVisibility() {
+        const isEnabled = document.getElementById('onecIntegrationEnabled').checked;
+        const settingsDiv = document.getElementById('onecSettings');
+        const buttonsDiv = document.getElementById('onecButtons');
+
+        if (isEnabled) {
+            settingsDiv.style.display = 'flex';
+            buttonsDiv.style.display = 'flex';
+        } else {
+            settingsDiv.style.display = 'none';
+            buttonsDiv.style.display = 'none';
+        }
+    }
+
+    async function syncFromOneC() {
+        const resultDiv = document.getElementById('onecResult');
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'sync-status info';
+        resultDiv.innerHTML = 'Запуск синхронизации с 1С...';
+
+        try {
+            const response = await fetch('/api/references/sync-from-1c', { method: 'POST' });
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                resultDiv.className = 'sync-status success';
+                resultDiv.innerHTML = '✅ Синхронизация с 1С выполнена успешно';
+                showNotification('Синхронизация с 1С выполнена', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                resultDiv.className = 'sync-status error';
+                resultDiv.innerHTML = '❌ ' + (data.error || 'Ошибка синхронизации');
+                showNotification(data.error || 'Ошибка синхронизации', 'error');
+            }
+        } catch(e) {
+            resultDiv.className = 'sync-status error';
+            resultDiv.innerHTML = '❌ Ошибка: ' + e.message;
+            showNotification('Ошибка синхронизации', 'error');
+        }
+
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    async function testOneCConnection() {
+        const resultDiv = document.getElementById('onecResult');
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'sync-status info';
+        resultDiv.innerHTML = 'Проверка соединения с 1С...';
+
+        const url = document.getElementById('onecUrl').value;
+        const username = document.getElementById('onecUsername').value;
+        const password = document.getElementById('onecPassword').value;
+
+        if (!url) {
+            resultDiv.className = 'sync-status error';
+            resultDiv.innerHTML = '❌ Укажите URL API 1С';
+            showNotification('Укажите URL API 1С', 'error');
+            return;
+        }
+
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            const response = await fetch(`${url}/health`, {
+                headers: {
+                    'Authorization': 'Basic ' + btoa(username + ':' + password)
+                },
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (response.ok) {
+                resultDiv.className = 'sync-status success';
+                resultDiv.innerHTML = '✅ Соединение с 1С установлено';
+                showNotification('Соединение с 1С установлено', 'success');
+            } else {
+                resultDiv.className = 'sync-status error';
+                resultDiv.innerHTML = '❌ Ошибка соединения с 1С: ' + response.status;
+                showNotification('Ошибка соединения с 1С', 'error');
+            }
+        } catch(e) {
+            resultDiv.className = 'sync-status error';
+            resultDiv.innerHTML = '❌ Не удалось подключиться к 1С: ' + e.message;
+            showNotification('Ошибка подключения к 1С', 'error');
+        }
+
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    async function loadOneCSettings() {
+        try {
+            const response = await fetch('/api/sync/onec/settings');
+            if (response.ok) {
+                const settings = await response.json();
+                document.getElementById('onecIntegrationEnabled').checked = settings.integrationEnabled;
+                document.getElementById('onecUrl').value = settings.apiUrl;
+                document.getElementById('onecUsername').value = settings.username;
+                document.getElementById('onecSyncInterval').value = settings.syncInterval;
+                updateOneCSettingsVisibility();
+            }
+        } catch(e) {
+            console.error('Ошибка загрузки настроек 1С:', e);
+        }
+    }
+
+    async function saveOneCSettings() {
+        const integrationEnabled = document.getElementById('onecIntegrationEnabled').checked;
+        const apiUrl = document.getElementById('onecUrl').value;
+        const username = document.getElementById('onecUsername').value;
+        const password = document.getElementById('onecPassword').value;
+        const syncInterval = parseInt(document.getElementById('onecSyncInterval').value);
+
+        if (integrationEnabled && !apiUrl) {
+            showNotification('Укажите URL API 1С', 'error');
+            return;
+        }
+
+        const settings = {
+            integrationEnabled: integrationEnabled,
+            apiUrl: apiUrl,
+            username: username,
+            password: password,
+            syncInterval: syncInterval
+        };
+
+        const saveBtn = event.target;
+        const originalText = saveBtn.innerText;
+        saveBtn.disabled = true;
+        saveBtn.innerText = 'Сохранение...';
+
+        try {
+            const response = await fetch('/api/sync/onec/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                showNotification('Настройки 1С сохранены', 'success');
+                updateOneCSettingsVisibility();
+                if (integrationEnabled) {
+                    showNotification('Включен режим интеграции с 1С. Редактирование справочников будет заблокировано после перезагрузки страницы.', 'info');
+                }
+            } else {
+                showNotification(result.message || 'Ошибка при сохранении настроек', 'error');
+            }
+        } catch(e) {
+            console.error('Ошибка:', e);
+            showNotification('Ошибка при сохранении настроек: ' + e.message, 'error');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerText = originalText;
+        }
+    }
+
+    document.getElementById('onecIntegrationEnabled')?.addEventListener('change', updateOneCSettingsVisibility);
+
     // ========== Инициализация ==========
     loadCurrentUser();
     loadSyncSettings();
+    loadOneCSettings();
 </script>
 </body>
 </html>
