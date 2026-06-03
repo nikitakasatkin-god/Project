@@ -5,7 +5,6 @@
     <title>Настройки - Логистика</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS переменные для тем */
         :root {
             --bg-primary: #f5f7fb;
             --bg-secondary: #ffffff;
@@ -73,7 +72,6 @@
         .arrow { font-size: 12px; transition: transform 0.2s; }
         .has-submenu.open .arrow { transform: rotate(180deg); }
 
-        /* Скрытие элементов по ролям */
         .logist-only { display: none; }
         .dispatcher-only { display: none; }
         .admin-only { display: none; }
@@ -167,6 +165,38 @@
             border-radius: 8px;
             cursor: pointer;
         }
+        .btn-success {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-warning:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+        }
+        .sync-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
         .sync-status {
             margin-top: 12px;
             padding: 10px;
@@ -184,41 +214,6 @@
         .sync-status.info {
             background: #dbeafe;
             color: #2563eb;
-        }
-        textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-family: inherit;
-            background: var(--input-bg);
-            color: var(--text-primary);
-        }
-        input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-        .sync-buttons {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-top: 16px;
-        }
-        .mappings-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 16px;
-        }
-        .mappings-table th, .mappings-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .mappings-table th {
-            background: var(--hover-bg);
-            font-weight: 600;
-            color: var(--text-secondary);
         }
         .current-settings {
             background: var(--hover-bg);
@@ -272,6 +267,7 @@
                 <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
                 <div class="submenu-item" onclick="window.location.href='/references#plants'">Заводы</div>
                 <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
+                <div class="submenu-item" onclick="window.location.href='/references#dispatch-mappings'">Сопоставление статусов</div>
             </div>
         </div>
         <div class="menu-item has-submenu admin-only" style="background: var(--hover-bg);">
@@ -309,18 +305,8 @@
     <div class="settings-group">
         <h3>Синхронизация с системой диспетчеризации</h3>
 
-        <!-- Настройки подключения -->
-        <div class="setting-item">
-            <span class="setting-label">URL системы диспетчеризации</span>
-            <div class="setting-value">
-                <input type="text" id="dispatchUrl" value="http://localhost:8081" style="width: 300px;">
-            </div>
-        </div>
-
-        <hr>
-
         <!-- Настройки отправки рейсов -->
-        <h4 style="margin: 16px 0 8px 0;">📤 Отправка рейсов в диспетчеризацию</h4>
+        <h4 style="margin: 16px 0 8px 0;">Отправка рейсов в диспетчеризацию</h4>
         <div class="setting-item">
             <span class="setting-label">Автоматическая отправка</span>
             <div class="setting-value">
@@ -345,7 +331,7 @@
         <hr>
 
         <!-- Настройки получения статусов -->
-        <h4 style="margin: 16px 0 8px 0;">📥 Получение статусов из диспетчеризации</h4>
+        <h4 style="margin: 16px 0 8px 0;">Получение статусов из диспетчеризации</h4>
         <div class="setting-item">
             <span class="setting-label">Автоматическое получение статусов</span>
             <div class="setting-value">
@@ -364,9 +350,9 @@
 
         <!-- Кнопки ручного управления -->
         <div class="sync-buttons">
-            <button class="btn-primary" onclick="sendTripsToDispatch()">📤 Отправить рейсы в диспетчеризацию (ручная)</button>
-            <button class="btn-primary" onclick="receiveStatusesFromDispatch()">📥 Получить статусы из диспетчеризации (ручная)</button>
-            <button class="btn-secondary" onclick="testDispatchConnection()">🔌 Проверить соединение</button>
+            <button class="btn-primary" onclick="sendTripsToDispatch()">Отправить рейсы в диспетчеризацию</button>
+            <button class="btn-primary" onclick="receiveStatusesFromDispatch()">Получить статусы из диспетчеризации</button>
+            <button class="btn-warning" onclick="testDispatchConnection()">Проверить соединение</button>
         </div>
 
         <!-- Результат операции -->
@@ -374,87 +360,23 @@
 
         <!-- Текущие настройки -->
         <div id="currentSettings" class="current-settings">
-            <strong>Текущие настройки:</strong><br>
+            <strong>Текущие настройки синхронизации:</strong><br>
             Загрузка...
         </div>
 
         <!-- Кнопка сохранения -->
         <div style="margin-top: 16px;">
-            <button class="btn-primary" onclick="saveSyncSettings()">💾 Сохранить настройки синхронизации</button>
-            <span style="margin-left: 12px; font-size: 12px; color: var(--text-muted);">
-                ⚠️ Для применения изменений требуется перезапуск приложения
-            </span>
+            <button class="btn-success" onclick="saveAndApplySyncSettings()">Применить настройки синхронизации</button>
         </div>
     </div>
 
-    <!-- Блок сопоставления статусов (только для админа) -->
-    <div class="settings-group admin-only">
-        <h3>Сопоставление статусов</h3>
-        <div class="setting-item">
-            <span class="setting-label">Статусы из системы диспетчеризации</span>
-            <div class="setting-value">
-                <select id="dispatchStatusSelect" style="width: 200px;">
-                    <option value="">Загрузка...</option>
-                </select>
-                <span style="margin: 0 8px;">→</span>
-                <select id="localStatusSelect" style="width: 200px;">
-                    <option value="">Выберите локальный статус</option>
-                    <option value="NEW">Новый</option>
-                    <option value="ARRIVED_LOADING">Прибыл на погрузку</option>
-                    <option value="LOADED">Погружен</option>
-                    <option value="IN_TRANSIT">В пути</option>
-                    <option value="ARRIVED_UNLOADING">Прибыл на выгрузку</option>
-                    <option value="UNLOADED">Выгружен</option>
-                    <option value="PROCESSED">Обработан</option>
-                    <option value="CANCELLED">Отменен</option>
-                </select>
-                <button class="btn-secondary" onclick="saveStatusMapping()" style="margin-left: 12px;">Сохранить</button>
-            </div>
-        </div>
-        <div id="mappingsList"></div>
-    </div>
-
-    <!-- Блок применения обновлений (только для админа) -->
-    <div class="settings-group admin-only">
-        <h3>Применение обновлений</h3>
-        <div class="setting-item">
-            <span class="setting-label">Текущая версия</span>
-            <div class="setting-value">v1.0.0</div>
-        </div>
-        <div class="setting-item">
-            <span class="setting-label">Доступна новая версия</span>
-            <div class="setting-value">Нет</div>
-        </div>
-        <div class="setting-item">
-            <span class="setting-label">Автоматическая проверка</span>
-            <div class="setting-value">
-                <input type="checkbox" checked>
-            </div>
-        </div>
-        <div style="margin-top: 16px;">
-            <button class="btn-primary" onclick="checkUpdates()">Проверить обновления</button>
-        </div>
-    </div>
-
-    <!-- Блок сообщения о недоступности (только для админа) -->
-    <div class="settings-group admin-only">
-        <h3>Сообщение о недоступности системы</h3>
-        <div class="setting-item" style="flex-direction: column; align-items: stretch;">
-            <span class="setting-label" style="margin-bottom: 8px;">Текст сообщения</span>
-            <textarea id="maintenanceMsg" rows="3" style="width: 100%;">Система временно недоступна. Ведутся технические работы.</textarea>
-        </div>
-        <div style="margin-top: 16px;">
-            <button class="btn-primary" onclick="saveMaintenanceMessage()">Сохранить сообщение</button>
-        </div>
-    </div>
-
-    <!-- Блок оформления для всех -->
+    <!-- Блок оформления -->
     <div class="settings-group">
         <h3>Оформление</h3>
         <div class="setting-item">
             <span class="setting-label">Тема оформления</span>
             <div class="setting-value">
-                <button class="btn-secondary" onclick="toggleTheme()">Сменить тему (светлая/темная)</button>
+                <button class="btn-secondary" onclick="toggleTheme()">Сменить тему</button>
             </div>
         </div>
     </div>
@@ -486,7 +408,6 @@
     document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
     initTheme();
 
-    // ========== Функции меню ==========
     function toggleSubmenu(element) {
         const menuItem = element.closest('.has-submenu');
         menuItem.classList.toggle('open');
@@ -517,7 +438,7 @@
             bottom: 20px;
             right: 20px;
             padding: 12px 20px;
-            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b'};
             color: white;
             border-radius: 10px;
             z-index: 9999;
@@ -529,12 +450,61 @@
         setTimeout(() => notification.remove(), 3000);
     }
 
+    // ========== Проверка соединения с диспетчеризацией ==========
+    async function testDispatchConnection() {
+        const resultDiv = document.getElementById('syncResult');
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'sync-status info';
+        resultDiv.innerHTML = 'Проверка соединения с системой диспетчеризации...';
+
+        // URL системы диспетчеризации (порт 8081)
+        const dispatchUrl = 'http://localhost:8081';
+
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            const response = await fetch(`${dispatchUrl}/api/statuses`, {
+                signal: controller.signal,
+                headers: {
+                    'Authorization': 'Basic ' + btoa('admin:admin123')
+                }
+            });
+
+            clearTimeout(timeoutId);
+
+            if (response.ok) {
+                resultDiv.className = 'sync-status success';
+                resultDiv.innerHTML = `✅ Соединение с системой диспетчеризации установлено.`;
+                showNotification('Система диспетчеризации доступна', 'success');
+            } else {
+                resultDiv.className = 'sync-status error';
+                resultDiv.innerHTML = `❌ Система диспетчеризации недоступна. Ошибка: ${response.status}`;
+                showNotification('Система диспетчеризации недоступна', 'error');
+            }
+        } catch(e) {
+            if (e.name === 'AbortError') {
+                resultDiv.className = 'sync-status error';
+                resultDiv.innerHTML = `❌ Система диспетчеризации не отвечает (таймаут 5 сек)`;
+                showNotification('Система диспетчеризации не отвечает', 'error');
+            } else {
+                resultDiv.className = 'sync-status error';
+                resultDiv.innerHTML = `❌ Система диспетчеризации недоступна. Ошибка: ${e.message}`;
+                showNotification('Система диспетчеризации недоступна', 'error');
+            }
+        }
+
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+        }, 5000);
+    }
+
     // ========== Функции синхронизации ==========
     async function sendTripsToDispatch() {
         const resultDiv = document.getElementById('syncResult');
         resultDiv.style.display = 'block';
         resultDiv.className = 'sync-status info';
-        resultDiv.innerHTML = '⏳ Отправка рейсов в систему диспетчеризации...';
+        resultDiv.innerHTML = 'Отправка рейсов в систему диспетчеризации...';
 
         try {
             const response = await fetch('/api/sync/send-trips', { method: 'POST' });
@@ -564,7 +534,7 @@
         const resultDiv = document.getElementById('syncResult');
         resultDiv.style.display = 'block';
         resultDiv.className = 'sync-status info';
-        resultDiv.innerHTML = '⏳ Получение статусов из системы диспетчеризации...';
+        resultDiv.innerHTML = 'Получение статусов из системы диспетчеризации...';
 
         try {
             const response = await fetch('/api/sync/receive-statuses', { method: 'POST' });
@@ -574,7 +544,6 @@
                 resultDiv.className = 'sync-status success';
                 resultDiv.innerHTML = `✅ ${data.message}`;
                 showNotification(data.message, 'success');
-                // Обновляем страницу, чтобы показать новые статусы
                 setTimeout(() => location.reload(), 1500);
             } else {
                 resultDiv.className = 'sync-status error';
@@ -592,82 +561,8 @@
         }, 5000);
     }
 
-    async function testDispatchConnection() {
-        const resultDiv = document.getElementById('syncResult');
-        resultDiv.style.display = 'block';
-        resultDiv.className = 'sync-status info';
-        resultDiv.innerHTML = '⏳ Проверка соединения...';
-
-        const dispatchUrl = document.getElementById('dispatchUrl').value;
-
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-            const response = await fetch(`${dispatchUrl}/api/statuses`, {
-                headers: {
-                    'Authorization': 'Basic ' + btoa('admin:admin123')
-                },
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-
-            if (response.ok) {
-                const statuses = await response.json();
-                resultDiv.className = 'sync-status success';
-                resultDiv.innerHTML = `✅ Соединение установлено. Получено статусов: ${statuses.length}`;
-                showNotification('Соединение с диспетчеризацией установлено', 'success');
-
-                const select = document.getElementById('dispatchStatusSelect');
-                select.innerHTML = '<option value="">Выберите статус</option>' +
-                    statuses.map(s => `<option value="${s.id}">${s.name} - ${s.description || ''}</option>`).join('');
-            } else {
-                resultDiv.className = 'sync-status error';
-                resultDiv.innerHTML = `❌ Ошибка соединения: ${response.status}`;
-                showNotification('Не удалось подключиться к диспетчеризации', 'error');
-            }
-        } catch(e) {
-            resultDiv.className = 'sync-status error';
-            resultDiv.innerHTML = `❌ Не удалось подключиться: ${e.message}`;
-            showNotification('Ошибка подключения к системе диспетчеризации', 'error');
-        }
-
-        setTimeout(() => {
-            resultDiv.style.display = 'none';
-        }, 5000);
-    }
-
-    // ========== Управление настройками синхронизации ==========
-    async function loadSyncSettings() {
-        try {
-            const response = await fetch('/api/sync/settings');
-            if (response.ok) {
-                const settings = await response.json();
-                document.getElementById('sendEnabled').checked = settings.sendEnabled;
-                document.getElementById('sendInterval').value = settings.sendIntervalSeconds;
-                document.getElementById('sendBatchSize').value = settings.sendBatchSize;
-                document.getElementById('receiveEnabled').checked = settings.receiveEnabled;
-                document.getElementById('receiveInterval').value = settings.receiveIntervalSeconds;
-
-                const settingsDiv = document.getElementById('currentSettings');
-                settingsDiv.innerHTML = `
-                    <strong>Текущие настройки синхронизации:</strong><br>
-                    • 📤 Отправка рейсов: ${settings.sendEnabled ? '✅ Включена' : '❌ Отключена'}<br>
-                    • 📤 Интервал отправки: ${settings.sendIntervalSeconds} секунд<br>
-                    • 📤 Размер пакета: ${settings.sendBatchSize} рейсов<br>
-                    • 📥 Получение статусов: ${settings.receiveEnabled ? '✅ Включено' : '❌ Отключено'}<br>
-                    • 📥 Интервал получения: ${settings.receiveIntervalSeconds} секунд
-                `;
-            } else {
-                document.getElementById('currentSettings').innerHTML = '<strong>Текущие настройки:</strong><br>Не удалось загрузить';
-            }
-        } catch(e) {
-            console.error('Ошибка загрузки настроек:', e);
-            document.getElementById('currentSettings').innerHTML = '<strong>Текущие настройки:</strong><br>Ошибка загрузки';
-        }
-    }
-
-    function saveSyncSettings() {
+    // ========== Сохранение и применение настроек ==========
+    async function saveAndApplySyncSettings() {
         const sendEnabled = document.getElementById('sendEnabled').checked;
         const sendIntervalSeconds = parseInt(document.getElementById('sendInterval').value);
         const sendBatchSize = parseInt(document.getElementById('sendBatchSize').value);
@@ -689,170 +584,75 @@
             return;
         }
 
-        const dispatchUrl = document.getElementById('dispatchUrl').value;
+        const settings = {
+            sendEnabled: sendEnabled,
+            sendIntervalSeconds: sendIntervalSeconds,
+            sendBatchSize: sendBatchSize,
+            receiveEnabled: receiveEnabled,
+            receiveIntervalSeconds: receiveIntervalSeconds
+        };
 
-        // Сохраняем настройки в localStorage
-        localStorage.setItem('dispatch_url', dispatchUrl);
-        localStorage.setItem('sync_send_enabled', sendEnabled);
-        localStorage.setItem('sync_send_interval', sendIntervalSeconds);
-        localStorage.setItem('sync_send_batch_size', sendBatchSize);
-        localStorage.setItem('sync_receive_enabled', receiveEnabled);
-        localStorage.setItem('sync_receive_interval', receiveIntervalSeconds);
-
-        showNotification('Настройки сохранены. Перезапустите приложение для полного применения изменений.', 'success');
-    }
-
-    function loadSavedSettings() {
-        const savedUrl = localStorage.getItem('dispatch_url');
-        const savedSendEnabled = localStorage.getItem('sync_send_enabled');
-        const savedSendInterval = localStorage.getItem('sync_send_interval');
-        const savedSendBatchSize = localStorage.getItem('sync_send_batch_size');
-        const savedReceiveEnabled = localStorage.getItem('sync_receive_enabled');
-        const savedReceiveInterval = localStorage.getItem('sync_receive_interval');
-
-        if (savedUrl) document.getElementById('dispatchUrl').value = savedUrl;
-        if (savedSendEnabled !== null) document.getElementById('sendEnabled').checked = savedSendEnabled === 'true';
-        if (savedSendInterval) document.getElementById('sendInterval').value = savedSendInterval;
-        if (savedSendBatchSize) document.getElementById('sendBatchSize').value = savedSendBatchSize;
-        if (savedReceiveEnabled !== null) document.getElementById('receiveEnabled').checked = savedReceiveEnabled === 'true';
-        if (savedReceiveInterval) document.getElementById('receiveInterval').value = savedReceiveInterval;
-    }
-
-    // ========== Функции для статусов ==========
-    async function saveStatusMapping() {
-        const dispatchStatusId = document.getElementById('dispatchStatusSelect').value;
-        const localStatus = document.getElementById('localStatusSelect').value;
-
-        if (!dispatchStatusId || !localStatus) {
-            alert('Выберите статус из системы диспетчеризации и локальный статус');
-            return;
-        }
+        const saveBtn = event.target;
+        const originalText = saveBtn.innerText;
+        saveBtn.disabled = true;
+        saveBtn.innerText = 'Применение...';
 
         try {
-            const response = await fetch('/api/status-mappings', {
+            const response = await fetch('/api/sync/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    dispatchStatusId: parseInt(dispatchStatusId),
-                    localStatus: localStatus
-                })
+                body: JSON.stringify(settings)
             });
 
-            if (response.ok) {
-                alert('Сопоставление сохранено');
-                loadMappings();
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                showNotification('Настройки применены', 'success');
+                await loadSyncSettings();
             } else {
-                alert('Ошибка при сохранении');
+                showNotification(result.message || 'Ошибка при применении настроек', 'error');
             }
         } catch(e) {
-            alert('Ошибка: ' + e.message);
+            console.error('Ошибка:', e);
+            showNotification('Ошибка при применении настроек: ' + e.message, 'error');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerText = originalText;
         }
     }
 
-    async function loadMappings() {
+    // ========== Загрузка текущих настроек ==========
+    async function loadSyncSettings() {
         try {
-            const response = await fetch('/api/status-mappings');
-            const mappings = await response.json();
-
-            const container = document.getElementById('mappingsList');
-            if (!mappings.length) {
-                container.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-muted);">Нет настроенных сопоставлений</div>';
-                return;
-            }
-
-            container.innerHTML = `
-                <table class="mappings-table">
-                    <thead>
-                        <tr>
-                            <th>Статус диспетчеризации</th>
-                            <th>→</th>
-                            <th>Локальный статус</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${mappings.map(m => `
-                            <tr>
-                                <td>${m.dispatchStatusName || `ID: ${m.dispatchStatusId}`}</td>
-                                <td>→</span></span>
-                                <td>${getLocalStatusName(m.localStatus)}</span></span>
-                                <td>
-                                    <button class="btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="deleteMapping(${m.id})">Удалить</button>
-                                 </span>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-        } catch(e) {
-            console.error('Ошибка загрузки сопоставлений:', e);
-        }
-    }
-
-    function getLocalStatusName(status) {
-        const names = {
-            'NEW': 'Новый',
-            'ARRIVED_LOADING': 'Прибыл на погрузку',
-            'LOADED': 'Погружен',
-            'IN_TRANSIT': 'В пути',
-            'ARRIVED_UNLOADING': 'Прибыл на выгрузку',
-            'UNLOADED': 'Выгружен',
-            'PROCESSED': 'Обработан',
-            'CANCELLED': 'Отменен'
-        };
-        return names[status] || status;
-    }
-
-    async function deleteMapping(id) {
-        if (!confirm('Удалить сопоставление?')) return;
-
-        try {
-            const response = await fetch(`/api/status-mappings/${id}`, { method: 'DELETE' });
+            const response = await fetch('/api/sync/settings');
             if (response.ok) {
-                alert('Сопоставление удалено');
-                loadMappings();
+                const settings = await response.json();
+                document.getElementById('sendEnabled').checked = settings.sendEnabled;
+                document.getElementById('sendInterval').value = settings.sendIntervalSeconds;
+                document.getElementById('sendBatchSize').value = settings.sendBatchSize;
+                document.getElementById('receiveEnabled').checked = settings.receiveEnabled;
+                document.getElementById('receiveInterval').value = settings.receiveIntervalSeconds;
+
+                const settingsDiv = document.getElementById('currentSettings');
+                settingsDiv.innerHTML = `
+                    <strong>Текущие настройки синхронизации:</strong><br>
+                    • Отправка рейсов: ${settings.sendEnabled ? 'Включена' : 'Отключена'}<br>
+                    • Интервал отправки: ${settings.sendIntervalSeconds} секунд<br>
+                    • Размер пакета: ${settings.sendBatchSize} рейсов<br>
+                    • Получение статусов: ${settings.receiveEnabled ? 'Включено' : 'Отключено'}<br>
+                    • Интервал получения: ${settings.receiveIntervalSeconds} секунд
+                `;
             } else {
-                alert('Ошибка при удалении');
+                document.getElementById('currentSettings').innerHTML = '<strong>Текущие настройки:</strong><br>Не удалось загрузить';
             }
         } catch(e) {
-            alert('Ошибка: ' + e.message);
+            console.error('Ошибка загрузки настроек:', e);
+            document.getElementById('currentSettings').innerHTML = '<strong>Текущие настройки:</strong><br>Ошибка загрузки';
         }
     }
-
-    // ========== Прочие функции ==========
-    function saveMaintenanceMessage() {
-        const message = document.getElementById('maintenanceMsg').value;
-        localStorage.setItem('maintenanceMessage', message);
-        alert('Сообщение сохранено');
-    }
-
-    function loadMaintenanceMessage() {
-        const saved = localStorage.getItem('maintenanceMessage');
-        if (saved) {
-            const msgField = document.getElementById('maintenanceMsg');
-            if (msgField) msgField.value = saved;
-        }
-    }
-
-    function checkUpdates() {
-        alert('Проверка обновлений... (заглушка)\nТекущая версия: v1.0.0');
-    }
-
-    // ========== CSS анимация ==========
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-    `;
-    document.head.appendChild(style);
 
     // ========== Инициализация ==========
     loadCurrentUser();
-    loadMaintenanceMessage();
-    loadMappings();
-    loadSavedSettings();
     loadSyncSettings();
 </script>
 </body>
