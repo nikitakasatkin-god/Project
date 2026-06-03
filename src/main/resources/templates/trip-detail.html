@@ -19,6 +19,8 @@
             --shadow: 0 1px 3px rgba(0,0,0,0.1);
             --input-bg: #ffffff;
             --hover-bg: #f9fafb;
+            --primary-color: #2a5298;
+            --primary-hover: #1e3c72;
         }
 
         body.dark-theme {
@@ -34,6 +36,8 @@
             --shadow: 0 1px 3px rgba(0,0,0,0.3);
             --input-bg: #1e2a4a;
             --hover-bg: #1a2744;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -72,6 +76,10 @@
         .submenu-item:hover { background: var(--hover-bg); color: #667eea; }
         .arrow { font-size: 12px; transition: transform 0.2s; }
         .has-submenu.open .arrow { transform: rotate(180deg); }
+
+        .admin-only { display: none; }
+        body[data-role="ADMIN"] .admin-only { display: block; }
+
         .main-content { margin-left: 260px; padding: 24px; }
         .top-bar {
             background: var(--header-bg);
@@ -87,7 +95,7 @@
         .page-title { font-size: 24px; font-weight: 700; color: var(--text-primary); }
         .user-info { display: flex; align-items: center; gap: 12px; }
         .logout-btn { padding: 8px 16px; background: #fee2e2; color: #dc2626; border-radius: 8px; text-decoration: none; font-size: 14px; }
-        .back-btn { background: none; border: none; font-size: 14px; color: #667eea; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .back-btn { background: none; border: none; font-size: 14px; color: var(--primary-color); cursor: pointer; display: flex; align-items: center; gap: 4px; }
         .theme-toggle {
             background: none;
             border: 1px solid var(--border-color);
@@ -132,6 +140,9 @@
         .status-trip-new { background: #f3f4f6; color: #6b7280; }
         .status-trip-arrived_loading { background: #fef3c7; color: #d97706; }
         .status-trip-loaded { background: #dbeafe; color: #2563eb; }
+        .status-trip-in_transit { background: #eab308; color: white; }
+        .status-trip-arrived_unloading { background: #fef3c7; color: #d97706; }
+        .status-trip-unloaded { background: #d1fae5; color: #059669; }
         .status-trip-processed { background: #d1fae5; color: #059669; }
         .status-trip-cancelled { background: #fee2e2; color: #dc2626; }
         .sync-badge {
@@ -154,6 +165,10 @@
             cursor: pointer;
             font-weight: 500;
         }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
         .btn-secondary { background: var(--hover-bg); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; cursor: pointer; }
         .btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
         .btn-warning { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
@@ -173,13 +188,22 @@
             color: var(--text-secondary);
         }
         .link-button {
-            color: #667eea;
+            color: var(--primary-color);
             text-decoration: none;
             font-weight: 500;
         }
         .history-system { color: #667eea; font-weight: 500; }
         .history-user { color: var(--text-secondary); }
         .loading { text-align: center; padding: 40px; color: var(--text-muted); }
+        .status-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+        }
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -214,8 +238,6 @@
             <div class="menu-title" onclick="toggleSubmenu(this)">Справочники<span class="arrow">▼</span></div>
             <div class="submenu">
                 <div class="submenu-item" onclick="window.location.href='/references#divisions'">Подразделения</div>
-                <div class="submenu-item" onclick="window.location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
-                <div class="submenu-item" onclick="window.location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
                 <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
                 <div class="submenu-item" onclick="window.location.href='/references#plants'">Заводы</div>
                 <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
@@ -322,6 +344,8 @@
             'ARRIVED_LOADING': 'Прибыл на погрузку',
             'LOADED': 'Погружен',
             'IN_TRANSIT': 'В пути',
+            'ARRIVED_UNLOADING': 'Прибыл на выгрузку',
+            'UNLOADED': 'Выгружен',
             'PROCESSED': 'Обработан',
             'CANCELLED': 'Отменен',
             'DELETED': 'Удален'
@@ -334,11 +358,28 @@
             'NEW': 'new',
             'ARRIVED_LOADING': 'arrived_loading',
             'LOADED': 'loaded',
-            'IN_TRANSIT': 'loaded',
+            'IN_TRANSIT': 'in_transit',
+            'ARRIVED_UNLOADING': 'arrived_unloading',
+            'UNLOADED': 'unloaded',
             'PROCESSED': 'processed',
             'CANCELLED': 'cancelled'
         };
         return map[status] || 'new';
+    }
+
+    function getStatusDisplayNameFromCode(statusCode) {
+        const map = {
+            'NEW': 'Новый',
+            'ARRIVED_LOADING': 'Прибыл на погрузку',
+            'LOADED': 'Погружен',
+            'IN_TRANSIT': 'В пути',
+            'ARRIVED_UNLOADING': 'Прибыл на выгрузку',
+            'UNLOADED': 'Выгружен',
+            'PROCESSED': 'Обработан',
+            'CANCELLED': 'Отменен',
+            'DELETED': 'Удален'
+        };
+        return map[statusCode] || statusCode;
     }
 
     function getSyncText(trip) {
@@ -400,7 +441,7 @@
             }
             tripData = await response.json();
             renderTripInfo();
-            loadHistory();
+            renderHistory(tripData.history);
         } catch(e) {
             console.error(e);
             document.getElementById('tripInfo').innerHTML = '<div class="loading">Ошибка загрузки рейса</div>';
@@ -420,11 +461,13 @@
         const syncText = getSyncText(tripData);
         const syncClass = getSyncClass(tripData);
         const requestId = tripData.requestId || '?';
+        const statusText = getStatusText(tripData.status);
+        const statusClass = getStatusClass(tripData.status);
 
         container.innerHTML = `
             <div class="detail-header">
                 <div><span class="detail-label">Рейс №</span><span class="detail-value">${tripData.id}</span></div>
-                <div><span class="status-badge status-trip-${getStatusClass(tripData.status)}">${getStatusText(tripData.status)}</span></div>
+                <div><span class="status-badge status-trip-${statusClass}">${statusText}</span></div>
             </div>
             <div class="detail-grid">
                 <div class="detail-item"><div class="detail-label">Заявка</div><div class="detail-value"><a href="/request-detail?id=${requestId}" class="link-button">Заявка №${requestId}</a></div></div>
@@ -435,28 +478,17 @@
                 <div class="detail-item"><div class="detail-label">Водитель</div><div class="detail-value">${tripData.driverName || '-'}</div></div>
                 <div class="detail-item"><div class="detail-label">Дата рейса</div><div class="detail-value">${tripDateFormatted}</div></div>
                 <div class="detail-item"><div class="detail-label">Объем</div><div class="detail-value">${tripData.volume} т</div></div>
+                <div class="detail-item"><div class="detail-label">Статус в диспетчеризации</div><div class="detail-value">${tripData.dispatchStatusName || '—'}</div></div>
                 <div class="detail-item"><div class="detail-label">Статус обмена</div><div class="detail-value"><span class="sync-badge ${syncClass}">${syncText}</span></div></div>
                 <div class="detail-item"><div class="detail-label">Дата создания</div><div class="detail-value">${formatDateTime(tripData.createdAt)}</div></div>
             </div>
             <div class="action-buttons">
-                ${isEditable ? `<button class="btn-secondary" onclick="editTrip()">Редактировать рейс</button>` : ''}
-                ${canSync ? `<button class="btn-primary" onclick="syncTrip()">Синхронизировать с системой диспетчеризации</button>` : ''}
+                ${isEditable ? `<button class="btn-secondary" onclick="editTrip()">✏️ Редактировать рейс</button>` : ''}
+                ${canSync ? `<button class="btn-primary" onclick="syncTrip()">📤 Синхронизировать с системой диспетчеризации</button>` : ''}
                 ${tripData.status === 'NEW' && (currentUser?.role === 'ADMIN' || currentUser?.role === 'DISPATCHER') ?
-                    `<button class="btn-warning" onclick="cancelTrip()">Отменить рейс</button>` : ''}
+                    `<button class="btn-warning" onclick="cancelTrip()">❌ Отменить рейс</button>` : ''}
             </div>
         `;
-    }
-
-    async function loadHistory() {
-        try {
-            const response = await fetch(`/api/trips/${tripId}/history`);
-            if (!response.ok) throw new Error('Ошибка загрузки истории');
-            const history = await response.json();
-            renderHistory(history);
-        } catch(e) {
-            console.error(e);
-            document.getElementById('historyContainer').innerHTML = '<div class="loading">Ошибка загрузки истории</div>';
-        }
     }
 
     function renderHistory(history) {
@@ -476,13 +508,39 @@
                     </tr>
                 </thead>
                 <tbody>
-                    ${history.map(h => `
-                        <tr>
-                            <td>${formatDateTime(h.changedAt)}</span></span>
-                            <td>${getStatusText(h.status)}</span></span>
-                            <td><span class="${h.changedBy === 'system' ? 'history-system' : 'history-user'}">${h.userName || (h.changedBy === 'system' ? 'Система' : h.changedBy)}</span></span>
-                        </tr>
-                    `).join('')}
+                    ${history.map(h => {
+                        let statusText = '';
+                        let statusClass = '';
+
+                        if (h.statusDisplay) {
+                            statusText = h.statusDisplay;
+                        } else if (h.statusCode) {
+                            statusText = getStatusDisplayNameFromCode(h.statusCode);
+                        } else if (h.status) {
+                            if (h.status === 'STATUS_UPDATED_FROM_DISPATCH') {
+                                statusText = h.statusDisplay || 'Обновление из диспетчеризации';
+                            } else {
+                                statusText = getStatusText(h.status);
+                            }
+                        } else {
+                            statusText = '-';
+                        }
+
+                        statusClass = getStatusClass(h.statusCode || h.status);
+
+                        let changedByText = h.userName || h.changedBy || '-';
+                        if (h.changedBy === 'dispatch_system') {
+                            changedByText = 'Система диспетчеризации';
+                        }
+
+                        return `
+                            <tr>
+                                <td>${formatDateTime(h.changedAt)}</span></span>
+                                <td><span class="status-badge status-trip-${statusClass}">${statusText}</span></span>
+                                <td><span class="history-user">${changedByText}</span></span>
+                            </tr>
+                        `;
+                    }).join('')}
                 </tbody>
             </table>
         `;
@@ -541,6 +599,29 @@
         document.body.appendChild(notification);
         setTimeout(() => notification.remove(), 3000);
     }
+
+    let autoRefreshInterval = null;
+
+    function startAutoRefresh() {
+        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        autoRefreshInterval = setInterval(() => {
+            console.log("Автообновление статусов рейсов...");
+            loadTrip();
+        }, 30000);
+    }
+
+    function stopAutoRefresh() {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+        }
+    }
+
+    startAutoRefresh();
+
+    window.addEventListener('beforeunload', () => {
+        stopAutoRefresh();
+    });
 
     fetchCurrentUser().then(() => {
         loadTrip();

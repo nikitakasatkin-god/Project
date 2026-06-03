@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,12 +61,31 @@ public class TripController {
         return userRepository.findByUsername(username).orElse(null);
     }
 
+    private String getStatusDisplayNameByCode(String statusCode) {
+        if (statusCode == null) return null;
+        switch (statusCode) {
+            case "NEW": return "Новый";
+            case "ARRIVED_LOADING": return "Прибыл на погрузку";
+            case "LOADED": return "Погружен";
+            case "IN_TRANSIT": return "В пути";
+            case "ARRIVED_UNLOADING": return "Прибыл на выгрузку";
+            case "UNLOADED": return "Выгружен";
+            case "PROCESSED": return "Обработан";
+            case "CANCELLED": return "Отменен";
+            case "DELETED": return "Удален";
+            default: return statusCode;
+        }
+    }
+
     private void addHistory(Trip trip, String status, String changedBy, String userName) {
         TripHistory history = new TripHistory();
         history.setTrip(trip);
         history.setStatus(status);
         history.setChangedBy(changedBy);
         history.setUserName(userName);
+        history.setFromDispatch(false);
+        history.setStatusCode(status);
+        history.setStatusDisplay(getStatusDisplayNameByCode(status));
         tripHistoryRepository.save(history);
     }
 
@@ -102,6 +122,7 @@ public class TripController {
             dto.setStatus(trip.getStatus());
             dto.setSyncedToDispatch(trip.getSyncedToDispatch());
             dto.setSequenceNumber(trip.getSequenceNumber());
+            dto.setDispatchStatusName(trip.getDispatchStatusName());
             return dto;
         }).collect(Collectors.toList());
     }
@@ -127,16 +148,50 @@ public class TripController {
                     response.put("syncedAt", trip.getSyncedAt());
                     response.put("sequenceNumber", trip.getSequenceNumber());
                     response.put("createdAt", trip.getCreatedAt());
-                    response.put("history", trip.getHistory());
+                    response.put("dispatchStatusId", trip.getDispatchStatusId());
+                    response.put("dispatchStatusName", trip.getDispatchStatusName());
+
+                    List<Map<String, Object>> historyList = new ArrayList<>();
+                    for (TripHistory history : trip.getHistory()) {
+                        Map<String, Object> h = new HashMap<>();
+                        h.put("id", history.getId());
+                        h.put("changedAt", history.getChangedAt());
+                        h.put("status", history.getStatus());
+                        h.put("statusCode", history.getStatusCode());
+                        h.put("statusDisplay", history.getStatusDisplay());
+                        h.put("changedBy", history.getChangedBy());
+                        h.put("userName", history.getUserName());
+                        h.put("dispatchStatusName", history.getDispatchStatusName());
+                        h.put("fromDispatch", history.getFromDispatch());
+                        historyList.add(h);
+                    }
+                    response.put("history", historyList);
+
                     return ResponseEntity.ok(response);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{id}/history")
-    public ResponseEntity<List<TripHistory>> getTripHistory(@PathVariable Long id) {
+    public ResponseEntity<List<Map<String, Object>>> getTripHistory(@PathVariable Long id) {
         return tripRepository.findById(id)
-                .map(trip -> ResponseEntity.ok(tripHistoryRepository.findByTripOrderByChangedAtAsc(trip)))
+                .map(trip -> {
+                    List<Map<String, Object>> historyList = new ArrayList<>();
+                    for (TripHistory history : tripHistoryRepository.findByTripOrderByChangedAtAsc(trip)) {
+                        Map<String, Object> h = new HashMap<>();
+                        h.put("id", history.getId());
+                        h.put("changedAt", history.getChangedAt());
+                        h.put("status", history.getStatus());
+                        h.put("statusCode", history.getStatusCode());
+                        h.put("statusDisplay", history.getStatusDisplay());
+                        h.put("changedBy", history.getChangedBy());
+                        h.put("userName", history.getUserName());
+                        h.put("dispatchStatusName", history.getDispatchStatusName());
+                        h.put("fromDispatch", history.getFromDispatch());
+                        historyList.add(h);
+                    }
+                    return ResponseEntity.ok(historyList);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -334,7 +389,6 @@ public class TripController {
         log.info("Новый статус: {}", newStatus);
         log.info("Пользователь: {} ({})", currentUser.getUsername(), currentUser.getRole());
 
-        // ========== LOGIST ==========
         if (currentUser.getRole() == Role.LOGIST) {
             if (trip.getStatus() == TripStatus.NEW && newStatus == TripStatus.ARRIVED_LOADING) {
                 trip.setStatus(TripStatus.ARRIVED_LOADING);
@@ -345,23 +399,21 @@ public class TripController {
             }
 
             if (trip.getStatus() == TripStatus.ARRIVED_LOADING && newStatus == TripStatus.LOADED) {
-                log.info("🚛 ЛОГИСТ переводит рейс {} в LOADED (без мгновенной отправки)", trip.getId());
+                log.info("🚛 ЛОГИСТ переводит рейс {} в LOADED", trip.getId());
 
                 trip.setStatus(TripStatus.LOADED);
                 tripRepository.save(trip);
                 addHistory(trip, "LOADED", "user:" + currentUser.getUsername(), currentUser.getFullName());
 
-                // НЕ ОТПРАВЛЯЕМ СРАЗУ - планировщик сделает это позже
                 externalSystemStub.sendToDispatchSystem(trip);
 
-                log.info("✅ Рейс {} переведен в LOADED. Ожидает отправки планировщиком", trip.getId());
+                log.info("✅ Рейс {} переведен в LOADED", trip.getId());
                 return ResponseEntity.ok(trip);
             }
 
             return ResponseEntity.status(403).body("Невозможно обновить статус");
         }
 
-        // ========== ADMIN ==========
         if (currentUser.getRole() == Role.ADMIN) {
             if (newStatus == TripStatus.CANCELLED && trip.getStatus() == TripStatus.NEW) {
                 trip.setStatus(TripStatus.CANCELLED);
@@ -380,16 +432,15 @@ public class TripController {
             }
 
             if (newStatus == TripStatus.LOADED && trip.getStatus() != TripStatus.LOADED) {
-                log.info("🚛 АДМИН переводит рейс {} в LOADED (без мгновенной отправки)", trip.getId());
+                log.info("🚛 АДМИН переводит рейс {} в LOADED", trip.getId());
 
                 trip.setStatus(TripStatus.LOADED);
                 tripRepository.save(trip);
                 addHistory(trip, "LOADED", "user:" + currentUser.getUsername(), currentUser.getFullName());
 
-                // НЕ ОТПРАВЛЯЕМ СРАЗУ - планировщик сделает это позже
                 externalSystemStub.sendToDispatchSystem(trip);
 
-                log.info("✅ Рейс {} переведен в LOADED. Ожидает отправки планировщиком", trip.getId());
+                log.info("✅ Рейс {} переведен в LOADED", trip.getId());
                 return ResponseEntity.ok(trip);
             }
 
@@ -412,7 +463,6 @@ public class TripController {
             return ResponseEntity.ok(trip);
         }
 
-        // ========== DISPATCHER ==========
         if (currentUser.getRole() == Role.DISPATCHER) {
             if (newStatus == TripStatus.LOADED) {
                 log.warn("⚠️ Диспетчер {} пытается установить статус LOADED для рейса {} - доступ запрещен",
@@ -481,6 +531,45 @@ public class TripController {
         return ResponseEntity.ok(Map.of("success", false, "message", "Рейс уже синхронизирован"));
     }
 
+    @PostMapping("/dispatch/update-status")
+    public ResponseEntity<?> updateStatusFromDispatch(@RequestBody Map<String, Object> data) {
+        log.info("=== ОБНОВЛЕНИЕ СТАТУСА ИЗ ДИСПЕТЧЕРИЗАЦИИ ===");
+        log.info("Получены данные: {}", data);
+
+        try {
+            Long tripId = Long.parseLong(data.get("tripId").toString());
+            String statusName = data.get("statusName") != null ? data.get("statusName").toString() : "";
+            Long statusId = Long.parseLong(data.get("statusId").toString());
+
+            log.info("Рейс ID: {}, Статус: {}, StatusId: {}", tripId, statusName, statusId);
+
+            boolean updated = syncService.updateTripStatus(tripId, statusName, statusId);
+
+            if (updated) {
+                log.info("✅ Статус рейса {} успешно обновлен", tripId);
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "Статус обновлен",
+                        "tripId", tripId,
+                        "newStatus", statusName
+                ));
+            } else {
+                log.warn("❌ Не удалось обновить статус рейса {}", tripId);
+                return ResponseEntity.ok(Map.of(
+                        "success", false,
+                        "message", "Не удалось обновить статус. Проверьте сопоставление статусов.",
+                        "tripId", tripId
+                ));
+            }
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении статуса: {}", e.getMessage(), e);
+            return ResponseEntity.ok(Map.of(
+                    "success", false,
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTrip(@PathVariable Long id) {
         Trip trip = tripRepository.findById(id).orElse(null);
@@ -499,18 +588,5 @@ public class TripController {
         }
 
         return ResponseEntity.status(403).body("Удаление недоступно. Рейс не в статусе 'Новый' или недостаточно прав.");
-    }
-
-    @PostMapping("/dispatch/update-status")
-    public ResponseEntity<?> updateStatusFromDispatch(@RequestBody Map<String, Object> data) {
-        Long tripId = Long.parseLong(data.get("tripId").toString());
-        String status = data.get("status").toString();
-        Long statusId = Long.parseLong(data.get("statusId").toString());
-
-        boolean updated = syncService.updateTripStatus(tripId, status, statusId);
-        if (updated) {
-            return ResponseEntity.ok(Map.of("success", true));
-        }
-        return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Не удалось обновить статус"));
     }
 }

@@ -74,7 +74,6 @@
         .arrow { font-size: 12px; transition: transform 0.2s; }
         .has-submenu.open .arrow { transform: rotate(180deg); }
 
-        /* Скрытие элементов по ролям */
         .logist-only { display: none; }
         .dispatcher-only { display: none; }
         .admin-only { display: none; }
@@ -346,6 +345,20 @@
             padding: 40px;
             color: var(--text-muted);
         }
+        .status-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: inline-block;
+            border: 1px solid #ddd;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -383,8 +396,9 @@
             </div>
             <div class="submenu">
                 <div class="submenu-item" onclick="window.location.href='/references#divisions'">Подразделения</div>
-                <div class="submenu-item" onclick="window.location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
-                <div class="submenu-item" onclick="window.location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
+                <div class="submenu-item" onclick="window.location.href='/references#users'">Пользователи</div>
+                <div class="submenu-item" onclick="window.location.href='/references#trip-statuses'">Статусы рейсов</div>
+                <div class="submenu-item" onclick="window.location.href='/references#dispatch-mappings'">Сопоставление статусов</div>
                 <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
                 <div class="submenu-item" onclick="window.location.href='/references#plants'">Заводы</div>
                 <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
@@ -424,6 +438,8 @@
     <div class="tabs">
         <div class="tab active" data-tab="divisions">Подразделения</div>
         <div class="tab" data-tab="users">Пользователи</div>
+        <div class="tab" data-tab="trip-statuses">Статусы рейсов</div>
+        <div class="tab" data-tab="dispatch-mappings">Сопоставление статусов</div>
         <div class="tab" data-tab="carriers">Перевозчики</div>
         <div class="tab" data-tab="plants">Заводы</div>
         <div class="tab" data-tab="warehouses">Склады</div>
@@ -437,24 +453,121 @@
     <div id="users" class="tab-content">
         <button class="btn-primary" onclick="openUserModal()">+ Добавить пользователя</button>
         <table class="data-table">
-            <thead><tr><th>ID</th><th>Логин</th><th>ФИО</th><th>Роль</th><th>Подразделение</th><th>Статус</th><th>Действия</th></tr></thead>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Логин</th>
+                <th>ФИО</th>
+                <th>Роль</th>
+                <th>Подразделение</th>
+                <th>Статус</th>
+                <th>Действия</th>
+            </tr>
+            </thead>
             <tbody id="users-tbody"><tr><td colspan="7" class="loading">Загрузка...</td></tr></tbody>
+        </table>
+    </div>
+
+    <div id="trip-statuses" class="tab-content">
+        <button class="btn-primary" onclick="openTripStatusModal()">+ Добавить статус</button>
+        <table class="data-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Код</th>
+                <th>Название</th>
+                <th>Описание</th>
+                <th>Цвет</th>
+                <th>Порядок</th>
+                <th>Системный</th>
+                <th>Действия</th>
+            </tr>
+            </thead>
+            <tbody id="tripStatusesTbody"></tbody>
+        </table>
+    </div>
+
+    <div id="dispatch-mappings" class="tab-content">
+        <div class="card">
+            <h4 style="margin-bottom: 12px;">Новое сопоставление</h4>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                <div class="form-group" style="flex: 2;">
+                    <label>Статус из диспетчеризации</label>
+                    <select id="mappingDispatchStatusId" class="form-control">
+                        <option value="">Загрузить статусы...</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Локальный статус</label>
+                    <select id="mappingLocalStatusId" class="form-control">
+                        <option value="">Выберите локальный статус</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="createDispatchMapping()" style="margin-bottom: 16px;">Сохранить сопоставление</button>
+            </div>
+            <button class="btn-secondary" onclick="loadDispatchStatusesFromSystem()" style="margin-top: 8px;">
+                📥 Загрузить статусы из диспетчеризации
+            </button>
+        </div>
+        <h4>Существующие сопоставления</h4>
+        <table class="data-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Статус диспетчеризации</th>
+                <th>→</th>
+                <th>Локальный статус</th>
+                <th>Действия</th>
+            </tr>
+            </thead>
+            <tbody id="dispatchMappingsTbody"></tbody>
         </table>
     </div>
 
     <div id="carriers" class="tab-content">
         <button class="btn-primary" onclick="openCarrierModal()">+ Добавить перевозчика</button>
-        <table class="data-table"><thead><tr><th>ID</th><th>Название</th><th>Контактное лицо</th><th>Телефон</th><th>Действия</th></tr></thead><tbody id="carriers-tbody"></tbody></table>
+        <table class="data-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Контактное лицо</th>
+                <th>Телефон</th>
+                <th>Действия</th>
+            </tr>
+            </thead>
+            <tbody id="carriers-tbody"></tbody>
+        </table>
     </div>
 
     <div id="plants" class="tab-content">
         <button class="btn-primary" onclick="openPlantModal()">+ Добавить завод</button>
-        <table class="data-table"><thead><tr><th>ID</th><th>Название</th><th>Адрес</th><th>Действия</th></tr></thead><tbody id="plants-tbody"></tbody></table>
+        <table class="data-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Адрес</th>
+                <th>Действия</th>
+            </tr>
+            </thead>
+            <tbody id="plants-tbody"></tbody>
+        </table>
     </div>
 
     <div id="warehouses" class="tab-content">
         <button class="btn-primary" onclick="openWarehouseModal()">+ Добавить склад</button>
-        <table class="data-table"><thead><tr><th>ID</th><th>Название</th><th>Адрес</th><th>Действия</th></tr></thead><tbody id="warehouses-tbody"></tbody></table>
+        <table class="data-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Адрес</th>
+                <th>Действия</th>
+            </tr>
+            </thead>
+            <tbody id="warehouses-tbody"></tbody>
+        </table>
     </div>
 </div>
 
@@ -491,8 +604,24 @@
     </div>
 </div>
 
+<!-- Модальное окно для статуса рейса -->
+<div id="tripStatusModal" class="modal">
+    <div class="modal-content">
+        <h3 id="tripStatusModalTitle">Добавление статуса рейса</h3>
+        <input type="hidden" id="tripStatusId">
+        <div class="form-group"><label>Код статуса *</label><input type="text" id="tripStatusCode" class="form-control" placeholder="например: NEW, LOADED, IN_TRANSIT"></div>
+        <div class="form-group"><label>Название *</label><input type="text" id="tripStatusName" class="form-control" placeholder="например: Новый, Погружен, В пути"></div>
+        <div class="form-group"><label>Описание</label><textarea id="tripStatusDescription" class="form-control" rows="2"></textarea></div>
+        <div class="form-group"><label>Цвет</label><input type="color" id="tripStatusColor" class="form-control" value="#6b7280"></div>
+        <div class="form-group"><label>Порядок сортировки</label><input type="number" id="tripStatusSortOrder" class="form-control" value="0"></div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            <button class="btn-secondary" onclick="closeTripStatusModal()">Отмена</button>
+            <button class="btn-primary" onclick="saveTripStatus()">Сохранить</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    // Функции для темы
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -532,7 +661,7 @@
 
     function showNotification(message, type) {
         const notification = document.createElement('div');
-        notification.style.cssText = `position:fixed;bottom:20px;right:20px;padding:12px 20px;background:${type === 'success' ? '#10b981' : '#ef4444'};color:white;border-radius:10px;z-index:9999;animation:slideIn 0.3s ease;`;
+        notification.style.cssText = `position:fixed;bottom:20px;right:20px;padding:12px 20px;background:${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};color:white;border-radius:10px;z-index:9999;animation:slideIn 0.3s ease;`;
         notification.textContent = message;
         document.body.appendChild(notification);
         setTimeout(() => notification.remove(), 3000);
@@ -570,6 +699,11 @@
             document.getElementById(tabId).classList.add('active');
             if (tabId === 'divisions') await loadDivisions();
             if (tabId === 'users') await loadUsers();
+            if (tabId === 'trip-statuses') await loadTripStatuses();
+            if (tabId === 'dispatch-mappings') {
+                await loadDispatchMappings();
+                await loadLocalStatusesForMapping();
+            }
             if (tabId === 'carriers') loadCarriers();
             if (tabId === 'plants') loadPlants();
             if (tabId === 'warehouses') loadWarehouses();
@@ -623,7 +757,7 @@
             } else {
                 response = await fetch('/api/divisions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, description }) });
             }
-            if (response.ok) { closeDivisionModal(); await loadDivisions(); showNotification(currentDivisionId ? 'Подразделение обновлено' : 'Подразделение создано', 'success'); }
+            if (response.ok) { closeDivisionModal(); await loadDivisions(); await loadUsers(); showNotification(currentDivisionId ? 'Подразделение обновлено' : 'Подразделение создано', 'success'); }
             else { alert('Ошибка'); }
         } catch(e) { alert('Ошибка'); }
     }
@@ -656,16 +790,20 @@
             tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Нет пользователей</td></tr>';
             return;
         }
-        tbody.innerHTML = allUsers.map(user => `<tr>
-            <td>${user.id}</span></span>
-            <td>${escapeHtml(user.username)}</span></span>
-            <td>${escapeHtml(user.fullName || '-')}</span></span>
-            <td>${getRoleName(user.role)}</span></span>
-            <td>${user.division?.name || '-'}</span></span>
-            <td>${user.active ? '🟢 Активен' : '🔴 Неактивен'}</span></span>
-            <td><button class="btn-secondary" style="padding:4px 8px;" onclick="editUser(${user.id})">✏️ Редактировать</button>
-                <button class="btn-secondary" style="padding:4px 8px;" onclick="deleteUser(${user.id})">🗑️ Удалить</button></span>
-        </table>`).join('');
+        tbody.innerHTML = allUsers.map(user => `
+            <tr>
+                <td>${user.id}</td>
+                <td>${escapeHtml(user.username)}</td>
+                <td>${escapeHtml(user.fullName || '-')}</td>
+                <td>${getRoleName(user.role)}</td>
+                <td>${user.division?.name || '-'}</td>
+                <td>${user.active ? '🟢 Активен' : '🔴 Неактивен'}</td>
+                <td>
+                    <button class="btn-secondary" style="padding:4px 8px;" onclick="editUser(${user.id})">✏️ Редактировать</button>
+                    <button class="btn-secondary" style="padding:4px 8px;" onclick="deleteUser(${user.id})">🗑️ Удалить</button>
+                </td>
+            </tr>
+        `).join('');
     }
 
     async function loadDivisionsForSelect(selectedId = null) {
@@ -829,9 +967,255 @@
     function closeAddUserModal() { document.getElementById('addUserModal').style.display = 'none'; document.getElementById('userSearchInput').value = ''; }
     document.getElementById('userSearchInput')?.addEventListener('input', () => loadUnassignedUsers());
 
-    async function loadCarriers() { try { const r = await fetch('/api/references/carriers'); const data = await r.json(); document.getElementById('carriers-tbody').innerHTML = data.map(c => `<td>${c.id}</td><td>${c.name}</td><td>${c.contactPerson || '-'}</td><td>${c.phone || '-'}</td><td><button onclick="editCarrier(${c.id})">✏️</button></td></tr>`).join(''); } catch(e) {} }
-    async function loadPlants() { try { const r = await fetch('/api/references/plants'); const data = await r.json(); document.getElementById('plants-tbody').innerHTML = data.map(p => `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.address || '-'}</td><td><button onclick="editPlant(${p.id})">✏️</button></td></tr>`).join(''); } catch(e) {} }
-    async function loadWarehouses() { try { const r = await fetch('/api/references/warehouses'); const data = await r.json(); document.getElementById('warehouses-tbody').innerHTML = data.map(w => `<tr><td>${w.id}</td><td>${w.name}</td><td>${w.address || '-'}</td><td><button onclick="editWarehouse(${w.id})">✏️</button></td></tr>`).join(''); } catch(e) {} }
+    async function loadTripStatuses() {
+        try {
+            const response = await fetch('/api/trip-statuses');
+            const statuses = await response.json();
+            const tbody = document.getElementById('tripStatusesTbody');
+            if (!statuses.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Нет статусов</td></tr>';
+                return;
+            }
+            tbody.innerHTML = statuses.map(s => `
+                <tr>
+                    <td>${s.id}</td>
+                    <td><code>${escapeHtml(s.code)}</code></td>
+                    <td>${escapeHtml(s.name)}</td>
+                    <td>${escapeHtml(s.description || '-')}</td>
+                    <td><div class="status-color" style="background:${s.color || '#6b7280'}"></div></td>
+                    <td>${s.sortOrder || 0}</td>
+                    <td>${s.systemDefault ? '✅ Да' : '❌ Нет'}</td>
+                    <td>
+                        <button class="btn-secondary" style="padding:4px 8px;" onclick="editTripStatus(${s.id})">✏️</button>
+                        ${!s.systemDefault ? `<button class="btn-secondary" style="padding:4px 8px;" onclick="deleteTripStatus(${s.id})">🗑️</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        } catch(e) {
+            document.getElementById('tripStatusesTbody').innerHTML = '<tr><td colspan="8" class="empty-state">Ошибка загрузки</td></tr>';
+        }
+    }
+
+    function openTripStatusModal() {
+        document.getElementById('tripStatusModal').style.display = 'flex';
+        document.getElementById('tripStatusId').value = '';
+        document.getElementById('tripStatusCode').value = '';
+        document.getElementById('tripStatusName').value = '';
+        document.getElementById('tripStatusDescription').value = '';
+        document.getElementById('tripStatusColor').value = '#6b7280';
+        document.getElementById('tripStatusSortOrder').value = '0';
+        document.getElementById('tripStatusModalTitle').innerText = 'Добавление статуса рейса';
+    }
+
+    function closeTripStatusModal() {
+        document.getElementById('tripStatusModal').style.display = 'none';
+    }
+
+    async function saveTripStatus() {
+        const id = document.getElementById('tripStatusId').value;
+        const data = {
+            code: document.getElementById('tripStatusCode').value.trim().toUpperCase(),
+            name: document.getElementById('tripStatusName').value,
+            description: document.getElementById('tripStatusDescription').value,
+            color: document.getElementById('tripStatusColor').value,
+            sortOrder: parseInt(document.getElementById('tripStatusSortOrder').value),
+            active: true
+        };
+        if (!data.code || !data.name) {
+            alert('Заполните код и название статуса');
+            return;
+        }
+        try {
+            let response;
+            if (id) {
+                response = await fetch(`/api/trip-statuses/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } else {
+                response = await fetch('/api/trip-statuses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            }
+            if (response.ok) {
+                alert(id ? 'Статус обновлен' : 'Статус создан');
+                closeTripStatusModal();
+                await loadTripStatuses();
+                await loadLocalStatusesForMapping();
+            } else {
+                alert('Ошибка при сохранении');
+            }
+        } catch(e) {
+            alert('Ошибка: ' + e.message);
+        }
+    }
+
+    async function editTripStatus(id) {
+        try {
+            const response = await fetch(`/api/trip-statuses/${id}`);
+            const status = await response.json();
+            document.getElementById('tripStatusId').value = status.id;
+            document.getElementById('tripStatusCode').value = status.code;
+            document.getElementById('tripStatusName').value = status.name;
+            document.getElementById('tripStatusDescription').value = status.description || '';
+            document.getElementById('tripStatusColor').value = status.color || '#6b7280';
+            document.getElementById('tripStatusSortOrder').value = status.sortOrder || 0;
+            document.getElementById('tripStatusModalTitle').innerText = 'Редактирование статуса';
+            document.getElementById('tripStatusModal').style.display = 'flex';
+        } catch(e) {
+            alert('Ошибка загрузки статуса');
+        }
+    }
+
+    async function deleteTripStatus(id) {
+        if (confirm('Удалить статус? Это может повлиять на существующие сопоставления.')) {
+            try {
+                const response = await fetch(`/api/trip-statuses/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert('Статус удален');
+                    await loadTripStatuses();
+                    await loadLocalStatusesForMapping();
+                } else {
+                    const error = await response.text();
+                    alert(error);
+                }
+            } catch(e) {
+                alert('Ошибка: ' + e.message);
+            }
+        }
+    }
+
+    async function loadDispatchStatusesFromSystem() {
+        const select = document.getElementById('mappingDispatchStatusId');
+        select.innerHTML = '<option value="">Загрузка статусов...</option>';
+        try {
+            // Теперь запрос идет через основную систему, а не напрямую
+            const response = await fetch('/api/sync/dispatch-statuses');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const statuses = await response.json();
+            if (statuses && statuses.length > 0) {
+                select.innerHTML = '<option value="">Выберите статус из диспетчеризации</option>' +
+                    statuses.map(s => `<option value="${s.id}" data-name="${s.name || s.code}">${s.name || s.code} - ${s.description || ''} (ID: ${s.id})</option>`).join('');
+                showNotification(`✅ Загружено ${statuses.length} статусов из диспетчеризации`, 'success');
+            } else {
+                select.innerHTML = '<option value="">Нет доступных статусов</option>';
+                showNotification('⚠️ Нет статусов в системе диспетчеризации', 'error');
+            }
+        } catch(e) {
+            console.error('Ошибка:', e);
+            select.innerHTML = '<option value="">Ошибка подключения к диспетчеризации</option>';
+            showNotification('❌ Ошибка подключения к системе диспетчеризации: ' + e.message, 'error');
+        }
+    }
+
+    async function loadLocalStatusesForMapping() {
+        try {
+            const response = await fetch('/api/trip-statuses');
+            const statuses = await response.json();
+            const select = document.getElementById('mappingLocalStatusId');
+            select.innerHTML = '<option value="">Выберите локальный статус</option>' +
+                statuses.map(s => `<option value="${s.id}">${s.name} (${s.code})</option>`).join('');
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    async function createDispatchMapping() {
+        const dispatchStatusId = document.getElementById('mappingDispatchStatusId').value;
+        const dispatchStatusName = document.getElementById('mappingDispatchStatusId').selectedOptions[0]?.getAttribute('data-name') || '';
+        const localStatusId = document.getElementById('mappingLocalStatusId').value;
+        if (!dispatchStatusId || !localStatusId) {
+            alert('Выберите оба статуса');
+            return;
+        }
+        try {
+            const response = await fetch('/api/dispatch-mappings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    dispatchStatusId: parseInt(dispatchStatusId),
+                    dispatchStatusName: dispatchStatusName,
+                    localStatusId: parseInt(localStatusId)
+                })
+            });
+            if (response.ok) {
+                alert('Сопоставление создано');
+                await loadDispatchMappings();
+            } else {
+                alert('Ошибка при создании сопоставления');
+            }
+        } catch(e) {
+            alert('Ошибка: ' + e.message);
+        }
+    }
+
+    async function loadDispatchMappings() {
+        try {
+            const response = await fetch('/api/dispatch-mappings');
+            const mappings = await response.json();
+            const tbody = document.getElementById('dispatchMappingsTbody');
+            if (!mappings.length) {
+                tbody.innerHTML = '</tr><td colspan="5" class="empty-state">Нет сопоставлений</td></tr>';
+                return;
+            }
+            tbody.innerHTML = mappings.map(m => `
+                <tr>
+                    <td>${m.id}</td>
+                    <td>${escapeHtml(m.dispatchStatusName || `ID: ${m.dispatchStatusId}`)}</td>
+                    <td>→</td>
+                    <td>${m.localStatus?.name || '-'}</td>
+                    <td><button class="btn-secondary" style="padding:4px 8px;" onclick="deleteDispatchMapping(${m.id})">Удалить</button></td>
+                </tr>
+            `).join('');
+        } catch(e) {
+            document.getElementById('dispatchMappingsTbody').innerHTML = '<tr><td colspan="5" class="empty-state">Ошибка загрузки</td></tr>';
+        }
+    }
+
+    async function deleteDispatchMapping(id) {
+        if (confirm('Удалить сопоставление?')) {
+            try {
+                const response = await fetch(`/api/dispatch-mappings/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert('Сопоставление удалено');
+                    await loadDispatchMappings();
+                } else {
+                    alert('Ошибка при удалении');
+                }
+            } catch(e) {
+                alert('Ошибка: ' + e.message);
+            }
+        }
+    }
+
+    async function loadCarriers() {
+        try {
+            const r = await fetch('/api/references/carriers');
+            const data = await r.json();
+            document.getElementById('carriers-tbody').innerHTML = data.map(c => `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.contactPerson || '-'}</td><td>${c.phone || '-'}</td><td><button onclick="editCarrier(${c.id})">✏️</button></td></tr>`).join('');
+        } catch(e) {}
+    }
+
+    async function loadPlants() {
+        try {
+            const r = await fetch('/api/references/plants');
+            const data = await r.json();
+            document.getElementById('plants-tbody').innerHTML = data.map(p => `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.address || '-'}</td><td><button onclick="editPlant(${p.id})">✏️</button></td></tr>`).join('');
+        } catch(e) {}
+    }
+
+    async function loadWarehouses() {
+        try {
+            const r = await fetch('/api/references/warehouses');
+            const data = await r.json();
+            document.getElementById('warehouses-tbody').innerHTML = data.map(w => `<tr><td>${w.id}</td><td>${w.name}</td><td>${w.address || '-'}</td><td><button onclick="editWarehouse(${w.id})">✏️</button></td></tr>`).join('');
+        } catch(e) {}
+    }
 
     function openCarrierModal() { alert('Добавление перевозчика (требуется реализация)'); }
     function editCarrier(id) { alert('Редактирование перевозчика ' + id); }
@@ -839,6 +1223,16 @@
     function editPlant(id) { alert('Редактирование завода ' + id); }
     function openWarehouseModal() { alert('Добавление склада (требуется реализация)'); }
     function editWarehouse(id) { alert('Редактирование склада ' + id); }
+
+    window.onclick = function(event) {
+        const modals = ['divisionModal', 'userModal', 'addUserModal', 'tripStatusModal'];
+        modals.forEach(modalId => {
+            const modal = document.getElementById(modalId);
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    };
 
     loadCurrentUser();
     loadDivisions();

@@ -15,6 +15,7 @@ public class DataInitializer implements CommandLineRunner {
     private final VehicleRepository vehicleRepository;
     private final PlantRepository plantRepository;
     private final WarehouseRepository warehouseRepository;
+    private final TripStatusRepository tripStatusRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(UserRepository userRepository,
@@ -23,6 +24,7 @@ public class DataInitializer implements CommandLineRunner {
                            VehicleRepository vehicleRepository,
                            PlantRepository plantRepository,
                            WarehouseRepository warehouseRepository,
+                           TripStatusRepository tripStatusRepository,
                            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.divisionRepository = divisionRepository;
@@ -30,12 +32,13 @@ public class DataInitializer implements CommandLineRunner {
         this.vehicleRepository = vehicleRepository;
         this.plantRepository = plantRepository;
         this.warehouseRepository = warehouseRepository;
+        this.tripStatusRepository = tripStatusRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) {
-        // Create divisions (только если их еще нет)
+        // Create divisions
         Division div1 = divisionRepository.findByName("Логистический центр №1").orElse(null);
         if (div1 == null) {
             div1 = new Division();
@@ -50,7 +53,7 @@ public class DataInitializer implements CommandLineRunner {
             divisionRepository.save(div2);
         }
 
-        // Create admin (только если не существует)
+        // Create users
         if (userRepository.findByUsername("admin").isEmpty()) {
             User admin = new User();
             admin.setUsername("admin");
@@ -62,7 +65,6 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(admin);
         }
 
-        // Create logist
         if (userRepository.findByUsername("logist").isEmpty()) {
             User logist = new User();
             logist.setUsername("logist");
@@ -74,7 +76,6 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(logist);
         }
 
-        // Create dispatcher
         if (userRepository.findByUsername("dispatcher").isEmpty()) {
             User dispatcher = new User();
             dispatcher.setUsername("dispatcher");
@@ -86,7 +87,7 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(dispatcher);
         }
 
-        // Create carriers (только если их нет)
+        // Create carriers
         if (carrierRepository.count() == 0) {
             Carrier carrier1 = new Carrier();
             carrier1.setName("ТрансЛогистик");
@@ -100,7 +101,6 @@ public class DataInitializer implements CommandLineRunner {
             carrier2.setPhone("+7(999)234-56-78");
             carrierRepository.save(carrier2);
 
-            // Create vehicles
             Vehicle v1 = new Vehicle();
             v1.setPlateNumber("А123ВВ77");
             v1.setBrand("KAMAZ");
@@ -118,33 +118,7 @@ public class DataInitializer implements CommandLineRunner {
             vehicleRepository.save(v2);
         }
 
-        // Create plants (только если их нет)
-        if (plantRepository.count() == 0) {
-            Plant plant1 = new Plant();
-            plant1.setName("Завод №1");
-            plant1.setAddress("г. Москва, ул. Заводская, 1");
-            plantRepository.save(plant1);
-
-            Plant plant2 = new Plant();
-            plant2.setName("Завод №2");
-            plant2.setAddress("г. Санкт-Петербург, ул. Промышленная, 15");
-            plantRepository.save(plant2);
-        }
-
-        // Create warehouses (только если их нет)
-        if (warehouseRepository.count() == 0) {
-            Warehouse wh1 = new Warehouse();
-            wh1.setName("Склад №1");
-            wh1.setAddress("г. Москва, ул. Складская, 5");
-            warehouseRepository.save(wh1);
-
-            Warehouse wh2 = new Warehouse();
-            wh2.setName("Склад №2");
-            wh2.setAddress("г. Санкт-Петербург, ул. Логистическая, 10");
-            warehouseRepository.save(wh2);
-        }
-
-        // В методе run добавьте больше заводов и складов:
+        // Create plants
         if (plantRepository.count() == 0) {
             String[][] plants = {
                     {"Завод №1", "г. Москва, ул. Заводская, 1"},
@@ -161,6 +135,7 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
+        // Create warehouses
         if (warehouseRepository.count() == 0) {
             String[][] warehouses = {
                     {"Склад №1", "г. Москва, ул. Складская, 5"},
@@ -177,11 +152,44 @@ public class DataInitializer implements CommandLineRunner {
             }
         }
 
+        // Initialize trip statuses
+        initTripStatuses();
+
         System.out.println("=== Data initialization completed ===");
         System.out.println("Users: " + userRepository.count());
         System.out.println("Divisions: " + divisionRepository.count());
         System.out.println("Carriers: " + carrierRepository.count());
         System.out.println("Plants: " + plantRepository.count());
         System.out.println("Warehouses: " + warehouseRepository.count());
+        System.out.println("Trip Statuses: " + tripStatusRepository.count());
+    }
+
+    private void initTripStatuses() {
+        if (tripStatusRepository.count() == 0) {
+            String[][] statuses = {
+                    {"NEW", "Новый", "Новый рейс", "#6b7280", "1", "true"},
+                    {"ARRIVED_LOADING", "Прибыл на погрузку", "ТС прибыло на погрузку", "#fef3c7", "2", "true"},
+                    {"LOADED", "Погружен", "Груз погружен", "#dbeafe", "3", "true"},
+                    {"IN_TRANSIT", "В пути", "Рейс в пути", "#eab308", "4", "true"},
+                    {"ARRIVED_UNLOADING", "Прибыл на выгрузку", "ТС прибыло на выгрузку", "#fef3c7", "5", "true"},
+                    {"UNLOADED", "Выгружен", "Груз выгружен", "#d1fae5", "6", "true"},
+                    {"PROCESSED", "Обработан", "Рейс обработан", "#059669", "7", "true"},
+                    {"CANCELLED", "Отменен", "Рейс отменен", "#ef4444", "8", "true"},
+                    {"DELETED", "Удален", "Рейс удален", "#9ca3af", "9", "true"}
+            };
+
+            for (String[] status : statuses) {
+                TripStatusEntity entity = new TripStatusEntity();
+                entity.setCode(status[0]);
+                entity.setName(status[1]);
+                entity.setDescription(status[2]);
+                entity.setColor(status[3]);
+                entity.setSortOrder(Integer.parseInt(status[4]));
+                entity.setSystemDefault(Boolean.parseBoolean(status[5]));
+                entity.setActive(true);
+                tripStatusRepository.save(entity);
+            }
+            System.out.println("Создано " + statuses.length + " системных статусов рейсов");
+        }
     }
 }

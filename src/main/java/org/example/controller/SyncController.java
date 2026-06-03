@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -25,6 +26,7 @@ public class SyncController {
 
     @PostMapping("/send-trips")
     public ResponseEntity<Map<String, Object>> sendTrips() {
+        log.info("POST /api/sync/send-trips - ручная отправка рейсов");
         int count = syncService.sendTripsToDispatch();
         Map<String, Object> response = new HashMap<>();
         response.put("success", count >= 0);
@@ -39,6 +41,7 @@ public class SyncController {
 
     @PostMapping("/receive-statuses")
     public ResponseEntity<Map<String, Object>> receiveStatuses() {
+        log.info("POST /api/sync/receive-statuses - ручное получение статусов");
         int count = syncService.receiveStatusesFromDispatch();
         Map<String, Object> response = new HashMap<>();
         response.put("success", count >= 0);
@@ -48,18 +51,27 @@ public class SyncController {
         } else {
             response.put("message", "Получено обновлений статусов: " + count);
         }
+        log.info("Ответ: {}", response);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/settings")
     public ResponseEntity<Map<String, Object>> getSyncSettings() {
+        log.info("GET /api/sync/settings - получение настроек");
         return ResponseEntity.ok(syncSettingsService.getSettings());
     }
 
     @PostMapping("/settings")
-    public ResponseEntity<Map<String, Object>> updateSyncSettings(@RequestBody Map<String, Object> newSettings) {
-        log.info("POST /api/sync/settings - обновление настроек");
-        Map<String, Object> result = syncSettingsService.updateSettings(newSettings);
+    public ResponseEntity<Map<String, Object>> updateSyncSettings(@RequestBody Map<String, Object> settings) {
+        log.info("POST /api/sync/settings - обновление настроек: {}", settings);
+        Map<String, Object> result = syncSettingsService.updateSettings(settings);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/dispatch-statuses")
+    public ResponseEntity<List<Map<String, Object>>> getDispatchStatuses() {
+        log.info("GET /api/sync/dispatch-statuses - запрос статусов из диспетчеризации");
+        List<Map<String, Object>> statuses = syncService.fetchDispatchStatuses();
+        return ResponseEntity.ok(statuses);
     }
 }

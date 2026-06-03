@@ -15,39 +15,59 @@ public class SyncScheduler {
     private static final Logger log = LoggerFactory.getLogger(SyncScheduler.class);
     private final SyncService syncService;
 
-    @Value("${sync.interval:60000}")
-    private long syncIntervalMs;
+    @Value("${sync.send.interval:60000}")
+    private long sendIntervalMs;
 
-    @Value("${sync.auto.enabled:true}")
-    private boolean autoSyncEnabled;
+    @Value("${sync.receive.interval:60000}")
+    private long receiveIntervalMs;
+
+    @Value("${sync.send.enabled:true}")
+    private boolean sendEnabled;
+
+    @Value("${sync.receive.enabled:true}")
+    private boolean receiveEnabled;
 
     public SyncScheduler(SyncService syncService) {
         this.syncService = syncService;
     }
 
-    @Scheduled(fixedDelayString = "${sync.interval:60000}", initialDelay = 10000)
-    public void scheduledSync() {
-        if (!autoSyncEnabled) {
-            log.debug("Автоматическая синхронизация отключена");
+    // Планировщик для отправки рейсов в диспетчеризацию
+    @Scheduled(fixedDelayString = "${sync.send.interval:60000}", initialDelay = 10000)
+    public void scheduledSend() {
+        if (!sendEnabled) {
+            log.debug("Отправка рейсов отключена");
             return;
         }
 
-        log.info("=== АВТОМАТИЧЕСКАЯ СИНХРОНИЗАЦИЯ (интервал: {} сек) ===", syncIntervalMs / 1000);
+        log.info("=== ОТПРАВКА РЕЙСОВ В ДИСПЕТЧЕРИЗАЦИЮ (интервал: {} сек) ===", sendIntervalMs / 1000);
 
         int sentCount = syncService.sendTripsToDispatch();
-
         if (sentCount > 0) {
             log.info("✅ Отправлено {} рейсов в систему диспетчеризации", sentCount);
         } else if (sentCount == 0) {
-            log.info("Нет рейсов для отправки");
+            log.debug("Нет рейсов для отправки");
         } else {
             log.error("❌ Ошибка при отправке рейсов");
         }
+    }
+
+    // Планировщик для получения статусов из диспетчеризации
+    @Scheduled(fixedDelayString = "${sync.receive.interval:60000}", initialDelay = 15000)
+    public void scheduledReceive() {
+        if (!receiveEnabled) {
+            log.debug("Получение статусов отключено");
+            return;
+        }
+
+        log.info("=== ПОЛУЧЕНИЕ СТАТУСОВ ИЗ ДИСПЕТЧЕРИЗАЦИИ (интервал: {} сек) ===", receiveIntervalMs / 1000);
 
         int receivedCount = syncService.receiveStatusesFromDispatch();
-
         if (receivedCount > 0) {
-            log.info("✅ Получено {} обновлений статусов из диспетчеризации", receivedCount);
+            log.info("✅ Обновлено {} рейсов из системы диспетчеризации", receivedCount);
+        } else if (receivedCount == 0) {
+            log.debug("Нет обновлений статусов");
+        } else if (receivedCount < 0) {
+            log.error("❌ Ошибка при получении статусов");
         }
     }
 }

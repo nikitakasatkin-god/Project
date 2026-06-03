@@ -32,13 +32,12 @@ public class SecurityConfig {
                         .defaultSuccessUrl("/dashboard", true)
                         .permitAll()
                 )
-                // УБИРАЕМ httpBasic - оставляем только formLogin
+                .httpBasic(httpBasic -> {})
                 .logout(logout -> logout
                         .logoutSuccessUrl("/login")
                         .permitAll()
                 )
                 .userDetailsService(userDetailsService);
-
         return http.build();
     }
 
