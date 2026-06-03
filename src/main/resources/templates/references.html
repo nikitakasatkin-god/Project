@@ -52,7 +52,6 @@
             background: var(--sidebar-bg);
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             overflow-y: auto;
-            z-index: 100;
             transition: background 0.3s ease;
         }
         .sidebar-header { padding: 24px; border-bottom: 1px solid var(--border-color); }
@@ -81,7 +80,7 @@
         body[data-role="LOGIST"] .logist-only { display: block; }
         body[data-role="DISPATCHER"] .dispatcher-only { display: block; }
 
-        .main-content { margin-left: 260px; padding: 24px; min-height: 100vh; }
+        .main-content { margin-left: 260px; padding: 24px; }
         .top-bar {
             background: var(--header-bg);
             border-radius: 12px;
@@ -94,16 +93,8 @@
             transition: background 0.3s ease;
         }
         .page-title { font-size: 24px; font-weight: 700; color: var(--text-primary); }
-        .user-info { display: flex; align-items: center; gap: 16px; }
-        .user-name { font-weight: 600; color: var(--text-secondary); }
-        .logout-btn {
-            padding: 8px 16px;
-            background: #fee2e2;
-            color: #dc2626;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 14px;
-        }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .logout-btn { padding: 8px 16px; background: #fee2e2; color: #dc2626; border-radius: 8px; text-decoration: none; font-size: 14px; }
         .theme-toggle {
             background: none;
             border: 1px solid var(--border-color);
@@ -274,9 +265,16 @@
             background: var(--hover-bg);
             color: var(--text-secondary);
             border: 1px solid var(--border-color);
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 6px;
             cursor: pointer;
+            font-size: 12px;
+        }
+        .status-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            display: inline-block;
         }
         .modal {
             display: none;
@@ -296,12 +294,10 @@
             padding: 24px;
             max-width: 500px;
             width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
         }
         .form-group { margin-bottom: 16px; }
         .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-secondary); }
-        .form-group input, .form-group select, .form-group textarea {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 10px;
             border: 1px solid var(--border-color);
@@ -345,19 +341,27 @@
             padding: 40px;
             color: var(--text-muted);
         }
-        .status-color {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            display: inline-block;
-            border: 1px solid #ddd;
-        }
         .card {
             background: var(--card-bg);
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 20px;
             border: 1px solid var(--border-color);
+        }
+        .info-message {
+            background: #eef2ff;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #4338ca;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .warning-message {
+            background: #fef3c7;
+            color: #d97706;
         }
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
@@ -446,12 +450,13 @@
     </div>
 
     <div id="divisions" class="tab-content active">
-        <button class="btn-primary" onclick="openDivisionModal()">+ Добавить подразделение</button>
+        <div id="integrationWarningDiv" style="display: none;"></div>
+        <button class="btn-primary" id="addDivisionBtn" onclick="openDivisionModal()">+ Добавить подразделение</button>
         <div id="divisionsContainer" class="divisions-grid"><div class="loading">Загрузка...</div></div>
     </div>
 
     <div id="users" class="tab-content">
-        <button class="btn-primary" onclick="openUserModal()">+ Добавить пользователя</button>
+        <button class="btn-primary" id="addUserBtn" onclick="openUserModal()">+ Добавить пользователя</button>
         <table class="data-table">
             <thead>
             <tr>
@@ -464,12 +469,12 @@
                 <th>Действия</th>
             </tr>
             </thead>
-            <tbody id="users-tbody"><tr><td colspan="7" class="loading">Загрузка...</td></tr></tbody>
+            <tbody id="users-tbody"><tr><td colspan="7" class="loading">Загрузка...</td></tr>
         </table>
     </div>
 
     <div id="trip-statuses" class="tab-content">
-        <button class="btn-primary" onclick="openTripStatusModal()">+ Добавить статус</button>
+        <button class="btn-primary" id="addTripStatusBtn" onclick="openTripStatusModal()">+ Добавить статус</button>
         <table class="data-table">
             <thead>
             <tr>
@@ -506,7 +511,7 @@
                 <button class="btn-primary" onclick="createDispatchMapping()" style="margin-bottom: 16px;">Сохранить сопоставление</button>
             </div>
             <button class="btn-secondary" onclick="loadDispatchStatusesFromSystem()" style="margin-top: 8px;">
-                📥 Загрузить статусы из диспетчеризации
+                Загрузить статусы из диспетчеризации
             </button>
         </div>
         <h4>Существующие сопоставления</h4>
@@ -525,7 +530,7 @@
     </div>
 
     <div id="carriers" class="tab-content">
-        <button class="btn-primary" onclick="openCarrierModal()">+ Добавить перевозчика</button>
+        <button class="btn-primary" id="addCarrierBtn" onclick="openCarrierModal()">+ Добавить перевозчика</button>
         <table class="data-table">
             <thead>
             <tr>
@@ -541,7 +546,7 @@
     </div>
 
     <div id="plants" class="tab-content">
-        <button class="btn-primary" onclick="openPlantModal()">+ Добавить завод</button>
+        <button class="btn-primary" id="addPlantBtn" onclick="openPlantModal()">+ Добавить завод</button>
         <table class="data-table">
             <thead>
             <tr>
@@ -556,7 +561,7 @@
     </div>
 
     <div id="warehouses" class="tab-content">
-        <button class="btn-primary" onclick="openWarehouseModal()">+ Добавить склад</button>
+        <button class="btn-primary" id="addWarehouseBtn" onclick="openWarehouseModal()">+ Добавить склад</button>
         <table class="data-table">
             <thead>
             <tr>
@@ -622,6 +627,7 @@
 </div>
 
 <script>
+    // Функции для темы
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -658,6 +664,43 @@
     let currentUserId = null;
     let allDivisions = [];
     let allUsers = [];
+    let isOneCIntegrationEnabled = false;
+
+    async function checkIntegrationMode() {
+        try {
+            const response = await fetch('/api/sync/onec/settings');
+            if (response.ok) {
+                const settings = await response.json();
+                isOneCIntegrationEnabled = settings.integrationEnabled;
+
+                if (isOneCIntegrationEnabled) {
+                    // Показываем предупреждение только для справочников, которые синхронизируются с 1С
+                    const warningDiv = document.getElementById('integrationWarningDiv');
+                    if (warningDiv) {
+                        warningDiv.style.display = 'block';
+                        warningDiv.innerHTML = '<div class="info-message warning-message">⚠️ Режим интеграции с 1С активен. Редактирование справочников (подразделения, заводы, склады, перевозчики) запрещено. Данные синхронизируются из 1С.</div>';
+                    }
+
+                    // Блокируем кнопки добавления только для синхронизируемых справочников
+                    const blockedButtons = ['addDivisionBtn', 'addCarrierBtn', 'addPlantBtn', 'addWarehouseBtn'];
+                    blockedButtons.forEach(btnId => {
+                        const btn = document.getElementById(btnId);
+                        if (btn) {
+                            btn.disabled = true;
+                            btn.style.opacity = '0.5';
+                            btn.style.cursor = 'not-allowed';
+                            btn.title = 'Редактирование запрещено в режиме интеграции с 1С';
+                        }
+                    });
+
+                    // Кнопки пользователей и статусов НЕ блокируем
+                    // addUserBtn и addTripStatusBtn остаются активными
+                }
+            }
+        } catch(e) {
+            console.error('Ошибка проверки режима интеграции:', e);
+        }
+    }
 
     function showNotification(message, type) {
         const notification = document.createElement('div');
@@ -727,14 +770,20 @@
         if (!allDivisions.length) { container.innerHTML = '<div class="empty-state">Нет подразделений</div>'; return; }
         container.innerHTML = allDivisions.map(div => {
             const users = div.users || [];
+            const isDirectoryDisabled = isOneCIntegrationEnabled; // Только для редактирования самого подразделения
             return `<div class="division-card">
                 <div class="division-header"><span class="division-name">${escapeHtml(div.name)}</span>
-                    <div class="division-actions"><button onclick="editDivision(${div.id})">✏️</button><button onclick="deleteDivision(${div.id})">🗑️</button></div>
+                    <div class="division-actions">
+                        <button onclick="editDivision(${div.id})" ${isDirectoryDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>✏️</button>
+                        <button onclick="deleteDivision(${div.id})" ${isDirectoryDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>🗑️</button>
+                    </div>
                 </div>
                 <div class="division-body">
                     <div class="division-description">${escapeHtml(div.description || 'Нет описания')}</div>
                     <div class="users-list">
-                        <div class="users-title"><span>👥 Сотрудники (${users.length})</span><button class="add-user-btn" onclick="openAddUserModal(${div.id})">+ Добавить</button></div>
+                        <div class="users-title"><span>👥 Сотрудники (${users.length})</span>
+                            <button class="add-user-btn" onclick="openAddUserModal(${div.id})">+ Добавить</button>
+                        </div>
                         ${users.length ? users.map(user => `<div class="user-item"><div class="user-info"><span class="user-name">${escapeHtml(user.fullName || user.username)}</span><span class="user-role">${getRoleName(user.role)}</span></div><button class="remove-user" onclick="removeUserFromDivision(${div.id}, ${user.id})">🗑️</button></div>`).join('') : '<div style="padding:8px;">Нет сотрудников</div>'}
                     </div>
                 </div>
@@ -742,11 +791,40 @@
         }).join('');
     }
 
-    function openDivisionModal() { currentDivisionId = null; document.getElementById('divisionModalTitle').innerText = 'Добавление подразделения'; document.getElementById('divisionName').value = ''; document.getElementById('divisionDescription').value = ''; document.getElementById('divisionModal').style.display = 'flex'; }
-    function editDivision(id) { const div = allDivisions.find(d => d.id === id); if (div) { currentDivisionId = id; document.getElementById('divisionModalTitle').innerText = 'Редактирование подразделения'; document.getElementById('divisionName').value = div.name; document.getElementById('divisionDescription').value = div.description || ''; document.getElementById('divisionModal').style.display = 'flex'; } }
+    function openDivisionModal() {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
+        currentDivisionId = null;
+        document.getElementById('divisionModalTitle').innerText = 'Добавление подразделения';
+        document.getElementById('divisionName').value = '';
+        document.getElementById('divisionDescription').value = '';
+        document.getElementById('divisionModal').style.display = 'flex';
+    }
+
+    function editDivision(id) {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
+        const div = allDivisions.find(d => d.id === id);
+        if (div) {
+            currentDivisionId = id;
+            document.getElementById('divisionModalTitle').innerText = 'Редактирование подразделения';
+            document.getElementById('divisionName').value = div.name;
+            document.getElementById('divisionDescription').value = div.description || '';
+            document.getElementById('divisionModal').style.display = 'flex';
+        }
+    }
+
     function closeDivisionModal() { document.getElementById('divisionModal').style.display = 'none'; currentDivisionId = null; }
 
     async function saveDivision() {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
         const name = document.getElementById('divisionName').value.trim();
         const description = document.getElementById('divisionDescription').value;
         if (!name) { alert('Введите название'); return; }
@@ -763,6 +841,10 @@
     }
 
     async function deleteDivision(id) {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
         if (confirm('Удалить подразделение?')) {
             try {
                 const response = await fetch(`/api/divisions/${id}`, { method: 'DELETE' });
@@ -787,21 +869,22 @@
     function renderUsers() {
         const tbody = document.getElementById('users-tbody');
         if (!allUsers.length) {
-            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Нет пользователей</td></tr>';
+            tbody.innerHTML = '<td><td colspan="7" class="empty-state">Нет пользователей</td></tr>';
             return;
         }
+        const isDisabled = isOneCIntegrationEnabled;
         tbody.innerHTML = allUsers.map(user => `
             <tr>
                 <td>${user.id}</td>
-                <td>${escapeHtml(user.username)}</td>
-                <td>${escapeHtml(user.fullName || '-')}</td>
-                <td>${getRoleName(user.role)}</td>
-                <td>${user.division?.name || '-'}</td>
-                <td>${user.active ? '🟢 Активен' : '🔴 Неактивен'}</td>
+                <td>${escapeHtml(user.username)}</span></span>
+                <td>${escapeHtml(user.fullName || '-')}</span></span>
+                <td>${getRoleName(user.role)}</span></span>
+                <td>${user.division?.name || '-'}</span></span>
+                <td>${user.active ? '🟢 Активен' : '🔴 Неактивен'}</span></span>
                 <td>
-                    <button class="btn-secondary" style="padding:4px 8px;" onclick="editUser(${user.id})">✏️ Редактировать</button>
-                    <button class="btn-secondary" style="padding:4px 8px;" onclick="deleteUser(${user.id})">🗑️ Удалить</button>
-                </td>
+                    <button class="btn-secondary" style="padding:4px 8px;" onclick="editUser(${user.id})" ${isDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>✏️ Редактировать</button>
+                    <button class="btn-secondary" style="padding:4px 8px;" onclick="deleteUser(${user.id})" ${isDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>🗑️ Удалить</button>
+                 </span>
             </tr>
         `).join('');
     }
@@ -817,6 +900,10 @@
     }
 
     function openUserModal() {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
         currentUserId = null;
         document.getElementById('userModalTitle').innerText = 'Добавление пользователя';
         document.getElementById('userUsername').value = ''; document.getElementById('userUsername').disabled = false;
@@ -828,6 +915,10 @@
     }
 
     function editUser(id) {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
         const user = allUsers.find(u => u.id === id);
         if (user) {
             currentUserId = user.id;
@@ -848,6 +939,10 @@
     }
 
     async function saveUser() {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
         const username = document.getElementById('userUsername').value.trim();
         const password = document.getElementById('userPassword').value;
         const fullName = document.getElementById('userFullName').value;
@@ -902,6 +997,10 @@
     }
 
     async function deleteUser(id) {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
         if (confirm('Удалить пользователя?')) {
             try {
                 const response = await fetch(`/api/users/${id}`, { method: 'DELETE' });
@@ -919,6 +1018,10 @@
     }
 
     async function openAddUserModal(divisionId) {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
         currentDivisionId = divisionId;
         await loadUnassignedUsers();
         document.getElementById('addUserModal').style.display = 'flex';
@@ -942,6 +1045,10 @@
     function toggleCheckbox(userId) { const cb = document.getElementById(`user_${userId}`); if (cb) cb.checked = !cb.checked; }
 
     async function addSelectedUsers() {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
         const checkboxes = document.querySelectorAll('#unassignedUsersList input:checked');
         if (!checkboxes.length) { alert('Выберите пользователей'); return; }
         for (const checkbox of checkboxes) {
@@ -954,6 +1061,10 @@
     }
 
     async function removeUserFromDivision(divisionId, userId) {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
         if (confirm('Открепить пользователя от подразделения?')) {
             try {
                 await fetch(`/api/divisions/${divisionId}/users/${userId}`, { method: 'DELETE' });
@@ -976,19 +1087,20 @@
                 tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Нет статусов</td></tr>';
                 return;
             }
+            const isDisabled = isOneCIntegrationEnabled;
             tbody.innerHTML = statuses.map(s => `
                 <tr>
                     <td>${s.id}</td>
                     <td><code>${escapeHtml(s.code)}</code></td>
-                    <td>${escapeHtml(s.name)}</td>
-                    <td>${escapeHtml(s.description || '-')}</td>
+                    <td>${escapeHtml(s.name)}</span></span>
+                    <td>${escapeHtml(s.description || '-')}</span></span>
                     <td><div class="status-color" style="background:${s.color || '#6b7280'}"></div></td>
-                    <td>${s.sortOrder || 0}</td>
-                    <td>${s.systemDefault ? '✅ Да' : '❌ Нет'}</td>
+                    <td>${s.sortOrder || 0}</span></span>
+                    <td>${s.systemDefault ? '✅ Да' : '❌ Нет'}</span></span>
                     <td>
-                        <button class="btn-secondary" style="padding:4px 8px;" onclick="editTripStatus(${s.id})">✏️</button>
-                        ${!s.systemDefault ? `<button class="btn-secondary" style="padding:4px 8px;" onclick="deleteTripStatus(${s.id})">🗑️</button>` : ''}
-                    </td>
+                        <button class="btn-secondary" style="padding:4px 8px;" onclick="editTripStatus(${s.id})" ${isDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>✏️</button>
+                        ${!s.systemDefault ? `<button class="btn-secondary" style="padding:4px 8px;" onclick="deleteTripStatus(${s.id})" ${isDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>🗑️</button>` : ''}
+                     </span>
                 </tr>
             `).join('');
         } catch(e) {
@@ -997,6 +1109,10 @@
     }
 
     function openTripStatusModal() {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
         document.getElementById('tripStatusModal').style.display = 'flex';
         document.getElementById('tripStatusId').value = '';
         document.getElementById('tripStatusCode').value = '';
@@ -1012,6 +1128,10 @@
     }
 
     async function saveTripStatus() {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
         const id = document.getElementById('tripStatusId').value;
         const data = {
             code: document.getElementById('tripStatusCode').value.trim().toUpperCase(),
@@ -1054,6 +1174,10 @@
     }
 
     async function editTripStatus(id) {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
         try {
             const response = await fetch(`/api/trip-statuses/${id}`);
             const status = await response.json();
@@ -1071,6 +1195,10 @@
     }
 
     async function deleteTripStatus(id) {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
         if (confirm('Удалить статус? Это может повлиять на существующие сопоставления.')) {
             try {
                 const response = await fetch(`/api/trip-statuses/${id}`, { method: 'DELETE' });
@@ -1092,7 +1220,6 @@
         const select = document.getElementById('mappingDispatchStatusId');
         select.innerHTML = '<option value="">Загрузка статусов...</option>';
         try {
-            // Теперь запрос идет через основную систему, а не напрямую
             const response = await fetch('/api/sync/dispatch-statuses');
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -1160,16 +1287,16 @@
             const mappings = await response.json();
             const tbody = document.getElementById('dispatchMappingsTbody');
             if (!mappings.length) {
-                tbody.innerHTML = '</tr><td colspan="5" class="empty-state">Нет сопоставлений</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Нет сопоставлений</td></tr>';
                 return;
             }
             tbody.innerHTML = mappings.map(m => `
                 <tr>
                     <td>${m.id}</td>
-                    <td>${escapeHtml(m.dispatchStatusName || `ID: ${m.dispatchStatusId}`)}</td>
-                    <td>→</td>
-                    <td>${m.localStatus?.name || '-'}</td>
-                    <td><button class="btn-secondary" style="padding:4px 8px;" onclick="deleteDispatchMapping(${m.id})">Удалить</button></td>
+                    <td>${escapeHtml(m.dispatchStatusName || `ID: ${m.dispatchStatusId}`)}</span></span>
+                    <td>→</span></span>
+                    <td>${m.localStatus?.name || '-'}</span></span>
+                    <td><button class="btn-secondary" style="padding:4px 8px;" onclick="deleteDispatchMapping(${m.id})">Удалить</button></span>
                 </tr>
             `).join('');
         } catch(e) {
@@ -1197,7 +1324,14 @@
         try {
             const r = await fetch('/api/references/carriers');
             const data = await r.json();
-            document.getElementById('carriers-tbody').innerHTML = data.map(c => `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.contactPerson || '-'}</td><td>${c.phone || '-'}</td><td><button onclick="editCarrier(${c.id})">✏️</button></td></tr>`).join('');
+            const isDisabled = isOneCIntegrationEnabled;
+            document.getElementById('carriers-tbody').innerHTML = data.map(c => `<tr>
+                <td>${c.id}</span></span>
+                <td>${c.name}</span></span>
+                <td>${c.contactPerson || '-'}</span></span>
+                <td>${c.phone || '-'}</span></span>
+                <td><button class="btn-secondary" onclick="editCarrier(${c.id})" ${isDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>✏️</button>
+            </tr>`).join('');
         } catch(e) {}
     }
 
@@ -1205,7 +1339,13 @@
         try {
             const r = await fetch('/api/references/plants');
             const data = await r.json();
-            document.getElementById('plants-tbody').innerHTML = data.map(p => `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.address || '-'}</td><td><button onclick="editPlant(${p.id})">✏️</button></td></tr>`).join('');
+            const isDisabled = isOneCIntegrationEnabled;
+            document.getElementById('plants-tbody').innerHTML = data.map(p => `<tr>
+                <td>${p.id}</span></span>
+                <td>${p.name}</span></span>
+                <td>${p.address || '-'}</span></span>
+                <td><button class="btn-secondary" onclick="editPlant(${p.id})" ${isDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>✏️</button>
+            </tr>`).join('');
         } catch(e) {}
     }
 
@@ -1213,16 +1353,63 @@
         try {
             const r = await fetch('/api/references/warehouses');
             const data = await r.json();
-            document.getElementById('warehouses-tbody').innerHTML = data.map(w => `<tr><td>${w.id}</td><td>${w.name}</td><td>${w.address || '-'}</td><td><button onclick="editWarehouse(${w.id})">✏️</button></td></tr>`).join('');
+            const isDisabled = isOneCIntegrationEnabled;
+            document.getElementById('warehouses-tbody').innerHTML = data.map(w => `<tr>
+                <td>${w.id}</span></span>
+                <td>${w.name}</span></span>
+                <td>${w.address || '-'}</span></span>
+                <td><button class="btn-secondary" onclick="editWarehouse(${w.id})" ${isDisabled ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>✏️</button>
+            </tr>`).join('');
         } catch(e) {}
     }
 
-    function openCarrierModal() { alert('Добавление перевозчика (требуется реализация)'); }
-    function editCarrier(id) { alert('Редактирование перевозчика ' + id); }
-    function openPlantModal() { alert('Добавление завода (требуется реализация)'); }
-    function editPlant(id) { alert('Редактирование завода ' + id); }
-    function openWarehouseModal() { alert('Добавление склада (требуется реализация)'); }
-    function editWarehouse(id) { alert('Редактирование склада ' + id); }
+    function openCarrierModal() {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
+        alert('Добавление перевозчика (требуется реализация)');
+    }
+
+    function editCarrier(id) {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
+        alert('Редактирование перевозчика ' + id);
+    }
+
+    function openPlantModal() {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
+        alert('Добавление завода (требуется реализация)');
+    }
+
+    function editPlant(id) {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
+        alert('Редактирование завода ' + id);
+    }
+
+    function openWarehouseModal() {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
+        alert('Добавление склада (требуется реализация)');
+    }
+
+    function editWarehouse(id) {
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено в режиме интеграции с 1С', 'error');
+            return;
+        }
+        alert('Редактирование склада ' + id);
+    }
 
     window.onclick = function(event) {
         const modals = ['divisionModal', 'userModal', 'addUserModal', 'tripStatusModal'];
@@ -1235,6 +1422,7 @@
     };
 
     loadCurrentUser();
+    checkIntegrationMode();
     loadDivisions();
     loadUsers();
     loadCarriers();
