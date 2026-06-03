@@ -177,6 +177,7 @@ public class SyncSettingsService {
         boolean needRestartSend = false;
         boolean needRestartReceive = false;
 
+        // Обновление настроек отправки
         if (newSettings.containsKey("sendIntervalSeconds")) {
             long newIntervalSeconds = Long.parseLong(newSettings.get("sendIntervalSeconds").toString());
             long newIntervalMs = newIntervalSeconds * 1000;
@@ -204,9 +205,12 @@ public class SyncSettingsService {
                 this.sendBatchSize = newBatchSize;
                 System.setProperty("sync.send.batch.size", String.valueOf(newBatchSize));
                 log.info("Размер пакета отправки изменен на: {}", newBatchSize);
+                // При изменении размера пакета не нужно перезапускать планировщик
+                // Он используется в SyncService при отправке
             }
         }
 
+        // Обновление настроек получения
         if (newSettings.containsKey("receiveIntervalSeconds")) {
             long newIntervalSeconds = Long.parseLong(newSettings.get("receiveIntervalSeconds").toString());
             long newIntervalMs = newIntervalSeconds * 1000;
@@ -228,7 +232,7 @@ public class SyncSettingsService {
             }
         }
 
-        // Перезапускаем планировщики с новыми настройками
+        // Перезапускаем планировщики с новыми настройками (без перезапуска всего приложения!)
         if (needRestartSend) {
             restartSendScheduler();
         }
@@ -239,8 +243,11 @@ public class SyncSettingsService {
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
-        response.put("message", "Настройки синхронизации обновлены");
+        response.put("message", "Настройки синхронизации применены");
         response.put("settings", getSettings());
+
+        log.info("Настройки успешно применены. Отправка: интервал={} мс, включена={}, размер пакета={}; Получение: интервал={} мс, включено={}",
+                sendIntervalMs, sendEnabled, sendBatchSize, receiveIntervalMs, receiveEnabled);
 
         return response;
     }
@@ -255,5 +262,27 @@ public class SyncSettingsService {
         settings.put("receiveIntervalSeconds", receiveIntervalMs / 1000);
         settings.put("receiveEnabled", receiveEnabled);
         return settings;
+    }
+
+    // ==================== Геттеры для доступа к настройкам из других сервисов ====================
+
+    public long getSendIntervalMs() {
+        return sendIntervalMs;
+    }
+
+    public boolean isSendEnabled() {
+        return sendEnabled;
+    }
+
+    public int getSendBatchSize() {
+        return sendBatchSize;
+    }
+
+    public long getReceiveIntervalMs() {
+        return receiveIntervalMs;
+    }
+
+    public boolean isReceiveEnabled() {
+        return receiveEnabled;
     }
 }

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,5 +74,14 @@ public class SyncController {
         log.info("GET /api/sync/dispatch-statuses - запрос статусов из диспетчеризации");
         List<Map<String, Object>> statuses = syncService.fetchDispatchStatuses();
         return ResponseEntity.ok(statuses);
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity<?> healthCheck() {
+        log.info("Health check запрос от системы диспетчеризации");
+        return ResponseEntity.ok(Map.of(
+                "status", "UP",
+                "timestamp", LocalDateTime.now().toString()
+        ));
     }
 }
