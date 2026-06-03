@@ -35,6 +35,7 @@ public class TripController {
     private final ExternalSystemStub externalSystemStub;
     private final SyncService syncService;
     private final DispatchSyncService dispatchSyncService;
+    private final TripStatusRepository tripStatusRepository;
 
     public TripController(TripRepository tripRepository,
                           TripHistoryRepository tripHistoryRepository,
@@ -44,7 +45,8 @@ public class TripController {
                           UserRepository userRepository,
                           ExternalSystemStub externalSystemStub,
                           SyncService syncService,
-                          DispatchSyncService dispatchSyncService) {
+                          DispatchSyncService dispatchSyncService,
+                          TripStatusRepository tripStatusRepository) {
         this.tripRepository = tripRepository;
         this.tripHistoryRepository = tripHistoryRepository;
         this.requestRepository = requestRepository;
@@ -54,6 +56,7 @@ public class TripController {
         this.externalSystemStub = externalSystemStub;
         this.syncService = syncService;
         this.dispatchSyncService = dispatchSyncService;
+        this.tripStatusRepository = tripStatusRepository;
     }
 
     private User getCurrentUser() {
@@ -74,6 +77,22 @@ public class TripController {
             case "CANCELLED": return "Отменен";
             case "DELETED": return "Удален";
             default: return statusCode;
+        }
+    }
+
+    private String getDefaultColorForStatus(TripStatus status) {
+        if (status == null) return "#6b7280";
+        switch (status) {
+            case NEW: return "#6b7280";
+            case ARRIVED_LOADING: return "#d97706";
+            case LOADED: return "#2563eb";
+            case IN_TRANSIT: return "#eab308";
+            case ARRIVED_UNLOADING: return "#d97706";
+            case UNLOADED: return "#10b981";
+            case PROCESSED: return "#059669";
+            case CANCELLED: return "#dc2626";
+            case DELETED: return "#9ca3af";
+            default: return "#6b7280";
         }
     }
 
@@ -119,7 +138,13 @@ public class TripController {
             dto.setDriverName(trip.getDriverName());
             dto.setTripDate(trip.getTripDate());
             dto.setVolume(trip.getVolume());
-            dto.setStatus(trip.getStatus());
+            dto.setStatus(trip.getStatus() != null ? trip.getStatus().name() : null);
+            dto.setStatusDisplayName(trip.getStatusDisplayName());
+            if (trip.getStatusEntity() != null && trip.getStatusEntity().getColor() != null) {
+                dto.setStatusColor(trip.getStatusEntity().getColor());
+            } else {
+                dto.setStatusColor(getDefaultColorForStatus(trip.getStatus()));
+            }
             dto.setSyncedToDispatch(trip.getSyncedToDispatch());
             dto.setSequenceNumber(trip.getSequenceNumber());
             dto.setDispatchStatusName(trip.getDispatchStatusName());
@@ -143,7 +168,13 @@ public class TripController {
                     response.put("driverName", trip.getDriverName());
                     response.put("tripDate", trip.getTripDate());
                     response.put("volume", trip.getVolume());
-                    response.put("status", trip.getStatus());
+                    response.put("status", trip.getStatus() != null ? trip.getStatus().name() : null);
+                    response.put("statusDisplayName", trip.getStatusDisplayName());
+                    if (trip.getStatusEntity() != null && trip.getStatusEntity().getColor() != null) {
+                        response.put("statusColor", trip.getStatusEntity().getColor());
+                    } else {
+                        response.put("statusColor", getDefaultColorForStatus(trip.getStatus()));
+                    }
                     response.put("syncedToDispatch", trip.getSyncedToDispatch());
                     response.put("syncedAt", trip.getSyncedAt());
                     response.put("sequenceNumber", trip.getSequenceNumber());
@@ -295,6 +326,13 @@ public class TripController {
         trip.setTripDate(LocalDate.parse(data.get("tripDate").toString()));
         trip.setVolume(tripVolume);
         trip.setStatus(TripStatus.NEW);
+
+        TripStatusEntity newStatusEntity = tripStatusRepository.findByCode("NEW").orElse(null);
+        if (newStatusEntity != null) {
+            trip.setStatusEntity(newStatusEntity);
+            log.info("Установлен statusEntity для нового рейса: {} с цветом {}", newStatusEntity.getCode(), newStatusEntity.getColor());
+        }
+
         trip.setSyncedToDispatch(false);
         trip.setSequenceNumber(request.getTrips().size() + 1);
 
@@ -302,7 +340,20 @@ public class TripController {
 
         addHistory(saved, "NEW", "user:" + currentUser.getUsername(), currentUser.getFullName());
 
-        return ResponseEntity.ok(saved);
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", saved.getId());
+        response.put("status", saved.getStatus().name());
+        response.put("statusDisplayName", saved.getStatusDisplayName());
+        response.put("statusColor", saved.getStatusEntity() != null ? saved.getStatusEntity().getColor() : "#6b7280");
+        response.put("volume", saved.getVolume());
+        response.put("tripDate", saved.getTripDate());
+        response.put("sequenceNumber", saved.getSequenceNumber());
+        response.put("carrier", saved.getCarrier());
+        response.put("vehiclePlate", saved.getVehiclePlate());
+        response.put("trailerPlate", saved.getTrailerPlate());
+        response.put("driverName", saved.getDriverName());
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
@@ -389,13 +440,25 @@ public class TripController {
         log.info("Новый статус: {}", newStatus);
         log.info("Пользователь: {} ({})", currentUser.getUsername(), currentUser.getRole());
 
+        TripStatusEntity newStatusEntity = tripStatusRepository.findByCode(newStatusStr).orElse(null);
+        if (newStatusEntity != null) {
+            trip.setStatusEntity(newStatusEntity);
+            log.info("Установлен statusEntity: {} с цветом {}", newStatusEntity.getCode(), newStatusEntity.getColor());
+        }
+
         if (currentUser.getRole() == Role.LOGIST) {
             if (trip.getStatus() == TripStatus.NEW && newStatus == TripStatus.ARRIVED_LOADING) {
                 trip.setStatus(TripStatus.ARRIVED_LOADING);
                 tripRepository.save(trip);
                 addHistory(trip, "ARRIVED_LOADING", "user:" + currentUser.getUsername(), currentUser.getFullName());
                 log.info("✅ Рейс {} изменен на ARRIVED_LOADING", trip.getId());
-                return ResponseEntity.ok(trip);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", trip.getId());
+                response.put("status", trip.getStatus().name());
+                response.put("statusDisplayName", trip.getStatusDisplayName());
+                response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : "#d97706");
+                return ResponseEntity.ok(response);
             }
 
             if (trip.getStatus() == TripStatus.ARRIVED_LOADING && newStatus == TripStatus.LOADED) {
@@ -408,7 +471,13 @@ public class TripController {
                 externalSystemStub.sendToDispatchSystem(trip);
 
                 log.info("✅ Рейс {} переведен в LOADED", trip.getId());
-                return ResponseEntity.ok(trip);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", trip.getId());
+                response.put("status", trip.getStatus().name());
+                response.put("statusDisplayName", trip.getStatusDisplayName());
+                response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : "#2563eb");
+                return ResponseEntity.ok(response);
             }
 
             return ResponseEntity.status(403).body("Невозможно обновить статус");
@@ -417,34 +486,61 @@ public class TripController {
         if (currentUser.getRole() == Role.ADMIN) {
             if (newStatus == TripStatus.CANCELLED && trip.getStatus() == TripStatus.NEW) {
                 trip.setStatus(TripStatus.CANCELLED);
+                TripStatusEntity cancelledEntity = tripStatusRepository.findByCode("CANCELLED").orElse(null);
+                if (cancelledEntity != null) trip.setStatusEntity(cancelledEntity);
                 tripRepository.save(trip);
                 addHistory(trip, "CANCELLED", "user:" + currentUser.getUsername(), currentUser.getFullName());
                 log.info("❌ Рейс {} отменен администратором", trip.getId());
-                return ResponseEntity.ok(trip);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", trip.getId());
+                response.put("status", trip.getStatus().name());
+                response.put("statusDisplayName", trip.getStatusDisplayName());
+                response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : "#dc2626");
+                return ResponseEntity.ok(response);
             }
 
             if (newStatus == TripStatus.DELETED && trip.getStatus() == TripStatus.NEW) {
                 trip.setStatus(TripStatus.DELETED);
+                TripStatusEntity deletedEntity = tripStatusRepository.findByCode("DELETED").orElse(null);
+                if (deletedEntity != null) trip.setStatusEntity(deletedEntity);
                 tripRepository.save(trip);
                 addHistory(trip, "DELETED", "user:" + currentUser.getUsername(), currentUser.getFullName());
                 log.info("🗑️ Рейс {} удален администратором", trip.getId());
-                return ResponseEntity.ok(trip);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", trip.getId());
+                response.put("status", trip.getStatus().name());
+                response.put("statusDisplayName", trip.getStatusDisplayName());
+                response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : "#9ca3af");
+                return ResponseEntity.ok(response);
             }
 
             if (newStatus == TripStatus.LOADED && trip.getStatus() != TripStatus.LOADED) {
                 log.info("🚛 АДМИН переводит рейс {} в LOADED", trip.getId());
 
                 trip.setStatus(TripStatus.LOADED);
+                TripStatusEntity loadedEntity = tripStatusRepository.findByCode("LOADED").orElse(null);
+                if (loadedEntity != null) trip.setStatusEntity(loadedEntity);
                 tripRepository.save(trip);
                 addHistory(trip, "LOADED", "user:" + currentUser.getUsername(), currentUser.getFullName());
 
                 externalSystemStub.sendToDispatchSystem(trip);
 
                 log.info("✅ Рейс {} переведен в LOADED", trip.getId());
-                return ResponseEntity.ok(trip);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", trip.getId());
+                response.put("status", trip.getStatus().name());
+                response.put("statusDisplayName", trip.getStatusDisplayName());
+                response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : "#2563eb");
+                return ResponseEntity.ok(response);
             }
 
             trip.setStatus(newStatus);
+            if (newStatusEntity != null) {
+                trip.setStatusEntity(newStatusEntity);
+            }
             tripRepository.save(trip);
             addHistory(trip, newStatusStr, "user:" + currentUser.getUsername(), currentUser.getFullName());
             log.info("✅ Рейс {} изменен на {} администратором", trip.getId(), newStatus);
@@ -460,7 +556,12 @@ public class TripController {
                 log.info("✅ Все рейсы заявки {} обработаны", request.getId());
             }
 
-            return ResponseEntity.ok(trip);
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", trip.getId());
+            response.put("status", trip.getStatus().name());
+            response.put("statusDisplayName", trip.getStatusDisplayName());
+            response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : getDefaultColorForStatus(trip.getStatus()));
+            return ResponseEntity.ok(response);
         }
 
         if (currentUser.getRole() == Role.DISPATCHER) {
@@ -472,21 +573,40 @@ public class TripController {
 
             if (newStatus == TripStatus.CANCELLED && trip.getStatus() == TripStatus.NEW) {
                 trip.setStatus(TripStatus.CANCELLED);
+                TripStatusEntity cancelledEntity = tripStatusRepository.findByCode("CANCELLED").orElse(null);
+                if (cancelledEntity != null) trip.setStatusEntity(cancelledEntity);
                 tripRepository.save(trip);
                 addHistory(trip, "CANCELLED", "user:" + currentUser.getUsername(), currentUser.getFullName());
                 log.info("❌ Рейс {} отменен диспетчером", trip.getId());
-                return ResponseEntity.ok(trip);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", trip.getId());
+                response.put("status", trip.getStatus().name());
+                response.put("statusDisplayName", trip.getStatusDisplayName());
+                response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : "#dc2626");
+                return ResponseEntity.ok(response);
             }
 
             if (newStatus == TripStatus.DELETED && trip.getStatus() == TripStatus.NEW) {
                 trip.setStatus(TripStatus.DELETED);
+                TripStatusEntity deletedEntity = tripStatusRepository.findByCode("DELETED").orElse(null);
+                if (deletedEntity != null) trip.setStatusEntity(deletedEntity);
                 tripRepository.save(trip);
                 addHistory(trip, "DELETED", "user:" + currentUser.getUsername(), currentUser.getFullName());
                 log.info("🗑️ Рейс {} удален диспетчером", trip.getId());
-                return ResponseEntity.ok(trip);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", trip.getId());
+                response.put("status", trip.getStatus().name());
+                response.put("statusDisplayName", trip.getStatusDisplayName());
+                response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : "#9ca3af");
+                return ResponseEntity.ok(response);
             }
 
             trip.setStatus(newStatus);
+            if (newStatusEntity != null) {
+                trip.setStatusEntity(newStatusEntity);
+            }
             tripRepository.save(trip);
             addHistory(trip, newStatusStr, "user:" + currentUser.getUsername(), currentUser.getFullName());
             log.info("✅ Рейс {} изменен на {} диспетчером", trip.getId(), newStatus);
@@ -502,7 +622,12 @@ public class TripController {
                 log.info("✅ Все рейсы заявки {} обработаны", request.getId());
             }
 
-            return ResponseEntity.ok(trip);
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", trip.getId());
+            response.put("status", trip.getStatus().name());
+            response.put("statusDisplayName", trip.getStatusDisplayName());
+            response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : getDefaultColorForStatus(trip.getStatus()));
+            return ResponseEntity.ok(response);
         }
 
         return ResponseEntity.status(403).body("Доступ запрещен");
@@ -582,6 +707,8 @@ public class TripController {
         if (trip.getStatus() == TripStatus.NEW &&
                 (currentUser.getRole() == Role.DISPATCHER || currentUser.getRole() == Role.ADMIN)) {
             trip.setStatus(TripStatus.DELETED);
+            TripStatusEntity deletedEntity = tripStatusRepository.findByCode("DELETED").orElse(null);
+            if (deletedEntity != null) trip.setStatusEntity(deletedEntity);
             tripRepository.save(trip);
             addHistory(trip, "DELETED", "user:" + currentUser.getUsername(), currentUser.getFullName());
             return ResponseEntity.ok().build();

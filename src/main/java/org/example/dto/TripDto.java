@@ -1,6 +1,5 @@
 package org.example.dto;
 
-import org.example.model.TripStatus;
 import java.time.LocalDate;
 
 public class TripDto {
@@ -13,7 +12,9 @@ public class TripDto {
     private String driverName;
     private LocalDate tripDate;
     private Double volume;
-    private TripStatus status;
+    private String status;
+    private String statusDisplayName;
+    private String statusColor;
     private Boolean syncedToDispatch;
     private Integer sequenceNumber;
     private String dispatchStatusName;
@@ -45,8 +46,14 @@ public class TripDto {
     public Double getVolume() { return volume; }
     public void setVolume(Double volume) { this.volume = volume; }
 
-    public TripStatus getStatus() { return status; }
-    public void setStatus(TripStatus status) { this.status = status; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public String getStatusDisplayName() { return statusDisplayName; }
+    public void setStatusDisplayName(String statusDisplayName) { this.statusDisplayName = statusDisplayName; }
+
+    public String getStatusColor() { return statusColor; }
+    public void setStatusColor(String statusColor) { this.statusColor = statusColor; }
 
     public Boolean getSyncedToDispatch() { return syncedToDispatch; }
     public void setSyncedToDispatch(Boolean syncedToDispatch) { this.syncedToDispatch = syncedToDispatch; }

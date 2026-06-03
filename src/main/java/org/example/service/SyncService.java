@@ -242,7 +242,7 @@ public class SyncService {
             return false;
         }
 
-        log.info("Текущий статус рейса {}: {}", tripId, trip.getStatus());
+        log.info("Текущий статус рейса {}: {}", tripId, trip.getStatusDisplayName());
 
         DispatchStatusMapping mapping = dispatchStatusMappingRepository.findByDispatchStatusId(dispatchStatusId).orElse(null);
 
@@ -251,54 +251,41 @@ public class SyncService {
             return false;
         }
 
-        log.info("Найдено сопоставление: статус диспетчеризации {} -> локальный статус {}",
-                dispatchStatusId, mapping.getLocalStatus().getCode());
-
-        if (mapping.getLocalStatus() == null) {
+        TripStatusEntity newStatusEntity = mapping.getLocalStatus();
+        if (newStatusEntity == null) {
             log.warn("Локальный статус в сопоставлении пуст");
             return false;
         }
 
-        try {
-            TripStatus newStatus = TripStatus.valueOf(mapping.getLocalStatus().getCode());
-            TripStatus oldStatus = trip.getStatus();
+        log.info("Найдено сопоставление: статус диспетчеризации {} -> локальный статус {} ({})",
+                dispatchStatusId, newStatusEntity.getCode(), newStatusEntity.getName());
 
-            String newStatusDisplay = getStatusDisplayName(newStatus);
-            String localStatusCode = mapping.getLocalStatus().getCode();
+        TripStatusEntity oldStatusEntity = trip.getStatusEntity();
+        String newStatusDisplay = newStatusEntity.getName();
 
-            log.info("Преобразование: {} -> {} (отображается как: {})",
-                    mapping.getLocalStatus().getCode(), newStatus, newStatusDisplay);
+        TripHistory history = new TripHistory();
+        history.setTrip(trip);
+        history.setStatusCode(newStatusEntity.getCode());
+        history.setStatusDisplay(newStatusDisplay);
+        history.setChangedBy("dispatch_system");
+        history.setUserName("Система диспетчеризации");
+        history.setDispatchStatusName(dispatchStatusName);
+        history.setFromDispatch(true);
+        history.setStatus("STATUS_UPDATED_FROM_DISPATCH");
 
-            TripHistory history = new TripHistory();
-            history.setTrip(trip);
-            history.setStatusCode(localStatusCode);
-            history.setStatusDisplay(newStatusDisplay);
-            history.setChangedBy("dispatch_system");
-            history.setUserName("Система диспетчеризации");
-            history.setDispatchStatusName(dispatchStatusName);
-            history.setFromDispatch(true);
-            history.setStatus("STATUS_UPDATED_FROM_DISPATCH");
+        tripHistoryRepository.save(history);
 
-            tripHistoryRepository.save(history);
+        trip.setStatusEntity(newStatusEntity);
+        trip.setDispatchStatusId(dispatchStatusId);
+        trip.setDispatchStatusName(dispatchStatusName);
+        tripRepository.save(trip);
 
-            if (oldStatus != newStatus) {
-                trip.setStatus(newStatus);
-                trip.setDispatchStatusId(dispatchStatusId);
-                trip.setDispatchStatusName(dispatchStatusName);
-                tripRepository.save(trip);
+        log.info("✅ Статус рейса {} обновлен: {} -> {} (из диспетчеризации)",
+                tripId,
+                oldStatusEntity != null ? oldStatusEntity.getName() : "null",
+                newStatusDisplay);
 
-                log.info("✅ Статус рейса {} обновлен: {} -> {} (из диспетчеризации)",
-                        tripId, oldStatus, newStatus);
-                return true;
-            } else {
-                log.info("Статус рейса {} уже {}, но история сохранена", tripId, newStatus);
-                return true;
-            }
-
-        } catch (IllegalArgumentException e) {
-            log.error("Неизвестный локальный статус: {}", mapping.getLocalStatus().getCode(), e);
-            return false;
-        }
+        return true;
     }
 
     private String getStatusDisplayName(TripStatus status) {

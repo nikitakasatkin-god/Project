@@ -24,31 +24,25 @@ public class Trip {
     private Carrier carrier;
 
     private String vehiclePlate;
-
     private String trailerPlate;
-
     private String vehicleBrand;
-
     private String driverName;
-
     private LocalDate tripDate;
-
     private Double volume;
 
+    @ManyToOne
+    @JoinColumn(name = "status_id")
+    private TripStatusEntity statusEntity;
+
     @Enumerated(EnumType.STRING)
-    private TripStatus status = TripStatus.NEW;
+    private TripStatus status;
 
     private Boolean syncedToDispatch = false;
-
     private LocalDateTime syncedAt;
-
     private Integer sequenceNumber;
-
     private LocalDateTime createdAt;
 
-    // Поля для статуса из диспетчеризации
     private Long dispatchStatusId;
-
     private String dispatchStatusName;
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -88,8 +82,22 @@ public class Trip {
     public Double getVolume() { return volume; }
     public void setVolume(Double volume) { this.volume = volume; }
 
+    public TripStatusEntity getStatusEntity() { return statusEntity; }
+    public void setStatusEntity(TripStatusEntity statusEntity) {
+        this.statusEntity = statusEntity;
+        if (statusEntity != null) {
+            try {
+                this.status = TripStatus.valueOf(statusEntity.getCode());
+            } catch (IllegalArgumentException e) {
+                // Пользовательский статус не соответствует enum
+            }
+        }
+    }
+
     public TripStatus getStatus() { return status; }
-    public void setStatus(TripStatus status) { this.status = status; }
+    public void setStatus(TripStatus status) {
+        this.status = status;
+    }
 
     public Boolean getSyncedToDispatch() { return syncedToDispatch; }
     public void setSyncedToDispatch(Boolean syncedToDispatch) { this.syncedToDispatch = syncedToDispatch; }
@@ -111,4 +119,14 @@ public class Trip {
 
     public String getDispatchStatusName() { return dispatchStatusName; }
     public void setDispatchStatusName(String dispatchStatusName) { this.dispatchStatusName = dispatchStatusName; }
+
+    public String getStatusDisplayName() {
+        if (statusEntity != null) {
+            return statusEntity.getName();
+        }
+        if (status != null) {
+            return status.getDisplayName();
+        }
+        return "Неизвестно";
+    }
 }
