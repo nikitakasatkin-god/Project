@@ -5,7 +5,6 @@
     <title>Заявка - Логистика</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS переменные для тем */
         :root {
             --bg-primary: #f5f7fb;
             --bg-secondary: #ffffff;
@@ -73,7 +72,6 @@
         .arrow { font-size: 12px; transition: transform 0.2s; }
         .has-submenu.open .arrow { transform: rotate(180deg); }
 
-        /* Скрытие элементов по ролям */
         .logist-only { display: none; }
         .dispatcher-only { display: none; }
         .admin-only { display: none; }
@@ -193,13 +191,6 @@
         .status-new { background: #fef3c7; color: #d97706; }
         .status-progress { background: #dbeafe; color: #2563eb; }
         .status-completed { background: #d1fae5; color: #059669; }
-        .status-trip-new { background: #f3f4f6; color: #6b7280; }
-        .status-trip-arrived_loading { background: #fef3c7; color: #d97706; }
-        .status-trip-loaded { background: #dbeafe; color: #2563eb; }
-        .status-trip-processed { background: #d1fae5; color: #059669; }
-        .status-trip-cancelled { background: #fee2e2; color: #dc2626; }
-
-        /* Стили для статуса обмена */
         .sync-badge {
             padding: 4px 12px;
             border-radius: 20px;
@@ -207,20 +198,9 @@
             font-weight: 500;
             display: inline-block;
         }
-        .sync-not-set {
-            background: #f3f4f6;
-            color: #6b7280;
-        }
-        .sync-pending {
-            background: #fef3c7;
-            color: #d97706;
-        }
-        .sync-completed {
-            background: #d1fae5;
-            color: #059669;
-        }
-
-        /* Стили для истории */
+        .sync-not-set { background: #f3f4f6; color: #6b7280; }
+        .sync-pending { background: #fef3c7; color: #d97706; }
+        .sync-completed { background: #d1fae5; color: #059669; }
         .history-table {
             width: 100%;
             border-collapse: collapse;
@@ -236,19 +216,11 @@
             font-weight: 600;
             color: var(--text-secondary);
         }
-        .history-system {
-            color: #667eea;
-            font-weight: 500;
-        }
-        .history-user {
-            color: var(--text-secondary);
-        }
         .link-button {
             color: #667eea;
             text-decoration: none;
             font-weight: 500;
         }
-
         .modal {
             display: none;
             position: fixed;
@@ -287,7 +259,6 @@
         }
         .form-control:focus { outline: none; border-color: #667eea; }
         .form-control:disabled { background: var(--hover-bg); cursor: not-allowed; }
-        .form-control.error { border-color: #ef4444; background: #fef2f2; }
         .info-message { background: #eef2ff; padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; color: #4338ca; display: flex; align-items: center; gap: 10px; }
         .warning-message { background: #fef3c7; color: #d97706; }
         .empty-state { text-align: center; padding: 40px; }
@@ -437,7 +408,6 @@
 </div>
 
 <script>
-    // Функции для темы
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -545,6 +515,7 @@
         try {
             const response = await fetch(`/api/trips/request/${requestId}`);
             existingTrips = await response.json();
+            console.log('Загружены рейсы:', existingTrips.map(t => ({id: t.id, status: t.status, statusColor: t.statusColor, statusDisplayName: t.statusDisplayName})));
             renderTrips(existingTrips);
         } catch(e) {
             console.error(e);
@@ -865,6 +836,8 @@
     }
 
     function renderTrips(trips) {
+        console.log('renderTrips получил:', trips.map(t => ({id: t.id, status: t.status, statusColor: t.statusColor, statusDisplayName: t.statusDisplayName})));
+
         const container = document.getElementById('tripsContainer');
         const activeTrips = trips.filter(t => t.status !== 'DELETED');
 
@@ -921,13 +894,37 @@
                 </thead>
                 <tbody>
                     ${activeTrips.map(trip => {
-                        let tripNumberDisplay = '';
+                        // Определяем цвет статуса
+                        let statusColor = trip.statusColor;
+                        let textColor = 'white';
+
+                        if (!statusColor) {
+                            const defaultColors = {
+                                'NEW': '#6b7280',
+                                'ARRIVED_LOADING': '#d97706',
+                                'LOADED': '#2563eb',
+                                'IN_TRANSIT': '#eab308',
+                                'PROCESSED': '#059669',
+                                'CANCELLED': '#ef4444',
+                                'DELETED': '#9ca3af'
+                            };
+                            statusColor = defaultColors[trip.status] || '#6b7280';
+                        }
+
+                        const lightColors = ['#fef3c7', '#dbeafe', '#d1fae5', '#f3f4f6', '#e0e7ff'];
+                        if (lightColors.includes(statusColor.toLowerCase())) {
+                            textColor = '#374151';
+                        }
+
+                        const statusText = trip.statusDisplayName || getTripStatusText(trip.status);
                         const syncText = getSyncText(trip);
                         const syncClass = getSyncClass(trip);
 
+                        let tripNumberDisplay = '';
+
                         if (trip.status === 'NEW') {
                             if (isOwner) {
-                                tripNumberDisplay = `<button class="trip-status-btn btn-status-new" onclick="updateTripStatus(${trip.id}, 'ARRIVED_LOADING')">${trip.sequenceNumber || trip.id} → Прибыл на погрузку</button>`;
+                                tripNumberDisplay = `<button class="trip-status-btn" style="background:#f3f4f6; color:#6b7280; border:none; cursor:pointer; font-weight:600; font-size:14px; padding:6px 12px; border-radius:6px; width:100%; text-align:left;" onclick="updateTripStatus(${trip.id}, 'ARRIVED_LOADING')">${trip.sequenceNumber || trip.id} → Прибыл на погрузку</button>`;
                             } else if (canViewTrip) {
                                 tripNumberDisplay = `<a href="/trip-detail?id=${trip.id}" class="link-button" style="font-weight:600;">${trip.sequenceNumber || trip.id}</a>`;
                             } else {
@@ -935,7 +932,7 @@
                             }
                         } else if (trip.status === 'ARRIVED_LOADING') {
                             if (isOwner) {
-                                tripNumberDisplay = `<button class="trip-status-btn btn-status-arrived" onclick="updateTripStatus(${trip.id}, 'LOADED')">${trip.sequenceNumber || trip.id} → Погружен</button>`;
+                                tripNumberDisplay = `<button class="trip-status-btn" style="background:#fef3c7; color:#d97706; border:none; cursor:pointer; font-weight:600; font-size:14px; padding:6px 12px; border-radius:6px; width:100%; text-align:left;" onclick="updateTripStatus(${trip.id}, 'LOADED')">${trip.sequenceNumber || trip.id} → Погружен</button>`;
                             } else if (canViewTrip) {
                                 tripNumberDisplay = `<a href="/trip-detail?id=${trip.id}" class="link-button" style="font-weight:600;">${trip.sequenceNumber || trip.id}</a>`;
                             } else {
@@ -958,8 +955,8 @@
                                 <td>${trip.driverName || '-'}</span></span>
                                 <td>${trip.tripDate}</span></span>
                                 <td>${trip.volume} т</span></span>
-                                <td><span class="status-badge status-trip-${getTripStatusClass(trip.status)}">${getTripStatusText(trip.status)}</span></span></span>
-                                <td><span class="sync-badge ${syncClass}">${syncText}</span></span></span>
+                                <td><span class="status-badge" style="background: ${statusColor}; color: ${textColor}; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; display: inline-block;">${statusText}</span></span>
+                                <td><span class="sync-badge ${syncClass}">${syncText}</span></span>
                                 <td>
                                     ${canManageTrips && trip.status === 'NEW' ?
                                         `<button class="btn-warning" style="font-size:12px;padding:4px 12px;margin:2px;" onclick="cancelTrip(${trip.id})">Отменить</button>
@@ -975,6 +972,32 @@
                 </tbody>
             </table>
         `;
+    }
+
+    function getTripStatusClass(status) {
+        const map = {
+            'NEW': 'new',
+            'ARRIVED_LOADING': 'arrived_loading',
+            'LOADED': 'loaded',
+            'IN_TRANSIT': 'in_transit',
+            'PROCESSED': 'processed',
+            'CANCELLED': 'cancelled',
+            'DELETED': 'deleted'
+        };
+        return map[status] || 'new';
+    }
+
+    function getTripStatusText(status) {
+        const map = {
+            'NEW': 'Новый',
+            'ARRIVED_LOADING': 'Прибыл на погрузку',
+            'LOADED': 'Погружен',
+            'IN_TRANSIT': 'В пути',
+            'PROCESSED': 'Обработан',
+            'CANCELLED': 'Отменен',
+            'DELETED': 'Удален'
+        };
+        return map[status] || status;
     }
 
     function checkButtonsVisibility() {
@@ -1021,11 +1044,25 @@
                 body: JSON.stringify({ status: status })
             });
             if (response.ok) {
-                showNotification(`Статус рейса обновлен`, 'success');
+                const result = await response.json();
+                console.log('Результат обновления статуса:', result);
+
+                // Обновляем рейс в массиве
+                const tripIndex = existingTrips.findIndex(t => t.id === tripId);
+                if (tripIndex !== -1) {
+                    existingTrips[tripIndex].status = result.status;
+                    existingTrips[tripIndex].statusDisplayName = result.statusDisplayName;
+                    existingTrips[tripIndex].statusColor = result.statusColor;
+                    console.log(`Обновлен рейс ${tripId}: статус=${result.status}, цвет=${result.statusColor}`);
+                    renderTrips(existingTrips);
+                }
+
+                showNotification(`Статус рейса обновлен на "${result.statusDisplayName}"`, 'success');
                 if (status === 'LOADED') {
                     showNotification('Рейс передан в систему диспетчеризации', 'info');
                 }
-                loadRequest();
+
+                await loadRequest();
             } else {
                 const error = await response.text();
                 showNotification(error || 'Ошибка при обновлении статуса', 'error');
@@ -1277,9 +1314,10 @@
             });
 
             if (response.ok) {
+                const newTrip = await response.json();
                 showNotification('Рейс успешно добавлен', 'success');
                 closeTripModal();
-                loadRequest();
+                await loadRequest();
             } else {
                 const error = await response.text();
                 showNotification(error || 'Ошибка при добавлении рейса', 'error');
@@ -1306,32 +1344,6 @@
         notification.textContent = message;
         document.body.appendChild(notification);
         setTimeout(() => notification.remove(), 3000);
-    }
-
-    function getTripStatusClass(status) {
-        const map = {
-            'NEW': 'new',
-            'ARRIVED_LOADING': 'arrived_loading',
-            'LOADED': 'loaded',
-            'IN_TRANSIT': 'in_transit',
-            'PROCESSED': 'processed',
-            'CANCELLED': 'cancelled',
-            'DELETED': 'deleted'
-        };
-        return map[status] || 'new';
-    }
-
-    function getTripStatusText(status) {
-        const map = {
-            'NEW': 'Новый',
-            'ARRIVED_LOADING': 'Прибыл на погрузку',
-            'LOADED': 'Погружен',
-            'IN_TRANSIT': 'В пути',
-            'PROCESSED': 'Обработан',
-            'CANCELLED': 'Отменен',
-            'DELETED': 'Удален'
-        };
-        return map[status] || status;
     }
 
     function getStatusClass(status) {

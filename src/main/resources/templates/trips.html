@@ -750,19 +750,22 @@
                 </thead>
                 <tbody>
                     ${trips.map(trip => {
-                        const requestId = trip.requestId || '?';
+                        const statusText = trip.statusDisplayName || getStatusText(trip.status);
+                        const statusColor = trip.statusColor || '#6b7280';
+                        const syncText = getSyncText(trip);
+                        const syncClass = getSyncClass(trip);
                         const canEdit = trip.status === 'NEW';
                         return `
                             <tr>
                                 <td><a href="/trip-detail?id=${trip.id}" class="link-button">${trip.id}</a></span></span>
-                                <td><a href="/request-detail?id=${requestId}" class="link-button">Заявка №${requestId}</a></span></span>
+                                <td><a href="/request-detail?id=${trip.requestId}" class="link-button">Заявка №${trip.requestId}</a></span></span>
                                 <td>${trip.carrierName || '-'}</span></span>
                                 <td>${trip.vehiclePlate || '-'}</span></span>
                                 <td>${trip.driverName || '-'}</span></span>
                                 <td>${formatDate(trip.tripDate)}</span></span>
                                 <td>${trip.volume} т</span></span>
-                                <td><span class="status-badge status-trip-${getStatusClass(trip.status)}">${getStatusText(trip.status)}</span></td>
-                                <td><span class="sync-badge ${getSyncClass(trip)}">${getSyncText(trip)}</span></td>
+                                <td><span class="status-badge" style="background: ${statusColor}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; display: inline-block;">${statusText}</span></span>
+                                <td><span class="sync-badge ${syncClass}">${syncText}</span></span>
                                 <td>
                                     <div class="action-buttons">
                                         ${canEdit ?
