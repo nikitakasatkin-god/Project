@@ -203,6 +203,7 @@
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
+            margin-top: 16px;
         }
         .mappings-table {
             width: 100%;
@@ -225,6 +226,14 @@
             border-radius: 8px;
             margin-top: 16px;
             font-size: 14px;
+        }
+        hr {
+            margin: 16px 0;
+            border-color: var(--border-color);
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); }
@@ -299,44 +308,82 @@
     <!-- Блок синхронизации с системой диспетчеризации -->
     <div class="settings-group">
         <h3>Синхронизация с системой диспетчеризации</h3>
+
+        <!-- Настройки подключения -->
         <div class="setting-item">
             <span class="setting-label">URL системы диспетчеризации</span>
             <div class="setting-value">
                 <input type="text" id="dispatchUrl" value="http://localhost:8081" style="width: 300px;">
             </div>
         </div>
+
+        <hr>
+
+        <!-- Настройки отправки рейсов -->
+        <h4 style="margin: 16px 0 8px 0;">📤 Отправка рейсов в диспетчеризацию</h4>
         <div class="setting-item">
-            <span class="setting-label">Автоматическая синхронизация</span>
+            <span class="setting-label">Автоматическая отправка</span>
             <div class="setting-value">
-                <input type="checkbox" id="autoSync" checked>
+                <input type="checkbox" id="sendEnabled" checked>
             </div>
         </div>
         <div class="setting-item">
-            <span class="setting-label">Интервал синхронизации (сек)</span>
+            <span class="setting-label">Интервал отправки рейсов (сек)</span>
             <div class="setting-value">
-                <input type="number" id="syncInterval" value="60" min="10" max="3600">
+                <input type="number" id="sendInterval" value="60" min="10" max="3600">
                 <span style="font-size: 12px; margin-left: 8px;">(мин: 10 сек, макс: 3600 сек)</span>
             </div>
         </div>
         <div class="setting-item">
-            <span class="setting-label">Размер пакета (рейсов)</span>
+            <span class="setting-label">Размер пакета отправки (рейсов)</span>
             <div class="setting-value">
-                <input type="number" id="batchSize" value="10" min="1" max="50">
+                <input type="number" id="sendBatchSize" value="10" min="1" max="50">
                 <span style="font-size: 12px; margin-left: 8px;">(мин: 1, макс: 50)</span>
             </div>
         </div>
-        <div class="sync-buttons" style="margin-top: 16px;">
-            <button class="btn-primary" onclick="sendTripsToDispatch()">📤 Отправить рейсы в диспетчеризацию</button>
-            <button class="btn-primary" onclick="receiveStatusesFromDispatch()">📥 Получить статусы из диспетчеризации</button>
+
+        <hr>
+
+        <!-- Настройки получения статусов -->
+        <h4 style="margin: 16px 0 8px 0;">📥 Получение статусов из диспетчеризации</h4>
+        <div class="setting-item">
+            <span class="setting-label">Автоматическое получение статусов</span>
+            <div class="setting-value">
+                <input type="checkbox" id="receiveEnabled" checked>
+            </div>
+        </div>
+        <div class="setting-item">
+            <span class="setting-label">Интервал получения статусов (сек)</span>
+            <div class="setting-value">
+                <input type="number" id="receiveInterval" value="60" min="10" max="3600">
+                <span style="font-size: 12px; margin-left: 8px;">(рекомендуется 30-60 сек)</span>
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Кнопки ручного управления -->
+        <div class="sync-buttons">
+            <button class="btn-primary" onclick="sendTripsToDispatch()">📤 Отправить рейсы в диспетчеризацию (ручная)</button>
+            <button class="btn-primary" onclick="receiveStatusesFromDispatch()">📥 Получить статусы из диспетчеризации (ручная)</button>
             <button class="btn-secondary" onclick="testDispatchConnection()">🔌 Проверить соединение</button>
         </div>
+
+        <!-- Результат операции -->
         <div id="syncResult" class="sync-status" style="display: none;"></div>
+
+        <!-- Текущие настройки -->
         <div id="currentSettings" class="current-settings">
             <strong>Текущие настройки:</strong><br>
             Загрузка...
         </div>
+
+        <!-- Кнопка сохранения -->
         <div style="margin-top: 16px;">
             <button class="btn-primary" onclick="saveSyncSettings()">💾 Сохранить настройки синхронизации</button>
+            <span style="margin-left: 12px; font-size: 12px; color: var(--text-muted);">
+                ⚠️ Для применения изменений требуется перезапуск приложения
+            </span>
         </div>
     </div>
 
@@ -496,13 +543,16 @@
             if (data.success) {
                 resultDiv.className = 'sync-status success';
                 resultDiv.innerHTML = `✅ ${data.message}`;
+                showNotification(data.message, 'success');
             } else {
                 resultDiv.className = 'sync-status error';
                 resultDiv.innerHTML = `❌ ${data.message}`;
+                showNotification(data.message, 'error');
             }
         } catch(e) {
             resultDiv.className = 'sync-status error';
             resultDiv.innerHTML = `❌ Ошибка при отправке: ${e.message}`;
+            showNotification('Ошибка при отправке рейсов', 'error');
         }
 
         setTimeout(() => {
@@ -523,14 +573,18 @@
             if (data.success) {
                 resultDiv.className = 'sync-status success';
                 resultDiv.innerHTML = `✅ ${data.message}`;
+                showNotification(data.message, 'success');
+                // Обновляем страницу, чтобы показать новые статусы
                 setTimeout(() => location.reload(), 1500);
             } else {
                 resultDiv.className = 'sync-status error';
                 resultDiv.innerHTML = `❌ ${data.message}`;
+                showNotification(data.message, 'error');
             }
         } catch(e) {
             resultDiv.className = 'sync-status error';
             resultDiv.innerHTML = `❌ Ошибка при получении: ${e.message}`;
+            showNotification('Ошибка при получении статусов', 'error');
         }
 
         setTimeout(() => {
@@ -562,6 +616,7 @@
                 const statuses = await response.json();
                 resultDiv.className = 'sync-status success';
                 resultDiv.innerHTML = `✅ Соединение установлено. Получено статусов: ${statuses.length}`;
+                showNotification('Соединение с диспетчеризацией установлено', 'success');
 
                 const select = document.getElementById('dispatchStatusSelect');
                 select.innerHTML = '<option value="">Выберите статус</option>' +
@@ -569,10 +624,12 @@
             } else {
                 resultDiv.className = 'sync-status error';
                 resultDiv.innerHTML = `❌ Ошибка соединения: ${response.status}`;
+                showNotification('Не удалось подключиться к диспетчеризации', 'error');
             }
         } catch(e) {
             resultDiv.className = 'sync-status error';
             resultDiv.innerHTML = `❌ Не удалось подключиться: ${e.message}`;
+            showNotification('Ошибка подключения к системе диспетчеризации', 'error');
         }
 
         setTimeout(() => {
@@ -586,79 +643,79 @@
             const response = await fetch('/api/sync/settings');
             if (response.ok) {
                 const settings = await response.json();
-                document.getElementById('autoSync').checked = settings.autoSyncEnabled;
-                document.getElementById('syncInterval').value = settings.syncIntervalSeconds;
-                document.getElementById('batchSize').value = settings.batchSize;
+                document.getElementById('sendEnabled').checked = settings.sendEnabled;
+                document.getElementById('sendInterval').value = settings.sendIntervalSeconds;
+                document.getElementById('sendBatchSize').value = settings.sendBatchSize;
+                document.getElementById('receiveEnabled').checked = settings.receiveEnabled;
+                document.getElementById('receiveInterval').value = settings.receiveIntervalSeconds;
 
                 const settingsDiv = document.getElementById('currentSettings');
                 settingsDiv.innerHTML = `
                     <strong>Текущие настройки синхронизации:</strong><br>
-                    • Автоматическая синхронизация: ${settings.autoSyncEnabled ? '✅ Включена' : '❌ Отключена'}<br>
-                    • Интервал: ${settings.syncIntervalSeconds} секунд<br>
-                    • Размер пакета: ${settings.batchSize} рейсов
+                    • 📤 Отправка рейсов: ${settings.sendEnabled ? '✅ Включена' : '❌ Отключена'}<br>
+                    • 📤 Интервал отправки: ${settings.sendIntervalSeconds} секунд<br>
+                    • 📤 Размер пакета: ${settings.sendBatchSize} рейсов<br>
+                    • 📥 Получение статусов: ${settings.receiveEnabled ? '✅ Включено' : '❌ Отключено'}<br>
+                    • 📥 Интервал получения: ${settings.receiveIntervalSeconds} секунд
                 `;
+            } else {
+                document.getElementById('currentSettings').innerHTML = '<strong>Текущие настройки:</strong><br>Не удалось загрузить';
             }
         } catch(e) {
             console.error('Ошибка загрузки настроек:', e);
-            const settingsDiv = document.getElementById('currentSettings');
-            settingsDiv.innerHTML = '<strong>Текущие настройки:</strong><br>Не удалось загрузить';
+            document.getElementById('currentSettings').innerHTML = '<strong>Текущие настройки:</strong><br>Ошибка загрузки';
         }
     }
 
-    async function saveSyncSettings() {
-        const autoSync = document.getElementById('autoSync').checked;
-        const syncIntervalSeconds = parseInt(document.getElementById('syncInterval').value);
-        const batchSize = parseInt(document.getElementById('batchSize').value);
+    function saveSyncSettings() {
+        const sendEnabled = document.getElementById('sendEnabled').checked;
+        const sendIntervalSeconds = parseInt(document.getElementById('sendInterval').value);
+        const sendBatchSize = parseInt(document.getElementById('sendBatchSize').value);
+        const receiveEnabled = document.getElementById('receiveEnabled').checked;
+        const receiveIntervalSeconds = parseInt(document.getElementById('receiveInterval').value);
 
-        if (syncIntervalSeconds < 10 || syncIntervalSeconds > 3600) {
-            showNotification('Интервал должен быть от 10 до 3600 секунд', 'error');
+        if (isNaN(sendIntervalSeconds) || sendIntervalSeconds < 10 || sendIntervalSeconds > 3600) {
+            showNotification('Интервал отправки должен быть от 10 до 3600 секунд', 'error');
             return;
         }
 
-        if (batchSize < 1 || batchSize > 50) {
+        if (isNaN(receiveIntervalSeconds) || receiveIntervalSeconds < 10 || receiveIntervalSeconds > 3600) {
+            showNotification('Интервал получения должен быть от 10 до 3600 секунд', 'error');
+            return;
+        }
+
+        if (isNaN(sendBatchSize) || sendBatchSize < 1 || sendBatchSize > 50) {
             showNotification('Размер пакета должен быть от 1 до 50', 'error');
             return;
         }
 
-        const settings = {
-            autoSyncEnabled: autoSync,
-            syncIntervalSeconds: syncIntervalSeconds,
-            batchSize: batchSize
-        };
+        const dispatchUrl = document.getElementById('dispatchUrl').value;
 
-        const resultDiv = document.getElementById('syncResult');
-        resultDiv.style.display = 'block';
-        resultDiv.className = 'sync-status info';
-        resultDiv.innerHTML = '⏳ Сохранение настроек...';
+        // Сохраняем настройки в localStorage
+        localStorage.setItem('dispatch_url', dispatchUrl);
+        localStorage.setItem('sync_send_enabled', sendEnabled);
+        localStorage.setItem('sync_send_interval', sendIntervalSeconds);
+        localStorage.setItem('sync_send_batch_size', sendBatchSize);
+        localStorage.setItem('sync_receive_enabled', receiveEnabled);
+        localStorage.setItem('sync_receive_interval', receiveIntervalSeconds);
 
-        try {
-            const response = await fetch('/api/sync/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(settings)
-            });
+        showNotification('Настройки сохранены. Перезапустите приложение для полного применения изменений.', 'success');
+    }
 
-            const data = await response.json();
+    function loadSavedSettings() {
+        const savedUrl = localStorage.getItem('dispatch_url');
+        const savedSendEnabled = localStorage.getItem('sync_send_enabled');
+        const savedSendInterval = localStorage.getItem('sync_send_interval');
+        const savedSendBatchSize = localStorage.getItem('sync_send_batch_size');
+        const savedReceiveEnabled = localStorage.getItem('sync_receive_enabled');
+        const savedReceiveInterval = localStorage.getItem('sync_receive_interval');
 
-            if (data.success) {
-                resultDiv.className = 'sync-status success';
-                resultDiv.innerHTML = `✅ ${data.message}`;
-                showNotification('Настройки сохранены и применены', 'success');
-                loadSyncSettings();
-            } else {
-                resultDiv.className = 'sync-status error';
-                resultDiv.innerHTML = `❌ ${data.message}`;
-                showNotification(data.message, 'error');
-            }
-        } catch(e) {
-            resultDiv.className = 'sync-status error';
-            resultDiv.innerHTML = `❌ Ошибка: ${e.message}`;
-            showNotification('Ошибка сохранения настроек', 'error');
-        }
-
-        setTimeout(() => {
-            resultDiv.style.display = 'none';
-        }, 3000);
+        if (savedUrl) document.getElementById('dispatchUrl').value = savedUrl;
+        if (savedSendEnabled !== null) document.getElementById('sendEnabled').checked = savedSendEnabled === 'true';
+        if (savedSendInterval) document.getElementById('sendInterval').value = savedSendInterval;
+        if (savedSendBatchSize) document.getElementById('sendBatchSize').value = savedSendBatchSize;
+        if (savedReceiveEnabled !== null) document.getElementById('receiveEnabled').checked = savedReceiveEnabled === 'true';
+        if (savedReceiveInterval) document.getElementById('receiveInterval').value = savedReceiveInterval;
     }
 
     // ========== Функции для статусов ==========
@@ -795,6 +852,7 @@
     loadCurrentUser();
     loadMaintenanceMessage();
     loadMappings();
+    loadSavedSettings();
     loadSyncSettings();
 </script>
 </body>

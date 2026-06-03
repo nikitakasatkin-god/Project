@@ -46,6 +46,11 @@ public class Trip {
 
     private LocalDateTime createdAt;
 
+    // Поля для статуса из диспетчеризации
+    private Long dispatchStatusId;
+
+    private String dispatchStatusName;
+
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("changedAt ASC")
     @JsonIgnore
@@ -56,7 +61,6 @@ public class Trip {
         createdAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -101,4 +105,10 @@ public class Trip {
 
     public List<TripHistory> getHistory() { return history; }
     public void setHistory(List<TripHistory> history) { this.history = history; }
+
+    public Long getDispatchStatusId() { return dispatchStatusId; }
+    public void setDispatchStatusId(Long dispatchStatusId) { this.dispatchStatusId = dispatchStatusId; }
+
+    public String getDispatchStatusName() { return dispatchStatusName; }
+    public void setDispatchStatusName(String dispatchStatusName) { this.dispatchStatusName = dispatchStatusName; }
 }

@@ -16,6 +16,7 @@ public class TripDto {
     private TripStatus status;
     private Boolean syncedToDispatch;
     private Integer sequenceNumber;
+    private String dispatchStatusName;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -52,4 +53,7 @@ public class TripDto {
 
     public Integer getSequenceNumber() { return sequenceNumber; }
     public void setSequenceNumber(Integer sequenceNumber) { this.sequenceNumber = sequenceNumber; }
+
+    public String getDispatchStatusName() { return dispatchStatusName; }
+    public void setDispatchStatusName(String dispatchStatusName) { this.dispatchStatusName = dispatchStatusName; }
 }
