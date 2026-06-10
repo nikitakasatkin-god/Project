@@ -7,7 +7,6 @@
     <title>Заявки - Логистика</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS переменные для тем */
         :root {
             --bg-primary: #f5f7fb;
             --bg-secondary: #ffffff;
@@ -89,7 +88,6 @@
         .arrow { font-size: 12px; transition: transform 0.2s; }
         .has-submenu.open .arrow { transform: rotate(180deg); }
 
-        /* Скрытие элементов по ролям */
         .logist-only { display: none; }
         .dispatcher-only { display: none; }
         .admin-only { display: none; }
@@ -284,6 +282,7 @@
         .status-new { background: #fef3c7; color: #d97706; }
         .status-progress { background: #dbeafe; color: #2563eb; }
         .status-completed { background: #d1fae5; color: #059669; }
+        .status-rejected { background: #fee2e2; color: #dc2626; }
         .request-card-body { padding: 16px; }
         .request-info {
             display: flex;
@@ -472,6 +471,7 @@
                         <option value="IN_PROGRESS">В работе</option>
                         <option value="PROCESSED">Обработана</option>
                         <option value="COMPLETED">Завершена</option>
+                        <option value="REJECTED">Отклонена</option>
                     </select>
                 </div>
                 <div class="filter-field">
@@ -575,7 +575,6 @@
 </div>
 
 <script>
-    // Функции для темы
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -692,25 +691,33 @@
 
     async function loadPickupPoints() {
         try {
-            const response = await fetch('/api/requests/reference/pickup-points');
+            const response = await fetch('/api/references/plants');
             const plants = await response.json();
             const pickupSelect = document.getElementById('pickupPoint');
             pickupSelect.innerHTML = '<option value="">Выберите завод</option>' +
-                plants.map(p => `<option value="${p.value}">${p.label}</option>`).join('');
+                plants.map(p => `<option value="${p.name}">🏭 Завод: ${p.name}</option>`).join('');
         } catch(e) {
             console.error('Ошибка загрузки заводов:', e);
+            const pickupSelect = document.getElementById('pickupPoint');
+            if (pickupSelect) {
+                pickupSelect.innerHTML = '<option value="">Ошибка загрузки заводов</option>';
+            }
         }
     }
 
     async function loadDeliveryPoints() {
         try {
-            const response = await fetch('/api/requests/reference/delivery-points');
+            const response = await fetch('/api/references/warehouses');
             const warehouses = await response.json();
             const deliverySelect = document.getElementById('deliveryPoint');
             deliverySelect.innerHTML = '<option value="">Выберите склад</option>' +
-                warehouses.map(w => `<option value="${w.value}">${w.label}</option>`).join('');
+                warehouses.map(w => `<option value="${w.name}">📦 Склад: ${w.name}</option>`).join('');
         } catch(e) {
             console.error('Ошибка загрузки складов:', e);
+            const deliverySelect = document.getElementById('deliveryPoint');
+            if (deliverySelect) {
+                deliverySelect.innerHTML = '<option value="">Ошибка загрузки складов</option>';
+            }
         }
     }
 
@@ -718,6 +725,8 @@
         try {
             const response = await fetch(`/api/requests?type=${currentProductType}`);
             allRequests = await response.json();
+            console.log('Загружено заявок:', allRequests.length);
+            console.log('Заявки со статусом REJECTED:', allRequests.filter(r => r.status === 'REJECTED'));
             applyFilters();
         } catch(e) {
             console.error(e);
@@ -765,6 +774,16 @@
         renderRequests(filtered);
     }
 
+    function getStatusClass(status) {
+        const map = {'NEW': 'new', 'IN_PROGRESS': 'progress', 'PROCESSED': 'completed', 'COMPLETED': 'completed', 'REJECTED': 'rejected'};
+        return map[status] || 'new';
+    }
+
+    function getStatusText(status) {
+        const map = {'NEW': 'Новая', 'IN_PROGRESS': 'В работе', 'PROCESSED': 'Обработана', 'COMPLETED': 'Завершена', 'REJECTED': 'Отклонена'};
+        return map[status] || status;
+    }
+
     function renderRequests(requests) {
         const container = document.getElementById('requestsContainer');
         if (!requests.length) {
@@ -779,7 +798,7 @@
                     <div class="request-card" data-id="${req.id}">
                         <div class="request-card-header">
                             <span class="request-id">Заявка №${req.id}</span>
-                            <span class="status-badge status-${req.status === 'NEW' ? 'new' : req.status === 'IN_PROGRESS' ? 'progress' : 'completed'}">${req.status === 'NEW' ? 'Новая' : req.status === 'IN_PROGRESS' ? 'В работе' : req.status === 'PROCESSED' ? 'Обработана' : 'Завершена'}</span>
+                            <span class="status-badge status-${getStatusClass(req.status)}">${getStatusText(req.status)}</span>
                         </div>
                         <div class="request-card-body">
                             <div class="request-info"><span class="info-label">Объем:</span> ${req.volume} т</div>

@@ -4,7 +4,8 @@ public enum RequestStatus {
     NEW("Новая"),
     IN_PROGRESS("В работе"),
     PROCESSED("Обработана"),
-    COMPLETED("Завершена");
+    COMPLETED("Завершена"),
+    REJECTED("Отклонена");
 
     private final String displayName;
 

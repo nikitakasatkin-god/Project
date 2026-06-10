@@ -436,19 +436,37 @@ public class TripController {
         }
 
         log.info("=== ОБНОВЛЕНИЕ СТАТУСА РЕЙСА {} ===", id);
-        log.info("Текущий статус: {}", trip.getStatus());
+        log.info("Текущий статус рейса в БД: {}", trip.getStatus());
         log.info("Новый статус: {}", newStatus);
         log.info("Пользователь: {} ({})", currentUser.getUsername(), currentUser.getRole());
 
-        TripStatusEntity newStatusEntity = tripStatusRepository.findByCode(newStatusStr).orElse(null);
-        if (newStatusEntity != null) {
-            trip.setStatusEntity(newStatusEntity);
-            log.info("Установлен statusEntity: {} с цветом {}", newStatusEntity.getCode(), newStatusEntity.getColor());
-        }
+        // Получаем владельца заявки
+        Request request = trip.getRequest();
+        User requestOwner = request.getOwner();
+        boolean isRequestOwner = requestOwner != null && requestOwner.getId().equals(currentUser.getId());
+        log.info("Владелец заявки ID: {}, текущий пользователь ID: {}, isOwner: {}",
+                requestOwner != null ? requestOwner.getId() : "null",
+                currentUser.getId(),
+                isRequestOwner);
 
+        // ========== ЛОГИСТ ==========
         if (currentUser.getRole() == Role.LOGIST) {
-            if (trip.getStatus() == TripStatus.NEW && newStatus == TripStatus.ARRIVED_LOADING) {
+            if (!isRequestOwner) {
+                log.warn("Логист {} не является владельцем заявки {}", currentUser.getUsername(), request.getId());
+                return ResponseEntity.status(403).body("Доступ запрещен. Только владелец заявки может обновлять статусы рейсов.");
+            }
+
+            // Получаем текущий статус из БД
+            TripStatus currentStatus = trip.getStatus();
+            log.info("Логист-владелец: текущий статус={}, новый статус={}", currentStatus, newStatus);
+
+            // Разрешаем переход NEW -> ARRIVED_LOADING
+            if (currentStatus == TripStatus.NEW && newStatus == TripStatus.ARRIVED_LOADING) {
                 trip.setStatus(TripStatus.ARRIVED_LOADING);
+                TripStatusEntity arrivedEntity = tripStatusRepository.findByCode("ARRIVED_LOADING").orElse(null);
+                if (arrivedEntity != null) {
+                    trip.setStatusEntity(arrivedEntity);
+                }
                 tripRepository.save(trip);
                 addHistory(trip, "ARRIVED_LOADING", "user:" + currentUser.getUsername(), currentUser.getFullName());
                 log.info("✅ Рейс {} изменен на ARRIVED_LOADING", trip.getId());
@@ -461,73 +479,17 @@ public class TripController {
                 return ResponseEntity.ok(response);
             }
 
-            if (trip.getStatus() == TripStatus.ARRIVED_LOADING && newStatus == TripStatus.LOADED) {
-                log.info("🚛 ЛОГИСТ переводит рейс {} в LOADED", trip.getId());
-
-                trip.setStatus(TripStatus.LOADED);
-                tripRepository.save(trip);
-                addHistory(trip, "LOADED", "user:" + currentUser.getUsername(), currentUser.getFullName());
-
-                externalSystemStub.sendToDispatchSystem(trip);
-
-                log.info("✅ Рейс {} переведен в LOADED", trip.getId());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("id", trip.getId());
-                response.put("status", trip.getStatus().name());
-                response.put("statusDisplayName", trip.getStatusDisplayName());
-                response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : "#2563eb");
-                return ResponseEntity.ok(response);
-            }
-
-            return ResponseEntity.status(403).body("Невозможно обновить статус");
-        }
-
-        if (currentUser.getRole() == Role.ADMIN) {
-            if (newStatus == TripStatus.CANCELLED && trip.getStatus() == TripStatus.NEW) {
-                trip.setStatus(TripStatus.CANCELLED);
-                TripStatusEntity cancelledEntity = tripStatusRepository.findByCode("CANCELLED").orElse(null);
-                if (cancelledEntity != null) trip.setStatusEntity(cancelledEntity);
-                tripRepository.save(trip);
-                addHistory(trip, "CANCELLED", "user:" + currentUser.getUsername(), currentUser.getFullName());
-                log.info("❌ Рейс {} отменен администратором", trip.getId());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("id", trip.getId());
-                response.put("status", trip.getStatus().name());
-                response.put("statusDisplayName", trip.getStatusDisplayName());
-                response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : "#dc2626");
-                return ResponseEntity.ok(response);
-            }
-
-            if (newStatus == TripStatus.DELETED && trip.getStatus() == TripStatus.NEW) {
-                trip.setStatus(TripStatus.DELETED);
-                TripStatusEntity deletedEntity = tripStatusRepository.findByCode("DELETED").orElse(null);
-                if (deletedEntity != null) trip.setStatusEntity(deletedEntity);
-                tripRepository.save(trip);
-                addHistory(trip, "DELETED", "user:" + currentUser.getUsername(), currentUser.getFullName());
-                log.info("🗑️ Рейс {} удален администратором", trip.getId());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("id", trip.getId());
-                response.put("status", trip.getStatus().name());
-                response.put("statusDisplayName", trip.getStatusDisplayName());
-                response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : "#9ca3af");
-                return ResponseEntity.ok(response);
-            }
-
-            if (newStatus == TripStatus.LOADED && trip.getStatus() != TripStatus.LOADED) {
-                log.info("🚛 АДМИН переводит рейс {} в LOADED", trip.getId());
-
+            // Разрешаем переход ARRIVED_LOADING -> LOADED
+            if (currentStatus == TripStatus.ARRIVED_LOADING && newStatus == TripStatus.LOADED) {
                 trip.setStatus(TripStatus.LOADED);
                 TripStatusEntity loadedEntity = tripStatusRepository.findByCode("LOADED").orElse(null);
-                if (loadedEntity != null) trip.setStatusEntity(loadedEntity);
+                if (loadedEntity != null) {
+                    trip.setStatusEntity(loadedEntity);
+                }
                 tripRepository.save(trip);
                 addHistory(trip, "LOADED", "user:" + currentUser.getUsername(), currentUser.getFullName());
-
                 externalSystemStub.sendToDispatchSystem(trip);
-
-                log.info("✅ Рейс {} переведен в LOADED", trip.getId());
+                log.info("✅ Рейс {} изменен на LOADED", trip.getId());
 
                 Map<String, Object> response = new HashMap<>();
                 response.put("id", trip.getId());
@@ -537,15 +499,27 @@ public class TripController {
                 return ResponseEntity.ok(response);
             }
 
-            trip.setStatus(newStatus);
+            // Если пытаются сделать что-то другое
+            log.warn("Логист {} пытается выполнить запрещенный переход: {} -> {}",
+                    currentUser.getUsername(), currentStatus, newStatus);
+            return ResponseEntity.status(403).body("Невозможно обновить статус. Разрешены только переходы: NEW → ARRIVED_LOADING → LOADED");
+        }
+
+        // ========== АДМИН ==========
+        if (currentUser.getRole() == Role.ADMIN) {
+            TripStatusEntity newStatusEntity = tripStatusRepository.findByCode(newStatusStr).orElse(null);
             if (newStatusEntity != null) {
                 trip.setStatusEntity(newStatusEntity);
             }
+            trip.setStatus(newStatus);
             tripRepository.save(trip);
             addHistory(trip, newStatusStr, "user:" + currentUser.getUsername(), currentUser.getFullName());
-            log.info("✅ Рейс {} изменен на {} администратором", trip.getId(), newStatus);
 
-            Request request = trip.getRequest();
+            if (newStatus == TripStatus.LOADED) {
+                externalSystemStub.sendToDispatchSystem(trip);
+            }
+
+            // Проверяем, все ли рейсы обработаны
             boolean allProcessed = request.getTrips().stream()
                     .filter(t -> t.getStatus() != TripStatus.DELETED && t.getStatus() != TripStatus.CANCELLED)
                     .allMatch(t -> t.getStatus() == TripStatus.PROCESSED);
@@ -564,6 +538,7 @@ public class TripController {
             return ResponseEntity.ok(response);
         }
 
+        // ========== ДИСПЕТЧЕР ==========
         if (currentUser.getRole() == Role.DISPATCHER) {
             if (newStatus == TripStatus.LOADED) {
                 log.warn("⚠️ Диспетчер {} пытается установить статус LOADED для рейса {} - доступ запрещен",
@@ -571,56 +546,13 @@ public class TripController {
                 return ResponseEntity.status(403).body("Диспетчер не может установить статус 'Погружен'");
             }
 
-            if (newStatus == TripStatus.CANCELLED && trip.getStatus() == TripStatus.NEW) {
-                trip.setStatus(TripStatus.CANCELLED);
-                TripStatusEntity cancelledEntity = tripStatusRepository.findByCode("CANCELLED").orElse(null);
-                if (cancelledEntity != null) trip.setStatusEntity(cancelledEntity);
-                tripRepository.save(trip);
-                addHistory(trip, "CANCELLED", "user:" + currentUser.getUsername(), currentUser.getFullName());
-                log.info("❌ Рейс {} отменен диспетчером", trip.getId());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("id", trip.getId());
-                response.put("status", trip.getStatus().name());
-                response.put("statusDisplayName", trip.getStatusDisplayName());
-                response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : "#dc2626");
-                return ResponseEntity.ok(response);
-            }
-
-            if (newStatus == TripStatus.DELETED && trip.getStatus() == TripStatus.NEW) {
-                trip.setStatus(TripStatus.DELETED);
-                TripStatusEntity deletedEntity = tripStatusRepository.findByCode("DELETED").orElse(null);
-                if (deletedEntity != null) trip.setStatusEntity(deletedEntity);
-                tripRepository.save(trip);
-                addHistory(trip, "DELETED", "user:" + currentUser.getUsername(), currentUser.getFullName());
-                log.info("🗑️ Рейс {} удален диспетчером", trip.getId());
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("id", trip.getId());
-                response.put("status", trip.getStatus().name());
-                response.put("statusDisplayName", trip.getStatusDisplayName());
-                response.put("statusColor", trip.getStatusEntity() != null ? trip.getStatusEntity().getColor() : "#9ca3af");
-                return ResponseEntity.ok(response);
-            }
-
-            trip.setStatus(newStatus);
+            TripStatusEntity newStatusEntity = tripStatusRepository.findByCode(newStatusStr).orElse(null);
             if (newStatusEntity != null) {
                 trip.setStatusEntity(newStatusEntity);
             }
+            trip.setStatus(newStatus);
             tripRepository.save(trip);
             addHistory(trip, newStatusStr, "user:" + currentUser.getUsername(), currentUser.getFullName());
-            log.info("✅ Рейс {} изменен на {} диспетчером", trip.getId(), newStatus);
-
-            Request request = trip.getRequest();
-            boolean allProcessed = request.getTrips().stream()
-                    .filter(t -> t.getStatus() != TripStatus.DELETED && t.getStatus() != TripStatus.CANCELLED)
-                    .allMatch(t -> t.getStatus() == TripStatus.PROCESSED);
-
-            if (allProcessed) {
-                request.setStatus(RequestStatus.PROCESSED);
-                requestRepository.save(request);
-                log.info("✅ Все рейсы заявки {} обработаны", request.getId());
-            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("id", trip.getId());
