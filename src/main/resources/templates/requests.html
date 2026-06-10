@@ -380,6 +380,7 @@
         <div class="menu-item" onclick="window.location.href='/dashboard'">
             <div class="menu-title">Главная</div>
         </div>
+
         <div class="menu-item has-submenu">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Брендовая продукция
@@ -390,6 +391,9 @@
                 <div class="submenu-item dispatcher-only admin-only" data-type="BRANDED" data-page="trips" onclick="changeProductType('BRANDED', 'trips')">Рейсы</div>
             </div>
         </div>
+
+        <!-- Небрендовая продукция - скрыта -->
+        <!--
         <div class="menu-item has-submenu">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Небрендовая продукция
@@ -400,39 +404,44 @@
                 <div class="submenu-item dispatcher-only admin-only" data-type="NON_BRANDED" data-page="trips" onclick="changeProductType('NON_BRANDED', 'trips')">Рейсы</div>
             </div>
         </div>
+        -->
+
         <div class="menu-item has-submenu admin-only">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Справочники
                 <span class="arrow">▼</span>
             </div>
             <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/references#divisions'">Подразделения</div>
-                <div class="submenu-item" onclick="window.location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
-                <div class="submenu-item" onclick="window.location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
-                <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
-                <div class="submenu-item" onclick="window.location.href='/references#plants'">Заводы</div>
-                <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
+                <div class="submenu-item" onclick="navigateToReferences('divisions')">Подразделения</div>
+                <div class="submenu-item" onclick="navigateToReferences('users')">Пользователи</div>
+                <div class="submenu-item" onclick="navigateToReferences('trip-statuses')">Статусы рейсов</div>
+                <div class="submenu-item" onclick="navigateToReferences('dispatch-mappings')">Сопоставление статусов</div>
+                <div class="submenu-item" onclick="navigateToReferences('carriers')">Перевозчики</div>
+                <div class="submenu-item" onclick="navigateToReferences('plants')">Заводы</div>
+                <div class="submenu-item" onclick="navigateToReferences('warehouses')">Склады</div>
             </div>
         </div>
+
         <div class="menu-item has-submenu admin-only">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Настройки
                 <span class="arrow">▼</span>
             </div>
             <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/settings'">Параметры</div>
-                <div class="submenu-item" onclick="window.location.href='/settings'">Применение обновлений</div>
-                <div class="submenu-item" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
-                <div class="submenu-item" onclick="window.location.href='/settings'">Пользователи</div>
+                <div class="submenu-item" onclick="navigateToSettings('sync')">Синхронизация</div>
+                <div class="submenu-item" onclick="navigateToSettings('onec')">Интеграция с 1С</div>
+                <div class="submenu-item" onclick="navigateToSettings('auto')">Автообработка заявок</div>
+                <div class="submenu-item" onclick="navigateToSettings('theme')">Оформление</div>
             </div>
         </div>
+
         <div class="menu-item has-submenu">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Профиль
                 <span class="arrow">▼</span>
             </div>
             <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/profile'">ФИО</div>
+                <div class="submenu-item" onclick="window.location.href='/profile'">Личные данные</div>
                 <div class="submenu-item" onclick="window.location.href='/logout'">Выход</div>
             </div>
         </div>
@@ -575,6 +584,18 @@
 </div>
 
 <script>
+    // ========== НАВИГАЦИЯ ==========
+    function navigateToReferences(tabId) {
+        localStorage.setItem('referencesTab', tabId);
+        window.location.href = '/references';
+    }
+
+    function navigateToSettings(section) {
+        localStorage.setItem('settingsSection', section);
+        window.location.href = '/settings';
+    }
+
+    // ========== ТЕМА ==========
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -603,9 +624,7 @@
         const menuItem = element.closest('.has-submenu');
         menuItem.classList.toggle('open');
         const submenu = menuItem.querySelector('.submenu');
-        if (submenu) {
-            submenu.classList.toggle('show');
-        }
+        if (submenu) submenu.classList.toggle('show');
         event.stopPropagation();
     }
 

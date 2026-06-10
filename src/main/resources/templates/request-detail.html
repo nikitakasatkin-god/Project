@@ -317,37 +317,32 @@
                 <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
             </div>
         </div>
-        <div class="menu-item has-submenu">
-            <div class="menu-title" onclick="toggleSubmenu(this)">Небрендовая продукция<span class="arrow">▼</span></div>
-            <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
-                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
-            </div>
-        </div>
+        <!-- Небрендовая продукция - скрыта -->
         <div class="menu-item has-submenu admin-only">
             <div class="menu-title" onclick="toggleSubmenu(this)">Справочники<span class="arrow">▼</span></div>
             <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/references#divisions'">Подразделения</div>
-                <div class="submenu-item" onclick="window.location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
-                <div class="submenu-item" onclick="window.location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
-                <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
-                <div class="submenu-item" onclick="window.location.href='/references#plants'">Заводы</div>
-                <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
+                <div class="submenu-item" onclick="navigateToReferences('divisions')">Подразделения</div>
+                <div class="submenu-item" onclick="navigateToReferences('users')">Пользователи</div>
+                <div class="submenu-item" onclick="navigateToReferences('trip-statuses')">Статусы рейсов</div>
+                <div class="submenu-item" onclick="navigateToReferences('dispatch-mappings')">Сопоставление статусов</div>
+                <div class="submenu-item" onclick="navigateToReferences('carriers')">Перевозчики</div>
+                <div class="submenu-item" onclick="navigateToReferences('plants')">Заводы</div>
+                <div class="submenu-item" onclick="navigateToReferences('warehouses')">Склады</div>
             </div>
         </div>
         <div class="menu-item has-submenu admin-only">
             <div class="menu-title" onclick="toggleSubmenu(this)">Настройки<span class="arrow">▼</span></div>
             <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/settings'">Параметры</div>
-                <div class="submenu-item" onclick="window.location.href='/settings'">Применение обновлений</div>
-                <div class="submenu-item" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
-                <div class="submenu-item" onclick="window.location.href='/settings'">Пользователи</div>
+                <div class="submenu-item" onclick="navigateToSettings('sync')">Синхронизация</div>
+                <div class="submenu-item" onclick="navigateToSettings('onec')">Интеграция с 1С</div>
+                <div class="submenu-item" onclick="navigateToSettings('auto')">Автообработка заявок</div>
+                <div class="submenu-item" onclick="navigateToSettings('theme')">Оформление</div>
             </div>
         </div>
         <div class="menu-item has-submenu">
             <div class="menu-title" onclick="toggleSubmenu(this)">Профиль<span class="arrow">▼</span></div>
             <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/profile'">ФИО</div>
+                <div class="submenu-item" onclick="window.location.href='/profile'">Личные данные</div>
                 <div class="submenu-item" onclick="window.location.href='/logout'">Выход</div>
             </div>
         </div>
@@ -457,6 +452,18 @@
 </div>
 
 <script>
+    // ========== НАВИГАЦИЯ ==========
+    function navigateToReferences(tabId) {
+        localStorage.setItem('referencesTab', tabId);
+        window.location.href = '/references';
+    }
+
+    function navigateToSettings(section) {
+        localStorage.setItem('settingsSection', section);
+        window.location.href = '/settings';
+    }
+
+    // ========== ТЕМА ==========
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -956,13 +963,7 @@
     }
 
     function renderTrips(trips) {
-        console.log('=== renderTrips ===');
-        console.log('Полученные рейсы:', trips.map(t => ({id: t.id, status: t.status, statusDisplayName: t.statusDisplayName})));
-        console.log('Текущий пользователь:', currentUser);
-        console.log('Владелец заявки (requestData.owner):', requestData?.owner);
-
-        const isOwner = currentUser && requestData?.owner && currentUser.id === requestData.owner.id;
-        console.log('isOwner:', isOwner, 'currentUser.id:', currentUser?.id, 'owner.id:', requestData?.owner?.id);
+        console.log('renderTrips получил:', trips.map(t => ({id: t.id, status: t.status, statusColor: t.statusColor, statusDisplayName: t.statusDisplayName})));
 
         const container = document.getElementById('tripsContainer');
         const activeTrips = trips.filter(t => t.status !== 'DELETED');
@@ -972,6 +973,7 @@
             return;
         }
 
+        const isOwner = currentUser && (currentUser.id === requestData?.owner?.id);
         const canViewTrip = currentUser?.role === 'ADMIN' || currentUser?.role === 'DISPATCHER';
         const canManageTrips = currentUser?.role === 'ADMIN' || currentUser?.role === 'DISPATCHER';
 
@@ -1044,13 +1046,10 @@
                         const syncText = getSyncText(trip);
                         const syncClass = getSyncClass(trip);
 
-                        console.log(`Рейс ${trip.id}: статус=${trip.status}, isOwner=${isOwner}`);
-
                         let tripNumberDisplay = '';
 
                         if (trip.status === 'NEW') {
                             if (isOwner) {
-                                console.log(`Показываем кнопку "Прибыл на погрузку" для рейса ${trip.id}`);
                                 tripNumberDisplay = `<button class="trip-status-btn" style="background:#f3f4f6; color:#6b7280; border:none; cursor:pointer; font-weight:600; font-size:14px; padding:6px 12px; border-radius:6px; width:100%; text-align:left;" onclick="updateTripStatus(${trip.id}, 'ARRIVED_LOADING')">${trip.sequenceNumber || trip.id} → Прибыл на погрузку</button>`;
                             } else if (canViewTrip) {
                                 tripNumberDisplay = `<a href="/trip-detail?id=${trip.id}" class="link-button" style="font-weight:600;">${trip.sequenceNumber || trip.id}</a>`;
@@ -1059,7 +1058,6 @@
                             }
                         } else if (trip.status === 'ARRIVED_LOADING') {
                             if (isOwner) {
-                                console.log(`Показываем кнопку "Погружен" для рейса ${trip.id}`);
                                 tripNumberDisplay = `<button class="trip-status-btn" style="background:#fef3c7; color:#d97706; border:none; cursor:pointer; font-weight:600; font-size:14px; padding:6px 12px; border-radius:6px; width:100%; text-align:left;" onclick="updateTripStatus(${trip.id}, 'LOADED')">${trip.sequenceNumber || trip.id} → Погружен</button>`;
                             } else if (canViewTrip) {
                                 tripNumberDisplay = `<a href="/trip-detail?id=${trip.id}" class="link-button" style="font-weight:600;">${trip.sequenceNumber || trip.id}</a>`;
@@ -1242,33 +1240,17 @@
         showNotification('Заявка обработана. Через некоторое время она будет автоматически завершена.', 'info');
     }
 
-    // ОСНОВНАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ СТАТУСА С ДИАГНОСТИКОЙ
     async function updateTripStatus(tripId, status) {
-        console.log('=== ОБНОВЛЕНИЕ СТАТУСА ===');
-        console.log('tripId:', tripId);
-        console.log('новый статус:', status);
-
-        // Найдем рейс в existingTrips
-        const currentTrip = existingTrips.find(t => t.id === tripId);
-        console.log('Текущий рейс в памяти:', currentTrip);
-        console.log('Текущий статус рейса в памяти:', currentTrip?.status);
-        console.log('Текущий статус рейса в памяти (raw):', currentTrip?.status);
-
         try {
             const response = await fetch(`/api/trips/${tripId}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: status })
             });
-
-            console.log('Response status:', response.status);
-            const result = await response.json();
-            console.log('Response body:', result);
-
             if (response.ok) {
-                console.log('Успешно обновлен статус рейса', tripId);
+                const result = await response.json();
+                console.log('Результат обновления статуса:', result);
 
-                // Обновляем рейс в массиве
                 const tripIndex = existingTrips.findIndex(t => t.id === tripId);
                 if (tripIndex !== -1) {
                     existingTrips[tripIndex].status = result.status;
@@ -1285,11 +1267,11 @@
 
                 await loadRequest();
             } else {
-                console.error('Ошибка от сервера:', result);
-                showNotification(typeof result === 'string' ? result : (result.message || result.error || 'Ошибка при обновлении статуса'), 'error');
+                const error = await response.text();
+                showNotification(error || 'Ошибка при обновлении статуса', 'error');
             }
         } catch(e) {
-            console.error('Исключение при обновлении статуса:', e);
+            console.error(e);
             showNotification('Ошибка при обновлении статуса', 'error');
         }
     }

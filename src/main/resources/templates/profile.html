@@ -6,7 +6,6 @@
     <title>Профиль пользователя</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS переменные для тем */
         :root {
             --bg-primary: #f5f7fb;
             --bg-secondary: #ffffff;
@@ -65,11 +64,32 @@
         .sidebar-menu { padding: 20px 0; }
         .menu-item { padding: 12px 24px; cursor: pointer; transition: all 0.3s; }
         .menu-item:hover { background: var(--hover-bg); }
-        .menu-title { font-weight: 600; color: var(--text-secondary); }
-        .main-content {
-            margin-left: 260px;
-            padding: 24px;
+        .menu-title { font-weight: 600; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
+        .has-submenu { position: relative; }
+        .submenu { margin-top: 8px; margin-left: 20px; display: none; }
+        .submenu.show { display: block; }
+        .submenu-item { padding: 8px 12px; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 14px; }
+        .submenu-item:hover { background: var(--hover-bg); color: #667eea; }
+        .arrow { font-size: 12px; transition: transform 0.2s; }
+        .has-submenu.open .arrow { transform: rotate(180deg); }
+
+        /* Скрытие элементов по ролям */
+        .logist-only { display: none; }
+        .dispatcher-only { display: none; }
+        .admin-only { display: none; }
+
+        body[data-role="ADMIN"] .admin-only { display: block; }
+        body[data-role="ADMIN"] .admin-only-flex { display: flex; }
+        body[data-role="LOGIST"] .logist-only { display: block; }
+        body[data-role="DISPATCHER"] .dispatcher-only { display: block; }
+
+        /* Скрываем справочники и настройки для не-админов */
+        body[data-role="LOGIST"] .menu-item.admin-only,
+        body[data-role="DISPATCHER"] .menu-item.admin-only {
+            display: none !important;
         }
+
+        .main-content { margin-left: 260px; padding: 24px; }
         .top-bar {
             background: var(--header-bg);
             border-radius: 12px;
@@ -173,11 +193,75 @@
     <div class="sidebar-header"><h2>Логистика</h2></div>
     <div class="sidebar-menu">
         <div class="menu-item" onclick="window.location.href='/dashboard'"><div class="menu-title">Главная</div></div>
-        <div class="menu-item" onclick="window.location.href='/requests?type=BRANDED'"><div class="menu-title">Брендовая продукция</div></div>
-        <div class="menu-item" onclick="window.location.href='/requests?type=NON_BRANDED'"><div class="menu-title">Небрендовая продукция</div></div>
-        <div class="menu-item admin-only" onclick="window.location.href='/references'"><div class="menu-title">Справочники</div></div>
-        <div class="menu-item admin-only" onclick="window.location.href='/settings'"><div class="menu-title">Настройки</div></div>
-        <div class="menu-item" style="background:var(--hover-bg)"><div class="menu-title">Профиль</div></div>
+
+        <!-- Брендовая продукция -->
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Брендовая продукция
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=BRANDED'">Заявки</div>
+                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
+            </div>
+        </div>
+
+        <!-- Небрендовая продукция - скрыта -->
+        <!--
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Небрендовая продукция
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
+                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
+            </div>
+        </div>
+        -->
+
+        <!-- Справочники - только для админа -->
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Справочники
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="navigateToReferences('divisions')">Подразделения</div>
+                <div class="submenu-item" onclick="navigateToReferences('users')">Пользователи</div>
+                <div class="submenu-item" onclick="navigateToReferences('trip-statuses')">Статусы рейсов</div>
+                <div class="submenu-item" onclick="navigateToReferences('dispatch-mappings')">Сопоставление статусов</div>
+                <div class="submenu-item" onclick="navigateToReferences('carriers')">Перевозчики</div>
+                <div class="submenu-item" onclick="navigateToReferences('plants')">Заводы</div>
+                <div class="submenu-item" onclick="navigateToReferences('warehouses')">Склады</div>
+            </div>
+        </div>
+
+        <!-- Настройки - только для админа -->
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Настройки
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="navigateToSettings('sync')">Синхронизация</div>
+                <div class="submenu-item" onclick="navigateToSettings('onec')">Интеграция с 1С</div>
+                <div class="submenu-item" onclick="navigateToSettings('auto')">Автообработка заявок</div>
+                <div class="submenu-item" onclick="navigateToSettings('theme')">Оформление</div>
+            </div>
+        </div>
+
+        <!-- Профиль -->
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Профиль
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/profile'">Личные данные</div>
+                <div class="submenu-item" onclick="window.location.href='/logout'">Выход</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -215,7 +299,18 @@
 </div>
 
 <script>
-    // Функции для темы
+    // ========== НАВИГАЦИЯ ==========
+    function navigateToReferences(tabId) {
+        localStorage.setItem('referencesTab', tabId);
+        window.location.href = '/references';
+    }
+
+    function navigateToSettings(section) {
+        localStorage.setItem('settingsSection', section);
+        window.location.href = '/settings';
+    }
+
+    // ========== ТЕМА ==========
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -237,8 +332,13 @@
         }
     }
 
-    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
-    initTheme();
+    function toggleSubmenu(element) {
+        const menuItem = element.closest('.has-submenu');
+        menuItem.classList.toggle('open');
+        const submenu = menuItem.querySelector('.submenu');
+        if (submenu) submenu.classList.toggle('show');
+        if (event) event.stopPropagation();
+    }
 
     async function loadUserProfile() {
         try {
@@ -257,6 +357,8 @@
 
                 document.getElementById('roleValue').innerText = roleText;
                 document.getElementById('roleBadge').innerText = roleText;
+
+                // Устанавливаем data-role на body для скрытия элементов по ролям
                 document.body.setAttribute('data-role', user.role);
             }
         } catch(e) {
@@ -264,6 +366,8 @@
         }
     }
 
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    initTheme();
     loadUserProfile();
 </script>
 </body>
