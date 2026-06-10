@@ -224,16 +224,35 @@
                 <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
             </div>
         </div>
-        <div class="menu-item has-submenu">
-            <div class="menu-title" onclick="toggleSubmenu(this)">Небрендовая продукция<span class="arrow">▼</span></div>
+        <!-- Небрендовая продукция - скрыта -->
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Справочники<span class="arrow">▼</span></div>
             <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
-                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
+                <div class="submenu-item" onclick="navigateToReferences('divisions')">Подразделения</div>
+                <div class="submenu-item" onclick="navigateToReferences('users')">Пользователи</div>
+                <div class="submenu-item" onclick="navigateToReferences('trip-statuses')">Статусы рейсов</div>
+                <div class="submenu-item" onclick="navigateToReferences('dispatch-mappings')">Сопоставление статусов</div>
+                <div class="submenu-item" onclick="navigateToReferences('carriers')">Перевозчики</div>
+                <div class="submenu-item" onclick="navigateToReferences('plants')">Заводы</div>
+                <div class="submenu-item" onclick="navigateToReferences('warehouses')">Склады</div>
             </div>
         </div>
-        <div class="menu-item admin-only" onclick="window.location.href='/references'"><div class="menu-title">Справочники</div></div>
-        <div class="menu-item admin-only" onclick="window.location.href='/settings'"><div class="menu-title">Настройки</div></div>
-        <div class="menu-item" onclick="window.location.href='/profile'"><div class="menu-title">Профиль</div></div>
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Настройки<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="navigateToSettings('sync')">Синхронизация</div>
+                <div class="submenu-item" onclick="navigateToSettings('onec')">Интеграция с 1С</div>
+                <div class="submenu-item" onclick="navigateToSettings('auto')">Автообработка заявок</div>
+                <div class="submenu-item" onclick="navigateToSettings('theme')">Оформление</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Профиль<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/profile'">Личные данные</div>
+                <div class="submenu-item" onclick="window.location.href='/logout'">Выход</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -358,6 +377,18 @@
 </div>
 
 <script>
+    // ========== НАВИГАЦИЯ ==========
+    function navigateToReferences(tabId) {
+        localStorage.setItem('referencesTab', tabId);
+        window.location.href = '/references';
+    }
+
+    function navigateToSettings(section) {
+        localStorage.setItem('settingsSection', section);
+        window.location.href = '/settings';
+    }
+
+    // ========== ТЕМА ==========
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -408,11 +439,9 @@
             const pickupSelect = document.getElementById('pickupPoint');
             const deliverySelect = document.getElementById('deliveryPoint');
 
-            // Для пункта погрузки - только заводы
             pickupSelect.innerHTML = '<option value="">Выберите пункт погрузки</option>' +
                 plants.map(p => `<option value="${p.name}">🏭 Завод: ${p.name}</option>`).join('');
 
-            // Для пункта разгрузки - только склады
             deliverySelect.innerHTML = '<option value="">Выберите пункт разгрузки</option>' +
                 warehouses.map(w => `<option value="${w.name}">📦 Склад: ${w.name}</option>`).join('');
         } catch(e) {
@@ -484,7 +513,7 @@
     }
 
     function getStatusText(status) {
-        const texts = {'NEW': 'Новая', 'IN_PROGRESS': 'В работе', 'PROCESSED': 'Обработана', 'COMPLETED': 'Завершена'};
+        const texts = {'NEW': 'Новая', 'IN_PROGRESS': 'В работе', 'PROCESSED': 'Обработана', 'COMPLETED': 'Завершена', 'REJECTED': 'Отклонена'};
         return texts[status] || status;
     }
 

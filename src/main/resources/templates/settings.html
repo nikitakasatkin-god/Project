@@ -19,7 +19,6 @@
             --input-bg: #ffffff;
             --hover-bg: #f9fafb;
         }
-
         body.dark-theme {
             --bg-primary: #1a1a2e;
             --bg-secondary: #16213e;
@@ -34,7 +33,6 @@
             --input-bg: #1e2a4a;
             --hover-bg: #1a2744;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
@@ -71,14 +69,12 @@
         .submenu-item:hover { background: var(--hover-bg); color: #667eea; }
         .arrow { font-size: 12px; transition: transform 0.2s; }
         .has-submenu.open .arrow { transform: rotate(180deg); }
-
         .logist-only { display: none; }
         .dispatcher-only { display: none; }
         .admin-only { display: none; }
         body[data-role="ADMIN"] .admin-only { display: block; }
         body[data-role="LOGIST"] .logist-only { display: block; }
         body[data-role="DISPATCHER"] .dispatcher-only { display: block; }
-
         .main-content { margin-left: 260px; padding: 24px; }
         .top-bar {
             background: var(--header-bg);
@@ -94,14 +90,7 @@
         .page-title { font-size: 24px; font-weight: 700; color: var(--text-primary); }
         .user-info { display: flex; align-items: center; gap: 16px; }
         .user-name { font-weight: 600; color: var(--text-secondary); }
-        .logout-btn {
-            padding: 8px 16px;
-            background: #fee2e2;
-            color: #dc2626;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 14px;
-        }
+        .logout-btn { padding: 8px 16px; background: #fee2e2; color: #dc2626; border-radius: 8px; text-decoration: none; font-size: 14px; }
         .theme-toggle {
             background: none;
             border: 1px solid var(--border-color);
@@ -115,9 +104,7 @@
             color: var(--text-secondary);
             transition: all 0.2s;
         }
-        .theme-toggle:hover {
-            background: var(--hover-bg);
-        }
+        .theme-toggle:hover { background: var(--hover-bg); }
         .settings-group {
             background: var(--card-bg);
             border-radius: 16px;
@@ -153,18 +140,8 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        .btn-secondary {
-            background: var(--hover-bg);
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+        .btn-secondary { background: var(--hover-bg); color: var(--text-secondary); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; cursor: pointer; }
         .btn-success {
             background: #10b981;
             color: white;
@@ -174,10 +151,7 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-success:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-        }
+        .btn-success:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
         .btn-warning {
             background: #f59e0b;
             color: white;
@@ -187,60 +161,15 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-warning:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-        }
-        .sync-buttons {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-top: 16px;
-        }
-        .sync-status {
-            margin-top: 12px;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 13px;
-        }
-        .sync-status.success {
-            background: #d1fae5;
-            color: #059669;
-        }
-        .sync-status.error {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-        .sync-status.info {
-            background: #dbeafe;
-            color: #2563eb;
-        }
-        .current-settings {
-            background: var(--hover-bg);
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 16px;
-            font-size: 14px;
-        }
-        .info-message {
-            background: #eef2ff;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            color: #4338ca;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        hr {
-            margin: 16px 0;
-            border-color: var(--border-color);
-        }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
+        .sync-buttons { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+        .sync-status { margin-top: 12px; padding: 10px; border-radius: 8px; font-size: 13px; }
+        .sync-status.success { background: #d1fae5; color: #059669; }
+        .sync-status.error { background: #fee2e2; color: #dc2626; }
+        .sync-status.info { background: #dbeafe; color: #2563eb; }
+        .current-settings { background: var(--hover-bg); padding: 12px; border-radius: 8px; margin-top: 16px; font-size: 14px; }
+        .info-message { background: #eef2ff; padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; color: #4338ca; display: flex; align-items: center; gap: 10px; }
+        hr { margin: 16px 0; border-color: var(--border-color); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); }
             .main-content { margin-left: 0; }
@@ -262,39 +191,32 @@
                 <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
             </div>
         </div>
-        <div class="menu-item has-submenu">
-            <div class="menu-title" onclick="toggleSubmenu(this)">Небрендовая продукция<span class="arrow">▼</span></div>
-            <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
-                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
-            </div>
-        </div>
+        <!-- Небрендовая продукция - скрыта -->
         <div class="menu-item has-submenu admin-only">
             <div class="menu-title" onclick="toggleSubmenu(this)">Справочники<span class="arrow">▼</span></div>
             <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/references#divisions'">Подразделения</div>
-                <div class="submenu-item" onclick="window.location.href='/references#tariffs-branded'">Тарифы Брендовая</div>
-                <div class="submenu-item" onclick="window.location.href='/references#tariffs-non-branded'">Тарифы Небрендовая</div>
-                <div class="submenu-item" onclick="window.location.href='/references#carriers'">Перевозчики</div>
-                <div class="submenu-item" onclick="window.location.href='/references#plants'">Заводы</div>
-                <div class="submenu-item" onclick="window.location.href='/references#warehouses'">Склады</div>
-                <div class="submenu-item" onclick="window.location.href='/references#dispatch-mappings'">Сопоставление статусов</div>
+                <div class="submenu-item" onclick="navigateToReferences('divisions')">Подразделения</div>
+                <div class="submenu-item" onclick="navigateToReferences('users')">Пользователи</div>
+                <div class="submenu-item" onclick="navigateToReferences('trip-statuses')">Статусы рейсов</div>
+                <div class="submenu-item" onclick="navigateToReferences('dispatch-mappings')">Сопоставление статусов</div>
+                <div class="submenu-item" onclick="navigateToReferences('carriers')">Перевозчики</div>
+                <div class="submenu-item" onclick="navigateToReferences('plants')">Заводы</div>
+                <div class="submenu-item" onclick="navigateToReferences('warehouses')">Склады</div>
             </div>
         </div>
         <div class="menu-item has-submenu admin-only" style="background: var(--hover-bg);">
             <div class="menu-title" onclick="toggleSubmenu(this)">Настройки<span class="arrow">▼</span></div>
             <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/settings'">Параметры</div>
-                <div class="submenu-item" onclick="window.location.href='/settings'">Интеграция с 1С</div>
-                <div class="submenu-item" onclick="window.location.href='/settings'">Применение обновлений</div>
-                <div class="submenu-item" onclick="window.location.href='/settings'">Сообщение о недоступности</div>
-                <div class="submenu-item" onclick="window.location.href='/settings'">Пользователи</div>
+                <div class="submenu-item" onclick="showSettingsSection('sync')">Синхронизация</div>
+                <div class="submenu-item" onclick="showSettingsSection('onec')">Интеграция с 1С</div>
+                <div class="submenu-item" onclick="showSettingsSection('auto')">Автообработка заявок</div>
+                <div class="submenu-item" onclick="showSettingsSection('theme')">Оформление</div>
             </div>
         </div>
         <div class="menu-item has-submenu">
             <div class="menu-title" onclick="toggleSubmenu(this)">Профиль<span class="arrow">▼</span></div>
             <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/profile'">ФИО</div>
+                <div class="submenu-item" onclick="window.location.href='/profile'">Личные данные</div>
                 <div class="submenu-item" onclick="window.location.href='/logout'">Выход</div>
             </div>
         </div>
@@ -306,184 +228,91 @@
         <h1 class="page-title">Настройки системы</h1>
         <div class="user-info">
             <span class="user-name" id="currentUsername">Загрузка...</span>
-            <button class="theme-toggle" id="themeToggle">
-                <span>🌙</span> Тема
-            </button>
+            <button class="theme-toggle" id="themeToggle"><span>🌙</span> Тема</button>
             <a href="/logout" class="logout-btn">Выйти</a>
         </div>
     </div>
 
-    <!-- Блок синхронизации с системой диспетчеризации -->
-    <div class="settings-group">
+    <div id="syncSection" class="settings-group">
         <h3>Синхронизация с системой диспетчеризации</h3>
-
         <h4 style="margin: 16px 0 8px 0;">Отправка рейсов в диспетчеризацию</h4>
-        <div class="setting-item">
-            <span class="setting-label">Автоматическая отправка</span>
-            <div class="setting-value">
-                <input type="checkbox" id="sendEnabled" checked>
-            </div>
-        </div>
-        <div class="setting-item">
-            <span class="setting-label">Интервал отправки рейсов (сек)</span>
-            <div class="setting-value">
-                <input type="number" id="sendInterval" value="60" min="10" max="3600" step="1">
-                <span style="font-size: 12px; margin-left: 8px;">(мин: 10 сек, макс: 3600 сек)</span>
-            </div>
-        </div>
-        <div class="setting-item">
-            <span class="setting-label">Размер пакета отправки (рейсов)</span>
-            <div class="setting-value">
-                <input type="number" id="sendBatchSize" value="10" min="1" max="50" step="1">
-                <span style="font-size: 12px; margin-left: 8px;">(мин: 1, макс: 50)</span>
-            </div>
-        </div>
-
+        <div class="setting-item"><span class="setting-label">Автоматическая отправка</span><div class="setting-value"><input type="checkbox" id="sendEnabled" checked></div></div>
+        <div class="setting-item"><span class="setting-label">Интервал отправки (сек)</span><div class="setting-value"><input type="number" id="sendInterval" value="60" min="10" max="3600" step="1"><span style="font-size: 12px; margin-left: 8px;">(мин: 10, макс: 3600)</span></div></div>
+        <div class="setting-item"><span class="setting-label">Размер пакета (рейсов)</span><div class="setting-value"><input type="number" id="sendBatchSize" value="10" min="1" max="50" step="1"><span style="font-size: 12px; margin-left: 8px;">(мин: 1, макс: 50)</span></div></div>
         <hr>
-
         <h4 style="margin: 16px 0 8px 0;">Получение статусов из диспетчеризации</h4>
-        <div class="setting-item">
-            <span class="setting-label">Автоматическое получение статусов</span>
-            <div class="setting-value">
-                <input type="checkbox" id="receiveEnabled" checked>
-            </div>
-        </div>
-        <div class="setting-item">
-            <span class="setting-label">Интервал получения статусов (сек)</span>
-            <div class="setting-value">
-                <input type="number" id="receiveInterval" value="60" min="10" max="3600" step="1">
-                <span style="font-size: 12px; margin-left: 8px;">(рекомендуется 30-60 сек)</span>
-            </div>
-        </div>
-
+        <div class="setting-item"><span class="setting-label">Автоматическое получение</span><div class="setting-value"><input type="checkbox" id="receiveEnabled" checked></div></div>
+        <div class="setting-item"><span class="setting-label">Интервал получения (сек)</span><div class="setting-value"><input type="number" id="receiveInterval" value="60" min="10" max="3600" step="1"><span style="font-size: 12px; margin-left: 8px;">(рекомендуется 30-60)</span></div></div>
         <hr>
-
         <div class="sync-buttons">
-            <button class="btn-primary" onclick="sendTripsToDispatch()">Отправить рейсы в диспетчеризацию</button>
-            <button class="btn-primary" onclick="receiveStatusesFromDispatch()">Получить статусы из диспетчеризации</button>
+            <button class="btn-primary" onclick="sendTripsToDispatch()">Отправить рейсы</button>
+            <button class="btn-primary" onclick="receiveStatusesFromDispatch()">Получить статусы</button>
             <button class="btn-warning" onclick="testDispatchConnection()">Проверить соединение</button>
         </div>
-
         <div id="syncResult" class="sync-status" style="display: none;"></div>
-
-        <div id="currentSettings" class="current-settings">
-            <strong>Текущие настройки синхронизации:</strong><br>
-            Загрузка...
-        </div>
-
-        <div style="margin-top: 16px;">
-            <button class="btn-success" onclick="saveAndApplySyncSettings()">Применить настройки синхронизации</button>
-        </div>
+        <div id="currentSettings" class="current-settings"><strong>Текущие настройки:</strong><br>Загрузка...</div>
+        <div style="margin-top: 16px;"><button class="btn-success" onclick="saveAndApplySyncSettings()">Применить настройки</button></div>
     </div>
 
-    <!-- Блок интеграции с 1С -->
-    <div class="settings-group admin-only">
+    <div id="onecSection" class="settings-group admin-only" style="display: none;">
         <h3>Интеграция с 1С</h3>
-
-        <div class="setting-item">
-            <span class="setting-label">Интеграция с 1С</span>
-            <div class="setting-value">
-                <input type="checkbox" id="onecIntegrationEnabled">
-                <span style="font-size: 12px; margin-left: 8px; color: var(--text-muted);">
-                    При включении редактирование справочников (подразделения, заводы, склады, перевозчики) будет запрещено. Данные будут синхронизироваться из 1С.
-                </span>
-            </div>
-        </div>
-
+        <div class="setting-item"><span class="setting-label">Интеграция с 1С</span><div class="setting-value"><input type="checkbox" id="onecIntegrationEnabled"><span style="font-size: 12px; margin-left: 8px;">При включении редактирование справочников будет запрещено</span></div></div>
         <div class="setting-item" id="onecSettings" style="display: none;">
-            <div class="setting-label">Настройки подключения к 1С</div>
+            <div class="setting-label">Настройки подключения</div>
             <div class="setting-value" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
                 <input type="text" id="onecUrl" placeholder="URL API 1С" style="width: 100%;">
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="onecUsername" placeholder="Логин" style="flex: 1;">
-                    <input type="password" id="onecPassword" placeholder="Пароль" style="flex: 1;">
-                </div>
+                <div style="display: flex; gap: 8px;"><input type="text" id="onecUsername" placeholder="Логин" style="flex: 1;"><input type="password" id="onecPassword" placeholder="Пароль" style="flex: 1;"></div>
                 <input type="number" id="onecSyncInterval" placeholder="Интервал синхронизации (сек)" style="width: 100%;" value="60" min="10" max="3600" step="1">
             </div>
         </div>
-
-        <div class="sync-buttons" id="onecButtons" style="display: none;">
-            <button class="btn-primary" onclick="syncFromOneC()">Синхронизировать с 1С (ручная)</button>
-            <button class="btn-secondary" onclick="testOneCConnection()">Проверить соединение</button>
-        </div>
-
+        <div class="sync-buttons" id="onecButtons" style="display: none;"><button class="btn-primary" onclick="syncFromOneC()">Синхронизировать</button><button class="btn-secondary" onclick="testOneCConnection()">Проверить соединение</button></div>
         <div id="onecResult" class="sync-status" style="display: none;"></div>
-
-        <div style="margin-top: 16px;">
-            <button class="btn-success" onclick="saveOneCSettings()">Сохранить настройки 1С</button>
-        </div>
+        <div style="margin-top: 16px;"><button class="btn-success" onclick="saveOneCSettings()">Сохранить настройки</button></div>
     </div>
 
-    <!-- Блок настроек автоматической обработки заявок -->
-    <div class="settings-group admin-only">
+    <div id="autoSection" class="settings-group admin-only" style="display: none;">
         <h3>Автоматическая обработка заявок</h3>
-
-        <div class="info-message" style="margin-bottom: 16px;">
-            <span>ℹ️</span>
-            <span>Автоматическая обработка переводит заявку в статус "Обработана", когда объем распределен полностью и все рейсы имеют статус "Обработан".<br>
-            Автоматическое завершение переводит заявку в статус "Завершена" через указанное время после обработки.</span>
-        </div>
-
-        <div class="setting-item">
-            <span class="setting-label">Автоматическая обработка заявок</span>
-            <div class="setting-value">
-                <input type="checkbox" id="autoProcessEnabled" checked>
-                <span style="font-size: 12px; margin-left: 8px; color: var(--text-muted);">
-                    При включении заявки будут автоматически переводиться в статус "Обработана" при выполнении условий
-                </span>
-            </div>
-        </div>
-
-        <div class="setting-item">
-            <span class="setting-label">Задержка перед обработкой (часов)</span>
-            <div class="setting-value">
-                <input type="number" id="autoProcessDelayHours" value="24" min="0" max="720" step="0.5">
-                <span style="font-size: 12px; margin-left: 8px;">(0 = сразу, 24 = через сутки, макс: 720 часов = 30 дней)</span>
-            </div>
-        </div>
-
+        <div class="info-message"><span>ℹ️</span><span>Автоматическая обработка переводит заявку в статус "Обработана", когда объем распределен полностью и все рейсы обработаны.<br>Автоматическое завершение переводит заявку в статус "Завершена" через указанное время.</span></div>
+        <div class="setting-item"><span class="setting-label">Автоматическая обработка</span><div class="setting-value"><input type="checkbox" id="autoProcessEnabled" checked><span style="font-size: 12px;">При включении заявки будут автоматически обрабатываться</span></div></div>
+        <div class="setting-item"><span class="setting-label">Задержка перед обработкой (часов)</span><div class="setting-value"><input type="number" id="autoProcessDelayHours" value="24" min="0" max="720" step="0.5"><span style="font-size: 12px;">(0 = сразу, макс: 720 часов)</span></div></div>
         <hr>
-
-        <div class="setting-item">
-            <span class="setting-label">Автоматическое завершение заявок</span>
-            <div class="setting-value">
-                <input type="checkbox" id="autoCompleteEnabled" checked>
-                <span style="font-size: 12px; margin-left: 8px; color: var(--text-muted);">
-                    При включении обработанные заявки будут автоматически переводиться в статус "Завершена"
-                </span>
-            </div>
-        </div>
-
-        <div class="setting-item">
-            <span class="setting-label">Задержка перед завершением (часов)</span>
-            <div class="setting-value">
-                <input type="number" id="autoCompleteDelayHours" value="48" min="0" max="720" step="0.5">
-                <span style="font-size: 12px; margin-left: 8px;">(0 = сразу, 48 = через двое суток, макс: 720 часов = 30 дней)</span>
-            </div>
-        </div>
-
-        <div id="autoProcessingStatus" class="current-settings" style="margin-top: 16px;"></div>
-
-        <div style="margin-top: 16px;">
-            <button class="btn-success" onclick="saveAutoProcessingSettings()">Применить настройки автообработки</button>
-            <button class="btn-secondary" onclick="runManualProcessingCheck()" style="margin-left: 12px;">Проверить заявки сейчас</button>
-        </div>
+        <div class="setting-item"><span class="setting-label">Автоматическое завершение</span><div class="setting-value"><input type="checkbox" id="autoCompleteEnabled" checked><span style="font-size: 12px;">При включении обработанные заявки будут автоматически завершаться</span></div></div>
+        <div class="setting-item"><span class="setting-label">Задержка перед завершением (часов)</span><div class="setting-value"><input type="number" id="autoCompleteDelayHours" value="48" min="0" max="720" step="0.5"><span style="font-size: 12px;">(0 = сразу, макс: 720 часов)</span></div></div>
+        <div id="autoProcessingStatus" class="current-settings"></div>
+        <div style="margin-top: 16px;"><button class="btn-success" onclick="saveAutoProcessingSettings()">Применить настройки</button><button class="btn-secondary" onclick="runManualProcessingCheck()" style="margin-left: 12px;">Проверить заявки сейчас</button></div>
     </div>
 
-    <!-- Блок оформления -->
-    <div class="settings-group">
+    <div id="themeSection" class="settings-group" style="display: none;">
         <h3>Оформление</h3>
-        <div class="setting-item">
-            <span class="setting-label">Тема оформления</span>
-            <div class="setting-value">
-                <button class="btn-secondary" onclick="toggleTheme()">Сменить тему</button>
-            </div>
-        </div>
+        <div class="setting-item"><span class="setting-label">Тема оформления</span><div class="setting-value"><button class="btn-secondary" onclick="toggleTheme()">Сменить тему</button></div></div>
     </div>
 </div>
 
 <script>
-    // ========== Функции для темы ==========
+    // ========== НАВИГАЦИЯ ==========
+    function navigateToReferences(tabId) {
+        localStorage.setItem('referencesTab', tabId);
+        window.location.href = '/references';
+    }
+
+    function showSettingsSection(section) {
+        document.getElementById('syncSection').style.display = 'none';
+        document.getElementById('onecSection').style.display = 'none';
+        document.getElementById('autoSection').style.display = 'none';
+        document.getElementById('themeSection').style.display = 'none';
+        if (section === 'sync') document.getElementById('syncSection').style.display = 'block';
+        if (section === 'onec') document.getElementById('onecSection').style.display = 'block';
+        if (section === 'auto') document.getElementById('autoSection').style.display = 'block';
+        if (section === 'theme') document.getElementById('themeSection').style.display = 'block';
+        localStorage.setItem('settingsSection', section);
+    }
+
+    function loadSettingsSection() {
+        const savedSection = localStorage.getItem('settingsSection') || 'sync';
+        showSettingsSection(savedSection);
+    }
+
+    // ========== ТЕМА ==========
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -505,18 +334,22 @@
         }
     }
 
-    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
-    initTheme();
-
     function toggleSubmenu(element) {
         const menuItem = element.closest('.has-submenu');
         menuItem.classList.toggle('open');
         const submenu = menuItem.querySelector('.submenu');
         if (submenu) submenu.classList.toggle('show');
-        if (event) event.stopPropagation();
+        event.stopPropagation();
     }
 
-    // ========== Загрузка текущего пользователя ==========
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `position:fixed;bottom:20px;right:20px;padding:12px 20px;background:${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b'};color:white;border-radius:10px;z-index:9999;animation:slideIn 0.3s ease;z-index:10000;`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
     async function loadCurrentUser() {
         try {
             const response = await fetch('/api/auth/current-user');
@@ -525,42 +358,18 @@
                 document.getElementById('currentUsername').innerText = user.username || user.fullName || 'User';
                 document.body.setAttribute('data-role', user.role);
             }
-        } catch(e) {
-            document.getElementById('currentUsername').innerText = 'User';
-        }
+        } catch(e) { document.getElementById('currentUsername').innerText = 'User'; }
     }
 
-    // ========== Отображение уведомлений ==========
-    function showNotification(message, type) {
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b'};
-            color: white;
-            border-radius: 10px;
-            z-index: 9999;
-            animation: slideIn 0.3s ease;
-            z-index: 10000;
-        `;
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        setTimeout(() => notification.remove(), 3000);
-    }
-
-    // ========== Функции синхронизации с диспетчеризацией ==========
+    // Функции синхронизации
     async function sendTripsToDispatch() {
         const resultDiv = document.getElementById('syncResult');
         resultDiv.style.display = 'block';
         resultDiv.className = 'sync-status info';
-        resultDiv.innerHTML = 'Отправка рейсов в систему диспетчеризации...';
-
+        resultDiv.innerHTML = 'Отправка рейсов...';
         try {
             const response = await fetch('/api/sync/send-trips', { method: 'POST' });
             const data = await response.json();
-
             if (data.success) {
                 resultDiv.className = 'sync-status success';
                 resultDiv.innerHTML = `✅ ${data.message}`;
@@ -572,25 +381,19 @@
             }
         } catch(e) {
             resultDiv.className = 'sync-status error';
-            resultDiv.innerHTML = `❌ Ошибка при отправке: ${e.message}`;
-            showNotification('Ошибка при отправке рейсов', 'error');
+            resultDiv.innerHTML = `❌ Ошибка: ${e.message}`;
         }
-
-        setTimeout(() => {
-            resultDiv.style.display = 'none';
-        }, 5000);
+        setTimeout(() => { resultDiv.style.display = 'none'; }, 5000);
     }
 
     async function receiveStatusesFromDispatch() {
         const resultDiv = document.getElementById('syncResult');
         resultDiv.style.display = 'block';
         resultDiv.className = 'sync-status info';
-        resultDiv.innerHTML = 'Получение статусов из системы диспетчеризации...';
-
+        resultDiv.innerHTML = 'Получение статусов...';
         try {
             const response = await fetch('/api/sync/receive-statuses', { method: 'POST' });
             const data = await response.json();
-
             if (data.success) {
                 resultDiv.className = 'sync-status success';
                 resultDiv.innerHTML = `✅ ${data.message}`;
@@ -603,13 +406,9 @@
             }
         } catch(e) {
             resultDiv.className = 'sync-status error';
-            resultDiv.innerHTML = `❌ Ошибка при получении: ${e.message}`;
-            showNotification('Ошибка при получении статусов', 'error');
+            resultDiv.innerHTML = `❌ Ошибка: ${e.message}`;
         }
-
-        setTimeout(() => {
-            resultDiv.style.display = 'none';
-        }, 5000);
+        setTimeout(() => { resultDiv.style.display = 'none'; }, 5000);
     }
 
     async function testDispatchConnection() {
@@ -617,89 +416,49 @@
         resultDiv.style.display = 'block';
         resultDiv.className = 'sync-status info';
         resultDiv.innerHTML = 'Проверка соединения...';
-
         try {
             const response = await fetch('/api/sync/dispatch-statuses');
-
             if (response.ok) {
                 const statuses = await response.json();
                 resultDiv.className = 'sync-status success';
-                resultDiv.innerHTML = `✅ Соединение установлено. Получено статусов: ${statuses.length}`;
-                showNotification('Соединение с диспетчеризацией установлено', 'success');
+                resultDiv.innerHTML = `✅ Соединение установлено. Получено: ${statuses.length}`;
+                showNotification('Соединение установлено', 'success');
             } else {
                 resultDiv.className = 'sync-status error';
-                resultDiv.innerHTML = `❌ Ошибка соединения: ${response.status}`;
-                showNotification('Не удалось подключиться к диспетчеризации', 'error');
+                resultDiv.innerHTML = `❌ Ошибка: ${response.status}`;
             }
         } catch(e) {
             resultDiv.className = 'sync-status error';
-            resultDiv.innerHTML = `❌ Не удалось подключиться: ${e.message}`;
-            showNotification('Ошибка подключения к системе диспетчеризации', 'error');
+            resultDiv.innerHTML = `❌ Ошибка: ${e.message}`;
         }
-
-        setTimeout(() => {
-            resultDiv.style.display = 'none';
-        }, 5000);
+        setTimeout(() => { resultDiv.style.display = 'none'; }, 5000);
     }
 
-    // ========== Настройки синхронизации ==========
     async function saveAndApplySyncSettings() {
-        const sendEnabled = document.getElementById('sendEnabled').checked;
-        const sendIntervalSeconds = parseInt(document.getElementById('sendInterval').value);
-        const sendBatchSize = parseInt(document.getElementById('sendBatchSize').value);
-        const receiveEnabled = document.getElementById('receiveEnabled').checked;
-        const receiveIntervalSeconds = parseInt(document.getElementById('receiveInterval').value);
-
-        if (isNaN(sendIntervalSeconds) || sendIntervalSeconds < 10 || sendIntervalSeconds > 3600) {
-            showNotification('Интервал отправки должен быть от 10 до 3600 секунд', 'error');
-            return;
-        }
-
-        if (isNaN(receiveIntervalSeconds) || receiveIntervalSeconds < 10 || receiveIntervalSeconds > 3600) {
-            showNotification('Интервал получения должен быть от 10 до 3600 секунд', 'error');
-            return;
-        }
-
-        if (isNaN(sendBatchSize) || sendBatchSize < 1 || sendBatchSize > 50) {
-            showNotification('Размер пакета должен быть от 1 до 50', 'error');
-            return;
-        }
-
         const settings = {
-            sendEnabled: sendEnabled,
-            sendIntervalSeconds: sendIntervalSeconds,
-            sendBatchSize: sendBatchSize,
-            receiveEnabled: receiveEnabled,
-            receiveIntervalSeconds: receiveIntervalSeconds
+            sendEnabled: document.getElementById('sendEnabled').checked,
+            sendIntervalSeconds: parseInt(document.getElementById('sendInterval').value),
+            sendBatchSize: parseInt(document.getElementById('sendBatchSize').value),
+            receiveEnabled: document.getElementById('receiveEnabled').checked,
+            receiveIntervalSeconds: parseInt(document.getElementById('receiveInterval').value)
         };
-
         const saveBtn = event.target;
         const originalText = saveBtn.innerText;
         saveBtn.disabled = true;
         saveBtn.innerText = 'Применение...';
-
         try {
             const response = await fetch('/api/sync/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings)
             });
-
             const result = await response.json();
-
             if (response.ok && result.success) {
                 showNotification('Настройки применены', 'success');
                 await loadSyncSettings();
-            } else {
-                showNotification(result.message || 'Ошибка при применении настроек', 'error');
-            }
-        } catch(e) {
-            console.error('Ошибка:', e);
-            showNotification('Ошибка при применении настроек: ' + e.message, 'error');
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerText = originalText;
-        }
+            } else { showNotification(result.message || 'Ошибка', 'error'); }
+        } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
+        finally { saveBtn.disabled = false; saveBtn.innerText = originalText; }
     }
 
     async function loadSyncSettings() {
@@ -712,118 +471,68 @@
                 document.getElementById('sendBatchSize').value = settings.sendBatchSize;
                 document.getElementById('receiveEnabled').checked = settings.receiveEnabled;
                 document.getElementById('receiveInterval').value = settings.receiveIntervalSeconds;
-
-                const settingsDiv = document.getElementById('currentSettings');
-                settingsDiv.innerHTML = `
-                    <strong>Текущие настройки синхронизации:</strong><br>
-                    • Отправка рейсов: ${settings.sendEnabled ? 'Включена' : 'Отключена'}<br>
-                    • Интервал отправки: ${settings.sendIntervalSeconds} секунд<br>
-                    • Размер пакета: ${settings.sendBatchSize} рейсов<br>
-                    • Получение статусов: ${settings.receiveEnabled ? 'Включено' : 'Отключено'}<br>
-                    • Интервал получения: ${settings.receiveIntervalSeconds} секунд
-                `;
-            } else {
-                document.getElementById('currentSettings').innerHTML = '<strong>Текущие настройки:</strong><br>Не удалось загрузить';
+                document.getElementById('currentSettings').innerHTML = `<strong>Текущие настройки:</strong><br>• Отправка: ${settings.sendEnabled ? 'Включена' : 'Отключена'}<br>• Интервал отправки: ${settings.sendIntervalSeconds} сек<br>• Размер пакета: ${settings.sendBatchSize}<br>• Получение: ${settings.receiveEnabled ? 'Включено' : 'Отключено'}<br>• Интервал получения: ${settings.receiveIntervalSeconds} сек`;
             }
-        } catch(e) {
-            console.error('Ошибка загрузки настроек:', e);
-            document.getElementById('currentSettings').innerHTML = '<strong>Текущие настройки:</strong><br>Ошибка загрузки';
-        }
+        } catch(e) { console.error(e); }
     }
 
-    // ========== Функции интеграции с 1С ==========
+    // Функции 1С
     function updateOneCSettingsVisibility() {
         const isEnabled = document.getElementById('onecIntegrationEnabled').checked;
-        const settingsDiv = document.getElementById('onecSettings');
-        const buttonsDiv = document.getElementById('onecButtons');
-
-        if (isEnabled) {
-            settingsDiv.style.display = 'flex';
-            buttonsDiv.style.display = 'flex';
-        } else {
-            settingsDiv.style.display = 'none';
-            buttonsDiv.style.display = 'none';
-        }
+        document.getElementById('onecSettings').style.display = isEnabled ? 'flex' : 'none';
+        document.getElementById('onecButtons').style.display = isEnabled ? 'flex' : 'none';
     }
 
     async function syncFromOneC() {
         const resultDiv = document.getElementById('onecResult');
         resultDiv.style.display = 'block';
         resultDiv.className = 'sync-status info';
-        resultDiv.innerHTML = 'Запуск синхронизации с 1С...';
-
+        resultDiv.innerHTML = 'Запуск синхронизации...';
         try {
             const response = await fetch('/api/references/sync-from-1c', { method: 'POST' });
             const data = await response.json();
-
             if (response.ok && data.success) {
                 resultDiv.className = 'sync-status success';
-                resultDiv.innerHTML = '✅ Синхронизация с 1С выполнена успешно';
-                showNotification('Синхронизация с 1С выполнена', 'success');
+                resultDiv.innerHTML = '✅ Синхронизация выполнена';
+                showNotification('Синхронизация выполнена', 'success');
                 setTimeout(() => location.reload(), 1500);
             } else {
                 resultDiv.className = 'sync-status error';
-                resultDiv.innerHTML = '❌ ' + (data.error || 'Ошибка синхронизации');
-                showNotification(data.error || 'Ошибка синхронизации', 'error');
+                resultDiv.innerHTML = '❌ ' + (data.error || 'Ошибка');
             }
         } catch(e) {
             resultDiv.className = 'sync-status error';
             resultDiv.innerHTML = '❌ Ошибка: ' + e.message;
-            showNotification('Ошибка синхронизации', 'error');
         }
-
-        setTimeout(() => {
-            resultDiv.style.display = 'none';
-        }, 5000);
+        setTimeout(() => { resultDiv.style.display = 'none'; }, 5000);
     }
 
     async function testOneCConnection() {
         const resultDiv = document.getElementById('onecResult');
         resultDiv.style.display = 'block';
         resultDiv.className = 'sync-status info';
-        resultDiv.innerHTML = 'Проверка соединения с 1С...';
-
+        resultDiv.innerHTML = 'Проверка соединения...';
         const url = document.getElementById('onecUrl').value;
         const username = document.getElementById('onecUsername').value;
         const password = document.getElementById('onecPassword').value;
-
-        if (!url) {
-            resultDiv.className = 'sync-status error';
-            resultDiv.innerHTML = '❌ Укажите URL API 1С';
-            showNotification('Укажите URL API 1С', 'error');
-            return;
-        }
-
+        if (!url) { resultDiv.className = 'sync-status error'; resultDiv.innerHTML = '❌ Укажите URL'; return; }
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-            const response = await fetch(`${url}/health`, {
-                headers: {
-                    'Authorization': 'Basic ' + btoa(username + ':' + password)
-                },
-                signal: controller.signal
-            });
+            const response = await fetch(`${url}/health`, { headers: { 'Authorization': 'Basic ' + btoa(username + ':' + password) }, signal: controller.signal });
             clearTimeout(timeoutId);
-
             if (response.ok) {
                 resultDiv.className = 'sync-status success';
-                resultDiv.innerHTML = '✅ Соединение с 1С установлено';
-                showNotification('Соединение с 1С установлено', 'success');
+                resultDiv.innerHTML = '✅ Соединение установлено';
             } else {
                 resultDiv.className = 'sync-status error';
-                resultDiv.innerHTML = '❌ Ошибка соединения с 1С: ' + response.status;
-                showNotification('Ошибка соединения с 1С', 'error');
+                resultDiv.innerHTML = '❌ Ошибка: ' + response.status;
             }
         } catch(e) {
             resultDiv.className = 'sync-status error';
-            resultDiv.innerHTML = '❌ Не удалось подключиться к 1С: ' + e.message;
-            showNotification('Ошибка подключения к 1С', 'error');
+            resultDiv.innerHTML = '❌ Ошибка: ' + e.message;
         }
-
-        setTimeout(() => {
-            resultDiv.style.display = 'none';
-        }, 5000);
+        setTimeout(() => { resultDiv.style.display = 'none'; }, 5000);
     }
 
     async function loadOneCSettings() {
@@ -837,66 +546,39 @@
                 document.getElementById('onecSyncInterval').value = settings.syncInterval;
                 updateOneCSettingsVisibility();
             }
-        } catch(e) {
-            console.error('Ошибка загрузки настроек 1С:', e);
-        }
+        } catch(e) { console.error(e); }
     }
 
     async function saveOneCSettings() {
-        const integrationEnabled = document.getElementById('onecIntegrationEnabled').checked;
-        const apiUrl = document.getElementById('onecUrl').value;
-        const username = document.getElementById('onecUsername').value;
-        const password = document.getElementById('onecPassword').value;
-        const syncInterval = parseInt(document.getElementById('onecSyncInterval').value);
-
-        if (integrationEnabled && !apiUrl) {
-            showNotification('Укажите URL API 1С', 'error');
-            return;
-        }
-
         const settings = {
-            integrationEnabled: integrationEnabled,
-            apiUrl: apiUrl,
-            username: username,
-            password: password,
-            syncInterval: syncInterval
+            integrationEnabled: document.getElementById('onecIntegrationEnabled').checked,
+            apiUrl: document.getElementById('onecUrl').value,
+            username: document.getElementById('onecUsername').value,
+            password: document.getElementById('onecPassword').value,
+            syncInterval: parseInt(document.getElementById('onecSyncInterval').value)
         };
-
         const saveBtn = event.target;
         const originalText = saveBtn.innerText;
         saveBtn.disabled = true;
         saveBtn.innerText = 'Сохранение...';
-
         try {
             const response = await fetch('/api/sync/onec/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings)
             });
-
             const result = await response.json();
-
             if (response.ok && result.success) {
-                showNotification('Настройки 1С сохранены', 'success');
+                showNotification('Настройки сохранены', 'success');
                 updateOneCSettingsVisibility();
-                if (integrationEnabled) {
-                    showNotification('Включен режим интеграции с 1С. Редактирование справочников будет заблокировано после перезагрузки страницы.', 'info');
-                }
-            } else {
-                showNotification(result.message || 'Ошибка при сохранении настроек', 'error');
-            }
-        } catch(e) {
-            console.error('Ошибка:', e);
-            showNotification('Ошибка при сохранении настроек: ' + e.message, 'error');
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerText = originalText;
-        }
+            } else { showNotification(result.message || 'Ошибка', 'error'); }
+        } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
+        finally { saveBtn.disabled = false; saveBtn.innerText = originalText; }
     }
 
     document.getElementById('onecIntegrationEnabled')?.addEventListener('change', updateOneCSettingsVisibility);
 
-    // ========== Настройки автоматической обработки заявок ==========
+    // Настройки автообработки
     async function loadAutoProcessingSettings() {
         try {
             const response = await fetch('/api/settings/auto-processing');
@@ -906,24 +588,15 @@
                 document.getElementById('autoProcessDelayHours').value = settings.autoProcessDelayHours;
                 document.getElementById('autoCompleteEnabled').checked = settings.autoCompleteEnabled;
                 document.getElementById('autoCompleteDelayHours').value = settings.autoCompleteDelayHours;
-
                 updateAutoProcessingStatus(settings);
             }
-        } catch(e) {
-            console.error('Ошибка загрузки настроек автообработки:', e);
-        }
+        } catch(e) { console.error(e); }
     }
 
     function updateAutoProcessingStatus(settings) {
         const statusDiv = document.getElementById('autoProcessingStatus');
         if (statusDiv) {
-            statusDiv.innerHTML = `
-                <strong>Текущие настройки автообработки:</strong><br>
-                • Автоматическая обработка: ${settings.autoProcessEnabled ? '✅ Включена' : '❌ Отключена'}<br>
-                • Задержка перед обработкой: ${settings.autoProcessDelayHours} часов<br>
-                • Автоматическое завершение: ${settings.autoCompleteEnabled ? '✅ Включено' : '❌ Отключено'}<br>
-                • Задержка перед завершением: ${settings.autoCompleteDelayHours} часов
-            `;
+            statusDiv.innerHTML = `<strong>Текущие настройки автообработки:</strong><br>• Автообработка: ${settings.autoProcessEnabled ? '✅ Включена' : '❌ Отключена'}<br>• Задержка: ${settings.autoProcessDelayHours} часов<br>• Автозавершение: ${settings.autoCompleteEnabled ? '✅ Включено' : '❌ Отключено'}<br>• Задержка: ${settings.autoCompleteDelayHours} часов`;
         }
     }
 
@@ -934,71 +607,44 @@
             autoCompleteEnabled: document.getElementById('autoCompleteEnabled').checked,
             autoCompleteDelayHours: parseFloat(document.getElementById('autoCompleteDelayHours').value)
         };
-
-        if (isNaN(settings.autoProcessDelayHours) || settings.autoProcessDelayHours < 0 || settings.autoProcessDelayHours > 720) {
-            showNotification('Задержка обработки должна быть от 0 до 720 часов', 'error');
-            return;
-        }
-
-        if (isNaN(settings.autoCompleteDelayHours) || settings.autoCompleteDelayHours < 0 || settings.autoCompleteDelayHours > 720) {
-            showNotification('Задержка завершения должна быть от 0 до 720 часов', 'error');
-            return;
-        }
-
         const saveBtn = event.target;
         const originalText = saveBtn.innerText;
         saveBtn.disabled = true;
         saveBtn.innerText = 'Сохранение...';
-
         try {
             const response = await fetch('/api/settings/auto-processing', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings)
             });
-
             const result = await response.json();
-
             if (response.ok && result.success) {
-                showNotification('Настройки автообработки сохранены', 'success');
+                showNotification('Настройки сохранены', 'success');
                 updateAutoProcessingStatus(settings);
-            } else {
-                showNotification(result.message || 'Ошибка при сохранении', 'error');
-            }
-        } catch(e) {
-            console.error('Ошибка:', e);
-            showNotification('Ошибка при сохранении: ' + e.message, 'error');
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerText = originalText;
-        }
+            } else { showNotification(result.message || 'Ошибка', 'error'); }
+        } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
+        finally { saveBtn.disabled = false; saveBtn.innerText = originalText; }
     }
 
     async function runManualProcessingCheck() {
         showNotification('Проверка заявок...', 'info');
-
         try {
             const response = await fetch('/api/settings/auto-processing/check', { method: 'POST' });
             const result = await response.json();
-
             if (response.ok && result.success) {
                 showNotification(`Проверка выполнена. Обработано: ${result.processed}, Завершено: ${result.completed}`, 'success');
-                if (result.processed > 0 || result.completed > 0) {
-                    setTimeout(() => location.reload(), 2000);
-                }
-            } else {
-                showNotification(result.message || 'Ошибка при проверке', 'error');
-            }
-        } catch(e) {
-            showNotification('Ошибка: ' + e.message, 'error');
-        }
+                if (result.processed > 0 || result.completed > 0) setTimeout(() => location.reload(), 2000);
+            } else { showNotification(result.message || 'Ошибка', 'error'); }
+        } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
     }
 
-    // ========== Инициализация ==========
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    initTheme();
     loadCurrentUser();
     loadSyncSettings();
     loadOneCSettings();
     loadAutoProcessingSettings();
+    loadSettingsSection();
 </script>
 </body>
 </html>
