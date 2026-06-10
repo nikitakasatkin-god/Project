@@ -3,9 +3,11 @@ package org.example.controller;
 import org.example.model.*;
 import org.example.repository.*;
 import org.example.service.ExternalSystemStub;
+import org.example.service.RequestAutoProcessingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.example.model.RequestStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,17 +25,20 @@ public class RequestController {
     private final UserRepository userRepository;
     private final DivisionRepository divisionRepository;
     private final ExternalSystemStub externalSystemStub;
+    private final RequestAutoProcessingService processingService;
 
     public RequestController(RequestRepository requestRepository,
                              RequestHistoryRepository requestHistoryRepository,
                              UserRepository userRepository,
                              DivisionRepository divisionRepository,
-                             ExternalSystemStub externalSystemStub) {
+                             ExternalSystemStub externalSystemStub,
+                             RequestAutoProcessingService processingService) {
         this.requestRepository = requestRepository;
         this.requestHistoryRepository = requestHistoryRepository;
         this.userRepository = userRepository;
         this.divisionRepository = divisionRepository;
         this.externalSystemStub = externalSystemStub;
+        this.processingService = processingService;
     }
 
     private User getCurrentUser() {
@@ -331,6 +336,249 @@ public class RequestController {
         }
 
         return ResponseEntity.badRequest().body("Заявка не в статусе 'Новая'");
+    }
+
+    /**
+     * Отклонение заявки (только для статуса NEW)
+     */
+    @PostMapping("/{id}/reject")
+    public ResponseEntity<?> rejectRequest(@PathVariable Long id, @RequestBody Map<String, Object> data) {
+        // ДИАГНОСТИКА НАЧАЛО
+        System.out.println("========== ОТКЛОНЕНИЕ ЗАЯВКИ НАЧАЛО ==========");
+        System.out.println("ID заявки: " + id);
+        System.out.println("Полученные данные: " + data);
+        System.out.println("Текущее время: " + LocalDateTime.now());
+
+        try {
+            // Шаг 1: Поиск заявки
+            System.out.println("Шаг 1: Поиск заявки в БД...");
+            Request request = requestRepository.findById(id).orElse(null);
+            if (request == null) {
+                System.out.println("ОШИБКА ШАГ 1: Заявка не найдена с id=" + id);
+                return ResponseEntity.status(404).body(Map.of("error", "Заявка не найдена"));
+            }
+            System.out.println("Шаг 1: Заявка найдена, статус=" + request.getStatus());
+
+            // Шаг 2: Получение текущего пользователя
+            System.out.println("Шаг 2: Получение текущего пользователя...");
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                System.out.println("ОШИБКА ШАГ 2: Текущий пользователь не найден");
+                return ResponseEntity.status(401).body(Map.of("error", "Пользователь не авторизован"));
+            }
+            System.out.println("Шаг 2: Пользователь найден: username=" + currentUser.getUsername() +
+                    ", role=" + currentUser.getRole() +
+                    ", id=" + currentUser.getId());
+
+            // Шаг 3: Проверка прав доступа
+            System.out.println("Шаг 3: Проверка прав доступа...");
+            boolean isDispatcher = currentUser.getRole() == Role.DISPATCHER;
+            boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+            System.out.println("  - isDispatcher: " + isDispatcher);
+            System.out.println("  - isAdmin: " + isAdmin);
+
+            if (!isDispatcher && !isAdmin) {
+                System.out.println("ОШИБКА ШАГ 3: Недостаточно прав. Роль пользователя: " + currentUser.getRole());
+                return ResponseEntity.status(403).body(Map.of("error", "Доступ запрещен. Только диспетчер или администратор могут отклонить заявку"));
+            }
+            System.out.println("Шаг 3: Права доступа подтверждены");
+
+            // Шаг 4: Проверка статуса заявки
+            System.out.println("Шаг 4: Проверка статуса заявки...");
+            System.out.println("  - Текущий статус: " + request.getStatus());
+            System.out.println("  - Ожидаемый статус: NEW");
+
+            if (request.getStatus() != RequestStatus.NEW) {
+                System.out.println("ОШИБКА ШАГ 4: Неверный статус заявки. Ожидался NEW, получен " + request.getStatus());
+                return ResponseEntity.badRequest().body(Map.of("error", "Отклонить можно только заявку в статусе 'Новая'. Текущий статус: " + request.getStatus().getDisplayName()));
+            }
+            System.out.println("Шаг 4: Статус заявки корректен");
+
+            // Шаг 5: Получение и проверка причины отклонения
+            System.out.println("Шаг 5: Получение причины отклонения...");
+            String reason = data.get("reason") != null ? data.get("reason").toString() : "";
+            System.out.println("  - Причина: '" + reason + "'");
+            System.out.println("  - Длина причины: " + reason.length() + " символов");
+            System.out.println("  - Пустая после trim: " + reason.trim().isEmpty());
+
+            if (reason.trim().isEmpty()) {
+                System.out.println("ОШИБКА ШАГ 5: Причина отклонения не указана или пустая");
+                return ResponseEntity.badRequest().body(Map.of("error", "Укажите причину отклонения"));
+            }
+            System.out.println("Шаг 5: Причина указана корректно");
+
+            // Шаг 6: Изменение статуса заявки
+            System.out.println("Шаг 6: Изменение статуса заявки...");
+            System.out.println("  - Старый статус: " + request.getStatus());
+            request.setStatus(RequestStatus.REJECTED);
+            System.out.println("  - Новый статус: " + request.getStatus());
+
+            System.out.println("Шаг 7: Сохранение заявки в БД...");
+            Request savedRequest = requestRepository.save(request);
+            System.out.println("Шаг 7: Заявка сохранена, ID=" + savedRequest.getId() + ", статус=" + savedRequest.getStatus());
+
+            // Шаг 8: Добавление записи в историю
+            System.out.println("Шаг 8: Добавление записи в историю...");
+            String actionText = "Заявка отклонена. Причина: " + reason;
+            String changedBy = "user:" + currentUser.getUsername();
+            String userName = currentUser.getFullName();
+            System.out.println("  - action: " + actionText);
+            System.out.println("  - changedBy: " + changedBy);
+            System.out.println("  - userName: " + userName);
+
+            addHistory(request, RequestStatus.REJECTED.name(), actionText, changedBy, userName);
+            System.out.println("Шаг 8: История добавлена");
+
+            // УСПЕХ
+            System.out.println("========== ОТКЛОНЕНИЕ ЗАЯВКИ УСПЕШНО ЗАВЕРШЕНО ==========");
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Заявка отклонена",
+                    "newStatus", RequestStatus.REJECTED.name()
+            ));
+
+        } catch (Exception e) {
+            System.out.println("========== ОШИБКА ПРИ ОТКЛОНЕНИИ ЗАЯВКИ ==========");
+            System.out.println("Тип исключения: " + e.getClass().getName());
+            System.out.println("Сообщение: " + e.getMessage());
+            System.out.println("Полный stack trace:");
+            e.printStackTrace();
+            System.out.println("========== КОНЕЦ ОШИБКИ ==========");
+            return ResponseEntity.status(500).body(Map.of(
+                    "error", "Внутренняя ошибка сервера: " + e.getMessage(),
+                    "exceptionType", e.getClass().getName()
+            ));
+        }
+    }
+
+    /**
+     * Проверка, можно ли отклонить заявку
+     */
+    @GetMapping("/{id}/can-reject")
+    public ResponseEntity<?> canRejectRequest(@PathVariable Long id) {
+        Request request = requestRepository.findById(id).orElse(null);
+        if (request == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("canReject", request.getStatus() == RequestStatus.NEW);
+        response.put("currentStatus", request.getStatus().name());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Ручная обработка заявки (кнопка "Завершить обработку")
+     */
+    @PostMapping("/{id}/complete-processing")
+    public ResponseEntity<?> completeProcessing(@PathVariable Long id) {
+        Request request = requestRepository.findById(id).orElse(null);
+        if (request == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        User currentUser = getCurrentUser();
+
+        if (currentUser.getRole() != Role.DISPATCHER && currentUser.getRole() != Role.ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Доступ запрещен. Только диспетчер или администратор могут завершить обработку заявки"));
+        }
+
+        boolean success = processingService.manualProcessRequest(id, currentUser.getUsername(), currentUser.getFullName());
+
+        if (success) {
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Заявка обработана",
+                    "newStatus", RequestStatus.PROCESSED.name()
+            ));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Невозможно обработать заявку. Проверьте, что объем полностью распределен и все рейсы имеют статус 'Обработан'"
+            ));
+        }
+    }
+
+    /**
+     * Проверка, можно ли обработать заявку
+     */
+    @GetMapping("/{id}/can-process")
+    public ResponseEntity<?> canProcessRequest(@PathVariable Long id) {
+        Request request = requestRepository.findById(id).orElse(null);
+        if (request == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("canProcess", processingService.canProcessRequest(request));
+        response.put("currentStatus", request.getStatus().name());
+
+        if (request.getStatus() != RequestStatus.IN_PROGRESS) {
+            response.put("reason", "Заявка не в статусе 'В работе'");
+            return ResponseEntity.ok(response);
+        }
+
+        double totalVolume = request.getVolume();
+        double assignedVolume = request.getTrips().stream()
+                .filter(t -> t.getStatus() != TripStatus.DELETED && t.getStatus() != TripStatus.CANCELLED)
+                .mapToDouble(Trip::getVolume)
+                .sum();
+
+        if (Math.abs(totalVolume - assignedVolume) > 0.01) {
+            response.put("reason", String.format("Объем распределен не полностью (%.1f из %.1f т)", assignedVolume, totalVolume));
+            response.put("assignedVolume", assignedVolume);
+            response.put("totalVolume", totalVolume);
+            return ResponseEntity.ok(response);
+        }
+
+        boolean allTripsProcessed = request.getTrips().stream()
+                .filter(t -> t.getStatus() != TripStatus.DELETED && t.getStatus() != TripStatus.CANCELLED)
+                .allMatch(t -> t.getStatus() == TripStatus.PROCESSED);
+
+        if (!allTripsProcessed) {
+            response.put("reason", "Не все рейсы имеют статус 'Обработан'");
+            return ResponseEntity.ok(response);
+        }
+
+        response.put("assignedVolume", assignedVolume);
+        response.put("totalVolume", totalVolume);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Ручное завершение заявки
+     */
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<?> completeRequest(@PathVariable Long id) {
+        Request request = requestRepository.findById(id).orElse(null);
+        if (request == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        User currentUser = getCurrentUser();
+
+        if (currentUser.getRole() != Role.DISPATCHER && currentUser.getRole() != Role.ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Доступ запрещен"));
+        }
+
+        if (request.getStatus() != RequestStatus.PROCESSED) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Заявка не в статусе 'Обработана'"));
+        }
+
+        boolean success = processingService.manualCompleteRequest(id, currentUser.getUsername(), currentUser.getFullName());
+
+        if (success) {
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Заявка завершена",
+                    "newStatus", RequestStatus.COMPLETED.name()
+            ));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Невозможно завершить заявку"
+            ));
+        }
     }
 
     @DeleteMapping("/{id}")

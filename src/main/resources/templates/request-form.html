@@ -7,7 +7,6 @@
     <title>Форма заявки - Логистика</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS переменные для тем */
         :root {
             --bg-primary: #f5f7fb;
             --bg-secondary: #ffffff;
@@ -359,7 +358,6 @@
 </div>
 
 <script>
-    // Функции для темы
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -406,18 +404,23 @@
                 fetch('/api/references/plants').then(r => r.json()),
                 fetch('/api/references/warehouses').then(r => r.json())
             ]);
-            const options = [
-                ...plants.map(p => ({value: p.name, label: `🏭 Завод: ${p.name}`})),
-                ...warehouses.map(w => ({value: w.name, label: `📦 Склад: ${w.name}`}))
-            ];
+
             const pickupSelect = document.getElementById('pickupPoint');
             const deliverySelect = document.getElementById('deliveryPoint');
+
+            // Для пункта погрузки - только заводы
             pickupSelect.innerHTML = '<option value="">Выберите пункт погрузки</option>' +
-                options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+                plants.map(p => `<option value="${p.name}">🏭 Завод: ${p.name}</option>`).join('');
+
+            // Для пункта разгрузки - только склады
             deliverySelect.innerHTML = '<option value="">Выберите пункт разгрузки</option>' +
-                options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+                warehouses.map(w => `<option value="${w.name}">📦 Склад: ${w.name}</option>`).join('');
         } catch(e) {
             console.error('Ошибка загрузки справочников:', e);
+            const pickupSelect = document.getElementById('pickupPoint');
+            const deliverySelect = document.getElementById('deliveryPoint');
+            if (pickupSelect) pickupSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+            if (deliverySelect) deliverySelect.innerHTML = '<option value="">Ошибка загрузки</option>';
         }
     }
 
