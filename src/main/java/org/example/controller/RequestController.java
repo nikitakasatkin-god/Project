@@ -7,7 +7,6 @@ import org.example.service.RequestAutoProcessingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.example.model.RequestStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,6 +23,7 @@ public class RequestController {
     private final RequestHistoryRepository requestHistoryRepository;
     private final UserRepository userRepository;
     private final DivisionRepository divisionRepository;
+    private final ProductRepository productRepository;
     private final ExternalSystemStub externalSystemStub;
     private final RequestAutoProcessingService processingService;
 
@@ -31,12 +31,14 @@ public class RequestController {
                              RequestHistoryRepository requestHistoryRepository,
                              UserRepository userRepository,
                              DivisionRepository divisionRepository,
+                             ProductRepository productRepository,
                              ExternalSystemStub externalSystemStub,
                              RequestAutoProcessingService processingService) {
         this.requestRepository = requestRepository;
         this.requestHistoryRepository = requestHistoryRepository;
         this.userRepository = userRepository;
         this.divisionRepository = divisionRepository;
+        this.productRepository = productRepository;
         this.externalSystemStub = externalSystemStub;
         this.processingService = processingService;
     }
@@ -54,6 +56,14 @@ public class RequestController {
         history.setChangedBy(changedBy);
         history.setUserName(userName);
         requestHistoryRepository.save(history);
+    }
+
+    @GetMapping("/reference/products")
+    public List<Product> getProducts() {
+        // Возвращаем только активные продукты для выбора
+        return productRepository.findAll().stream()
+                .filter(p -> p.getActive() != null && p.getActive())
+                .toList();
     }
 
     @GetMapping
@@ -89,6 +99,7 @@ public class RequestController {
                     response.put("owner", request.getOwner());
                     response.put("division", request.getDivision());
                     response.put("productType", request.getProductType());
+                    response.put("product", request.getProduct());
                     response.put("volume", request.getVolume());
                     response.put("pickupPoint", request.getPickupPoint());
                     response.put("deliveryPoint", request.getDeliveryPoint());
@@ -172,6 +183,7 @@ public class RequestController {
 
             List<String> missingFields = new java.util.ArrayList<>();
             if (data.get("volume") == null) missingFields.add("Объем");
+            if (data.get("productId") == null) missingFields.add("Продукт");
             if (data.get("pickupPoint") == null) missingFields.add("Пункт погрузки");
             if (data.get("deliveryPoint") == null) missingFields.add("Пункт разгрузки");
             if (data.get("pickupStartDate") == null) missingFields.add("Дата начала погрузки");
@@ -190,6 +202,11 @@ public class RequestController {
             request.setOwner(currentUser);
             request.setDivision(currentUser.getDivision());
             request.setVolume(Double.parseDouble(data.get("volume").toString()));
+
+            Long productId = Long.parseLong(data.get("productId").toString());
+            Product product = productRepository.findById(productId).orElse(null);
+            request.setProduct(product);
+
             request.setPickupPoint(data.get("pickupPoint").toString());
             request.setDeliveryPoint(data.get("deliveryPoint").toString());
             request.setPickupStartDate(LocalDate.parse(data.get("pickupStartDate").toString()));
@@ -248,6 +265,20 @@ public class RequestController {
                 }
                 request.setVolume(newVolume);
             }
+
+            if (data.containsKey("productId")) {
+                Long oldProductId = request.getProduct() != null ? request.getProduct().getId() : null;
+                Long newProductId = Long.parseLong(data.get("productId").toString());
+                if (oldProductId == null || !oldProductId.equals(newProductId)) {
+                    Product newProduct = productRepository.findById(newProductId).orElse(null);
+                    if (newProduct != null) {
+                        String oldProductName = request.getProduct() != null ? request.getProduct().getName() : "не указан";
+                        changes.append("Продукт: ").append(oldProductName).append(" → ").append(newProduct.getName()).append("; ");
+                        request.setProduct(newProduct);
+                    }
+                }
+            }
+
             if (data.containsKey("pickupPoint")) {
                 String oldValue = request.getPickupPoint();
                 String newValue = data.get("pickupPoint").toString();
@@ -338,122 +369,43 @@ public class RequestController {
         return ResponseEntity.badRequest().body("Заявка не в статусе 'Новая'");
     }
 
-    /**
-     * Отклонение заявки (только для статуса NEW)
-     */
     @PostMapping("/{id}/reject")
     public ResponseEntity<?> rejectRequest(@PathVariable Long id, @RequestBody Map<String, Object> data) {
-        // ДИАГНОСТИКА НАЧАЛО
-        System.out.println("========== ОТКЛОНЕНИЕ ЗАЯВКИ НАЧАЛО ==========");
-        System.out.println("ID заявки: " + id);
-        System.out.println("Полученные данные: " + data);
-        System.out.println("Текущее время: " + LocalDateTime.now());
-
-        try {
-            // Шаг 1: Поиск заявки
-            System.out.println("Шаг 1: Поиск заявки в БД...");
-            Request request = requestRepository.findById(id).orElse(null);
-            if (request == null) {
-                System.out.println("ОШИБКА ШАГ 1: Заявка не найдена с id=" + id);
-                return ResponseEntity.status(404).body(Map.of("error", "Заявка не найдена"));
-            }
-            System.out.println("Шаг 1: Заявка найдена, статус=" + request.getStatus());
-
-            // Шаг 2: Получение текущего пользователя
-            System.out.println("Шаг 2: Получение текущего пользователя...");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
-                System.out.println("ОШИБКА ШАГ 2: Текущий пользователь не найден");
-                return ResponseEntity.status(401).body(Map.of("error", "Пользователь не авторизован"));
-            }
-            System.out.println("Шаг 2: Пользователь найден: username=" + currentUser.getUsername() +
-                    ", role=" + currentUser.getRole() +
-                    ", id=" + currentUser.getId());
-
-            // Шаг 3: Проверка прав доступа
-            System.out.println("Шаг 3: Проверка прав доступа...");
-            boolean isDispatcher = currentUser.getRole() == Role.DISPATCHER;
-            boolean isAdmin = currentUser.getRole() == Role.ADMIN;
-            System.out.println("  - isDispatcher: " + isDispatcher);
-            System.out.println("  - isAdmin: " + isAdmin);
-
-            if (!isDispatcher && !isAdmin) {
-                System.out.println("ОШИБКА ШАГ 3: Недостаточно прав. Роль пользователя: " + currentUser.getRole());
-                return ResponseEntity.status(403).body(Map.of("error", "Доступ запрещен. Только диспетчер или администратор могут отклонить заявку"));
-            }
-            System.out.println("Шаг 3: Права доступа подтверждены");
-
-            // Шаг 4: Проверка статуса заявки
-            System.out.println("Шаг 4: Проверка статуса заявки...");
-            System.out.println("  - Текущий статус: " + request.getStatus());
-            System.out.println("  - Ожидаемый статус: NEW");
-
-            if (request.getStatus() != RequestStatus.NEW) {
-                System.out.println("ОШИБКА ШАГ 4: Неверный статус заявки. Ожидался NEW, получен " + request.getStatus());
-                return ResponseEntity.badRequest().body(Map.of("error", "Отклонить можно только заявку в статусе 'Новая'. Текущий статус: " + request.getStatus().getDisplayName()));
-            }
-            System.out.println("Шаг 4: Статус заявки корректен");
-
-            // Шаг 5: Получение и проверка причины отклонения
-            System.out.println("Шаг 5: Получение причины отклонения...");
-            String reason = data.get("reason") != null ? data.get("reason").toString() : "";
-            System.out.println("  - Причина: '" + reason + "'");
-            System.out.println("  - Длина причины: " + reason.length() + " символов");
-            System.out.println("  - Пустая после trim: " + reason.trim().isEmpty());
-
-            if (reason.trim().isEmpty()) {
-                System.out.println("ОШИБКА ШАГ 5: Причина отклонения не указана или пустая");
-                return ResponseEntity.badRequest().body(Map.of("error", "Укажите причину отклонения"));
-            }
-            System.out.println("Шаг 5: Причина указана корректно");
-
-            // Шаг 6: Изменение статуса заявки
-            System.out.println("Шаг 6: Изменение статуса заявки...");
-            System.out.println("  - Старый статус: " + request.getStatus());
-            request.setStatus(RequestStatus.REJECTED);
-            System.out.println("  - Новый статус: " + request.getStatus());
-
-            System.out.println("Шаг 7: Сохранение заявки в БД...");
-            Request savedRequest = requestRepository.save(request);
-            System.out.println("Шаг 7: Заявка сохранена, ID=" + savedRequest.getId() + ", статус=" + savedRequest.getStatus());
-
-            // Шаг 8: Добавление записи в историю
-            System.out.println("Шаг 8: Добавление записи в историю...");
-            String actionText = "Заявка отклонена. Причина: " + reason;
-            String changedBy = "user:" + currentUser.getUsername();
-            String userName = currentUser.getFullName();
-            System.out.println("  - action: " + actionText);
-            System.out.println("  - changedBy: " + changedBy);
-            System.out.println("  - userName: " + userName);
-
-            addHistory(request, RequestStatus.REJECTED.name(), actionText, changedBy, userName);
-            System.out.println("Шаг 8: История добавлена");
-
-            // УСПЕХ
-            System.out.println("========== ОТКЛОНЕНИЕ ЗАЯВКИ УСПЕШНО ЗАВЕРШЕНО ==========");
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Заявка отклонена",
-                    "newStatus", RequestStatus.REJECTED.name()
-            ));
-
-        } catch (Exception e) {
-            System.out.println("========== ОШИБКА ПРИ ОТКЛОНЕНИИ ЗАЯВКИ ==========");
-            System.out.println("Тип исключения: " + e.getClass().getName());
-            System.out.println("Сообщение: " + e.getMessage());
-            System.out.println("Полный stack trace:");
-            e.printStackTrace();
-            System.out.println("========== КОНЕЦ ОШИБКИ ==========");
-            return ResponseEntity.status(500).body(Map.of(
-                    "error", "Внутренняя ошибка сервера: " + e.getMessage(),
-                    "exceptionType", e.getClass().getName()
-            ));
+        Request request = requestRepository.findById(id).orElse(null);
+        if (request == null) {
+            return ResponseEntity.notFound().build();
         }
+
+        User currentUser = getCurrentUser();
+
+        if (currentUser.getRole() != Role.DISPATCHER && currentUser.getRole() != Role.ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Доступ запрещен. Только диспетчер или администратор могут отклонить заявку"));
+        }
+
+        if (request.getStatus() != RequestStatus.NEW) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Отклонить можно только заявку в статусе 'Новая'"));
+        }
+
+        String reason = data.get("reason") != null ? data.get("reason").toString() : "";
+        if (reason.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Укажите причину отклонения"));
+        }
+
+        request.setStatus(RequestStatus.REJECTED);
+        requestRepository.save(request);
+
+        addHistory(request, RequestStatus.REJECTED.name(),
+                "Заявка отклонена. Причина: " + reason,
+                "user:" + currentUser.getUsername(),
+                currentUser.getFullName());
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Заявка отклонена",
+                "newStatus", RequestStatus.REJECTED.name()
+        ));
     }
 
-    /**
-     * Проверка, можно ли отклонить заявку
-     */
     @GetMapping("/{id}/can-reject")
     public ResponseEntity<?> canRejectRequest(@PathVariable Long id) {
         Request request = requestRepository.findById(id).orElse(null);
@@ -467,9 +419,6 @@ public class RequestController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Ручная обработка заявки (кнопка "Завершить обработку")
-     */
     @PostMapping("/{id}/complete-processing")
     public ResponseEntity<?> completeProcessing(@PathVariable Long id) {
         Request request = requestRepository.findById(id).orElse(null);
@@ -499,9 +448,6 @@ public class RequestController {
         }
     }
 
-    /**
-     * Проверка, можно ли обработать заявку
-     */
     @GetMapping("/{id}/can-process")
     public ResponseEntity<?> canProcessRequest(@PathVariable Long id) {
         Request request = requestRepository.findById(id).orElse(null);
@@ -545,9 +491,6 @@ public class RequestController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Ручное завершение заявки
-     */
     @PostMapping("/{id}/complete")
     public ResponseEntity<?> completeRequest(@PathVariable Long id) {
         Request request = requestRepository.findById(id).orElse(null);

@@ -27,6 +27,10 @@ public class Request {
     @Enumerated(EnumType.STRING)
     private ProductType productType;
 
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    private Product product;
+
     private Double volume;
 
     private String pickupPoint;
@@ -70,6 +74,8 @@ public class Request {
     public void setDivision(Division division) { this.division = division; }
     public ProductType getProductType() { return productType; }
     public void setProductType(ProductType productType) { this.productType = productType; }
+    public Product getProduct() { return product; }
+    public void setProduct(Product product) { this.product = product; }
     public Double getVolume() { return volume; }
     public void setVolume(Double volume) { this.volume = volume; }
     public String getPickupPoint() { return pickupPoint; }

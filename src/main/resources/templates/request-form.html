@@ -224,7 +224,6 @@
                 <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
             </div>
         </div>
-        <!-- Небрендовая продукция - скрыта -->
         <div class="menu-item has-submenu admin-only">
             <div class="menu-title" onclick="toggleSubmenu(this)">Справочники<span class="arrow">▼</span></div>
             <div class="submenu">
@@ -235,6 +234,7 @@
                 <div class="submenu-item" onclick="navigateToReferences('carriers')">Перевозчики</div>
                 <div class="submenu-item" onclick="navigateToReferences('plants')">Заводы</div>
                 <div class="submenu-item" onclick="navigateToReferences('warehouses')">Склады</div>
+                <div class="submenu-item" onclick="navigateToReferences('products')">Продукты</div>
             </div>
         </div>
         <div class="menu-item has-submenu admin-only">
@@ -288,6 +288,14 @@
                             <option value="NON_BRANDED">Небрендовая продукция</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Продукт *</label>
+                        <select id="productId" class="form-control" required>
+                            <option value="">Выберите продукт</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
                     <div class="form-group">
                         <label>Объем (тонн) *</label>
                         <input type="number" id="volume" step="0.1" class="form-control" required>
@@ -377,7 +385,6 @@
 </div>
 
 <script>
-    // ========== НАВИГАЦИЯ ==========
     function navigateToReferences(tabId) {
         localStorage.setItem('referencesTab', tabId);
         window.location.href = '/references';
@@ -388,7 +395,6 @@
         window.location.href = '/settings';
     }
 
-    // ========== ТЕМА ==========
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -429,6 +435,18 @@
     requestId = urlParams.get('id');
     isEditMode = requestId && requestId !== 'null';
 
+    async function loadProducts() {
+        try {
+            const response = await fetch('/api/requests/reference/products');
+            const products = await response.json();
+            const productSelect = document.getElementById('productId');
+            productSelect.innerHTML = '<option value="">Выберите продукт</option>' +
+                products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        } catch(e) {
+            console.error('Ошибка загрузки продуктов:', e);
+        }
+    }
+
     async function loadLocations() {
         try {
             const [plants, warehouses] = await Promise.all([
@@ -462,6 +480,7 @@
             originalData = data;
 
             document.getElementById('productType').value = data.productType;
+            document.getElementById('productId').value = data.product?.id || '';
             document.getElementById('volume').value = data.volume;
             document.getElementById('pickupPoint').value = data.pickupPoint;
             document.getElementById('deliveryPoint').value = data.deliveryPoint;
@@ -524,7 +543,7 @@
     }
 
     function disableFormFields(disabled) {
-        const fields = ['productType', 'volume', 'pickupPoint', 'deliveryPoint',
+        const fields = ['productType', 'productId', 'volume', 'pickupPoint', 'deliveryPoint',
                        'pickupStartDate', 'pickupEndDate', 'pickupStartTime', 'pickupEndTime'];
         fields.forEach(field => {
             const el = document.getElementById(field);
@@ -564,7 +583,12 @@
     }
 
     function validateForm() {
+        const productId = document.getElementById('productId').value;
         const volume = parseFloat(document.getElementById('volume').value);
+        if (!productId) {
+            alert('Выберите продукт');
+            return false;
+        }
         if (isNaN(volume) || volume <= 0) {
             alert('Введите корректный объем (больше 0)');
             return false;
@@ -614,6 +638,7 @@
         if (!validateForm()) return;
 
         const formData = {
+            productId: parseInt(document.getElementById('productId').value),
             volume: parseFloat(document.getElementById('volume').value),
             productType: document.getElementById('productType').value,
             pickupPoint: document.getElementById('pickupPoint').value,
@@ -682,6 +707,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
+        await loadProducts();
         await loadLocations();
         if (isEditMode) {
             await loadRequestData();
