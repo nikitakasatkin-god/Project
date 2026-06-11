@@ -391,6 +391,10 @@
             background: var(--input-bg);
             color: var(--text-primary);
         }
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+        }
         .search-input {
             width: 100%;
             padding: 8px 12px;
@@ -484,6 +488,7 @@
                 <div class="submenu-item" onclick="switchToTab('carriers')">Перевозчики</div>
                 <div class="submenu-item" onclick="switchToTab('plants')">Заводы</div>
                 <div class="submenu-item" onclick="switchToTab('warehouses')">Склады</div>
+                <div class="submenu-item" onclick="switchToTab('products')">Продукты</div>
             </div>
         </div>
         <div class="menu-item has-submenu admin-only">
@@ -523,6 +528,7 @@
         <div class="tab" data-tab="carriers">Перевозчики</div>
         <div class="tab" data-tab="plants">Заводы</div>
         <div class="tab" data-tab="warehouses">Склады</div>
+        <div class="tab" data-tab="products">Продукты</div>
     </div>
 
     <!-- Подразделения -->
@@ -552,15 +558,9 @@
             <div class="filter-row">
                 <div class="filter-field"><label>Логин</label><input type="text" id="filterUserUsername" placeholder="Логин"></div>
                 <div class="filter-field"><label>ФИО</label><input type="text" id="filterUserFullName" placeholder="ФИО"></div>
-                <div class="filter-field">
-                    <label>Роль</label>
-                    <select id="filterUserRole"><option value="">Все</option><option value="ADMIN">Администратор</option><option value="LOGIST">Логист</option><option value="DISPATCHER">Диспетчер</option></select>
-                </div>
+                <div class="filter-field"><label>Роль</label><select id="filterUserRole"><option value="">Все</option><option value="ADMIN">Администратор</option><option value="LOGIST">Логист</option><option value="DISPATCHER">Диспетчер</option></select></div>
                 <div class="filter-field"><label>Подразделение</label><select id="filterUserDivision"><option value="">Все</option></select></div>
-                <div class="filter-field">
-                    <label>Статус</label>
-                    <select id="filterUserActive"><option value="">Все</option><option value="true">Активен</option><option value="false">Неактивен</option></select>
-                </div>
+                <div class="filter-field"><label>Статус</label><select id="filterUserActive"><option value="">Все</option><option value="true">Активен</option><option value="false">Неактивен</option></select></div>
             </div>
             <div class="filter-actions"><button class="btn-clear" onclick="clearUserFilters()">Сбросить</button><button class="btn-apply" onclick="applyUserFilters()">Применить</button></div>
         </div>
@@ -580,10 +580,7 @@
             <div class="filter-row">
                 <div class="filter-field"><label>Код</label><input type="text" id="filterStatusCode" placeholder="Код статуса"></div>
                 <div class="filter-field"><label>Название</label><input type="text" id="filterStatusName" placeholder="Название"></div>
-                <div class="filter-field">
-                    <label>Системный</label>
-                    <select id="filterStatusSystemDefault"><option value="">Все</option><option value="true">Системный</option><option value="false">Пользовательский</option></select>
-                </div>
+                <div class="filter-field"><label>Системный</label><select id="filterStatusSystemDefault"><option value="">Все</option><option value="true">Системный</option><option value="false">Пользовательский</option></select></div>
             </div>
             <div class="filter-actions"><button class="btn-clear" onclick="clearStatusFilters()">Сбросить</button><button class="btn-apply" onclick="applyStatusFilters()">Применить</button></div>
         </div>
@@ -668,6 +665,26 @@
             <tbody id="warehouses-tbody"></tbody>
         </table>
     </div>
+
+    <!-- Продукты -->
+    <div id="products" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <button class="btn-filter" id="filterProductsBtn"><span>🔍</span> Фильтр</button>
+            <button class="btn-primary" id="addProductBtn" onclick="openProductModal()">+ Добавить продукт</button>
+        </div>
+        <div id="filterProductsPanel" class="filter-panel">
+            <div class="filter-row">
+                <div class="filter-field"><label>Название</label><input type="text" id="filterProductName" placeholder="Название продукта"></div>
+                <div class="filter-field"><label>Описание</label><input type="text" id="filterProductDescription" placeholder="Описание"></div>
+                <div class="filter-field"><label>Статус</label><select id="filterProductActive"><option value="">Все</option><option value="true">Активен</option><option value="false">Неактивен</option></select></div>
+            </div>
+            <div class="filter-actions"><button class="btn-clear" onclick="clearProductFilters()">Сбросить</button><button class="btn-apply" onclick="applyProductFilters()">Применить</button></div>
+        </div>
+        <table class="data-table">
+            <thead><tr><th>ID</th><th>Название</th><th>Описание</th><th>Статус</th><th>Дата создания</th><th>Действия</th></tr></thead>
+            <tbody id="products-tbody"></tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Модальные окна -->
@@ -680,6 +697,26 @@
 <div id="tripStatusModal" class="modal"><div class="modal-content"><h3 id="tripStatusModalTitle">Добавление статуса</h3><input type="hidden" id="tripStatusId"><div class="form-group"><label>Код *</label><input type="text" id="tripStatusCode" class="form-control"></div><div class="form-group"><label>Название *</label><input type="text" id="tripStatusName" class="form-control"></div><div class="form-group"><label>Описание</label><textarea id="tripStatusDescription" class="form-control" rows="2"></textarea></div><div class="form-group"><label>Цвет</label><input type="color" id="tripStatusColor" class="form-control" value="#6b7280"></div><div class="form-group"><label>Порядок</label><input type="number" id="tripStatusSortOrder" class="form-control" value="0"></div><div style="display: flex; justify-content: flex-end; gap: 12px;"><button class="btn-secondary" onclick="closeTripStatusModal()">Отмена</button><button class="btn-primary" onclick="saveTripStatus()">Сохранить</button></div></div></div>
 
 <div id="carrierModal" class="modal"><div class="modal-content"><h3 id="carrierModalTitle">Добавление перевозчика</h3><input type="hidden" id="carrierId"><div class="form-group"><label>Название *</label><input type="text" id="carrierName" class="form-control"></div><div class="form-group"><label>Контактное лицо</label><input type="text" id="carrierContactPerson" class="form-control"></div><div class="form-group"><label>Телефон</label><input type="text" id="carrierPhone" class="form-control"></div><div class="form-group"><label>Email</label><input type="email" id="carrierEmail" class="form-control"></div><div style="display: flex; justify-content: flex-end; gap: 12px;"><button class="btn-secondary" onclick="closeCarrierModal()">Отмена</button><button class="btn-primary" onclick="saveCarrier()">Сохранить</button></div></div></div>
+
+<div id="productModal" class="modal">
+    <div class="modal-content">
+        <h3 id="productModalTitle">Добавление продукта</h3>
+        <input type="hidden" id="productId">
+        <div class="form-group"><label>Название *</label><input type="text" id="productName" class="form-control" placeholder="Введите название продукта"></div>
+        <div class="form-group"><label>Описание</label><textarea id="productDescription" rows="3" class="form-control" placeholder="Описание продукта"></textarea></div>
+        <div class="form-group" id="productActiveField" style="display: none;">
+            <label>Статус</label>
+            <select id="productActive" class="form-control">
+                <option value="true">Активен</option>
+                <option value="false">Неактивен</option>
+            </select>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+            <button class="btn-secondary" onclick="closeProductModal()">Отмена</button>
+            <button class="btn-primary" onclick="saveProduct()">Сохранить</button>
+        </div>
+    </div>
+</div>
 
 <script>
     function navigateToReferences(tabId) {
@@ -707,11 +744,12 @@
         if (tabId === 'carriers') loadCarriers();
         if (tabId === 'plants') loadPlants();
         if (tabId === 'warehouses') loadWarehouses();
+        if (tabId === 'products') loadProducts();
     }
 
     function loadSavedTab() {
         const savedTab = localStorage.getItem('referencesTab');
-        const validTabs = ['divisions', 'users', 'trip-statuses', 'dispatch-mappings', 'carriers', 'plants', 'warehouses'];
+        const validTabs = ['divisions', 'users', 'trip-statuses', 'dispatch-mappings', 'carriers', 'plants', 'warehouses', 'products'];
         if (savedTab && validTabs.includes(savedTab)) {
             switchToTab(savedTab);
         } else {
@@ -783,6 +821,7 @@
     let allPlants = [];
     let allWarehouses = [];
     let allStatuses = [];
+    let allProducts = [];
     let isOneCIntegrationEnabled = false;
 
     async function checkIntegrationMode() {
@@ -797,7 +836,7 @@
                         warningDiv.style.display = 'block';
                         warningDiv.innerHTML = '<div class="info-message warning-message">⚠️ Режим интеграции с 1С активен. Редактирование справочников запрещено.</div>';
                     }
-                    const blockedButtons = ['addDivisionBtn', 'addCarrierBtn', 'addPlantBtn', 'addWarehouseBtn'];
+                    const blockedButtons = ['addDivisionBtn', 'addCarrierBtn', 'addPlantBtn', 'addWarehouseBtn', 'addProductBtn'];
                     blockedButtons.forEach(btnId => {
                         const btn = document.getElementById(btnId);
                         if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.style.cursor = 'not-allowed'; }
@@ -825,6 +864,12 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
     }
 
     async function loadCurrentUser() {
@@ -971,7 +1016,7 @@
         const isDisabled = isOneCIntegrationEnabled;
         tbody.innerHTML = filtered.map(user => `
             <tr>
-                <td>${user.id}</span></span>
+                <td>${user.id}</td>
                 <td>${escapeHtml(user.username)}</span></span>
                 <td>${escapeHtml(user.fullName || '-')}</span></span>
                 <td>${getRoleName(user.role)}</span></span>
@@ -1127,7 +1172,7 @@
             allStatuses = await response.json();
             renderTripStatuses();
         } catch(e) {
-            document.getElementById('tripStatusesTbody').innerHTML = '<tr><td colspan="8" class="empty-state">Ошибка загрузки</span></span>';
+            document.getElementById('tripStatusesTbody').innerHTML = '<td><td colspan="8" class="empty-state">Ошибка загрузки</span></span>';
         }
     }
 
@@ -1144,8 +1189,8 @@
         const isDisabled = isOneCIntegrationEnabled;
         tbody.innerHTML = filtered.map(s => `
             <tr>
-                <td>${s.id}</span></span>
-                <td><code>${escapeHtml(s.code)}</code></span></span>
+                <td>${s.id}</td>
+                <td><code>${escapeHtml(s.code)}</code></td>
                 <td>${escapeHtml(s.name)}</span></span>
                 <td>${escapeHtml(s.description || '-')}</span></span>
                 <td><div class="status-color" style="background:${s.color || '#6b7280'}"></div></span>
@@ -1310,7 +1355,7 @@
         if (filterPhone) filtered = filtered.filter(c => (c.phone || '').toLowerCase().includes(filterPhone));
         const container = document.getElementById('carriers-tbody');
         const isDisabled = isOneCIntegrationEnabled;
-        if (!filtered.length) { container.innerHTML = '<tr><td colspan="5" class="empty-state">Нет перевозчиков</span></span>'; return; }
+        if (!filtered.length) { container.innerHTML = '</tr><td colspan="5" class="empty-state">Нет перевозчиков</span></span>'; return; }
         container.innerHTML = filtered.map(c => `
             <tr>
                 <td>${c.id}</td>
@@ -1462,7 +1507,7 @@
         if (filterAddress) filtered = filtered.filter(w => (w.address || '').toLowerCase().includes(filterAddress));
         const container = document.getElementById('warehouses-tbody');
         const isDisabled = isOneCIntegrationEnabled;
-        if (!filtered.length) { container.innerHTML = '</table><td colspan="4" class="empty-state">Нет складов</span></span>'; return; }
+        if (!filtered.length) { container.innerHTML = '<tr><td colspan="4" class="empty-state">Нет складов</span></span>'; return; }
         container.innerHTML = filtered.map(w => `
             <tr>
                 <td>${w.id}</td>
@@ -1491,8 +1536,165 @@
         alert('Редактирование склада ' + id);
     }
 
+    // ========== PRODUCTS ==========
+    async function loadProducts() {
+        try {
+            const response = await fetch('/api/references/products');
+            allProducts = await response.json();
+            renderProducts();
+        } catch(e) {
+            console.error(e);
+            document.getElementById('products-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">Ошибка загрузки</span></span>';
+        }
+    }
+
+    function renderProducts() {
+        const filterName = document.getElementById('filterProductName')?.value.toLowerCase() || '';
+        const filterDescription = document.getElementById('filterProductDescription')?.value.toLowerCase() || '';
+        const filterActive = document.getElementById('filterProductActive')?.value || '';
+
+        let filtered = allProducts;
+        if (filterName) {
+            filtered = filtered.filter(p => p.name.toLowerCase().includes(filterName));
+        }
+        if (filterDescription) {
+            filtered = filtered.filter(p => (p.description || '').toLowerCase().includes(filterDescription));
+        }
+        if (filterActive) {
+            filtered = filtered.filter(p => p.active == (filterActive === 'true'));
+        }
+
+        const container = document.getElementById('products-tbody');
+        if (!filtered.length) {
+            container.innerHTML = '</table><td colspan="6" class="empty-state">Нет продуктов</span></span>';
+            return;
+        }
+
+        container.innerHTML = filtered.map(p => `
+            <tr>
+                <td>${p.id}</td>
+                <td><strong>${escapeHtml(p.name)}</strong></td>
+                <td>${escapeHtml(p.description || '-')}</td>
+                <td>${p.active ? '<span style="color:#10b981;">🟢 Активен</span>' : '<span style="color:#ef4444;">🔴 Неактивен</span>'}</td>
+                <td>${formatDate(p.createdAt)}</span></span>
+                <td>
+                    <button class="btn-secondary" onclick="editProduct(${p.id})">✏️</button>
+                    <button class="btn-danger" onclick="deleteProduct(${p.id})">🗑️</button>
+                 </span>
+            </tr>
+        `).join('');
+    }
+
+    function clearProductFilters() {
+        document.getElementById('filterProductName').value = '';
+        document.getElementById('filterProductDescription').value = '';
+        document.getElementById('filterProductActive').value = '';
+        renderProducts();
+    }
+
+    function applyProductFilters() {
+        renderProducts();
+    }
+
+    function openProductModal() {
+        if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
+        document.getElementById('productModalTitle').innerText = 'Добавление продукта';
+        document.getElementById('productId').value = '';
+        document.getElementById('productName').value = '';
+        document.getElementById('productDescription').value = '';
+        document.getElementById('productActiveField').style.display = 'none';
+        document.getElementById('productModal').style.display = 'flex';
+    }
+
+    function editProduct(id) {
+        if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
+        const product = allProducts.find(p => p.id === id);
+        if (product) {
+            document.getElementById('productModalTitle').innerText = 'Редактирование продукта';
+            document.getElementById('productId').value = product.id;
+            document.getElementById('productName').value = product.name;
+            document.getElementById('productDescription').value = product.description || '';
+            document.getElementById('productActive').value = product.active ? 'true' : 'false';
+            document.getElementById('productActiveField').style.display = 'block';
+            document.getElementById('productModal').style.display = 'flex';
+        }
+    }
+
+    function closeProductModal() {
+        document.getElementById('productModal').style.display = 'none';
+        document.getElementById('productId').value = '';
+        document.getElementById('productName').value = '';
+        document.getElementById('productDescription').value = '';
+    }
+
+    async function saveProduct() {
+        if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
+        const id = document.getElementById('productId').value;
+        const name = document.getElementById('productName').value.trim();
+        const description = document.getElementById('productDescription').value;
+
+        if (!name) {
+            showNotification('Введите название продукта', 'error');
+            return;
+        }
+
+        const data = {
+            name: name,
+            description: description
+        };
+
+        if (id) {
+            data.active = document.getElementById('productActive').value === 'true';
+        }
+
+        try {
+            let response;
+            if (id) {
+                response = await fetch(`/api/references/products/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } else {
+                response = await fetch('/api/references/products', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            }
+
+            if (response.ok) {
+                showNotification(id ? 'Продукт обновлен' : 'Продукт добавлен', 'success');
+                closeProductModal();
+                await loadProducts();
+            } else {
+                const error = await response.json();
+                showNotification(error.error || 'Ошибка при сохранении', 'error');
+            }
+        } catch(e) {
+            showNotification('Ошибка: ' + e.message, 'error');
+        }
+    }
+
+    async function deleteProduct(id) {
+        if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
+        if (confirm('Удалить продукт? Это действие нельзя отменить.')) {
+            try {
+                const response = await fetch(`/api/references/products/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showNotification('Продукт удален', 'success');
+                    await loadProducts();
+                } else {
+                    showNotification('Ошибка при удалении', 'error');
+                }
+            } catch(e) {
+                showNotification('Ошибка: ' + e.message, 'error');
+            }
+        }
+    }
+
     window.onclick = function(event) {
-        const modals = ['divisionModal', 'userModal', 'addUserModal', 'tripStatusModal', 'carrierModal'];
+        const modals = ['divisionModal', 'userModal', 'addUserModal', 'tripStatusModal', 'carrierModal', 'productModal'];
         modals.forEach(modalId => {
             const modal = document.getElementById(modalId);
             if (event.target === modal) modal.style.display = 'none';
@@ -1505,6 +1707,7 @@
     initFilterPanel('filterCarriersBtn', 'filterCarriersPanel');
     initFilterPanel('filterPlantsBtn', 'filterPlantsPanel');
     initFilterPanel('filterWarehousesBtn', 'filterWarehousesPanel');
+    initFilterPanel('filterProductsBtn', 'filterProductsPanel');
 
     loadCurrentUser();
     checkIntegrationMode();
