@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/references")
@@ -24,6 +25,7 @@ public class ReferenceController {
     private final TariffBrandedRepository tariffBrandedRepository;
     private final TariffNonBrandedRepository tariffNonBrandedRepository;
     private final VehicleRepository vehicleRepository;
+    private final ProductRepository productRepository;
     private final IntegrationSettings integrationSettings;
     private final OneCIntegrationService oneCIntegrationService;
 
@@ -34,6 +36,7 @@ public class ReferenceController {
                                TariffBrandedRepository tariffBrandedRepository,
                                TariffNonBrandedRepository tariffNonBrandedRepository,
                                VehicleRepository vehicleRepository,
+                               ProductRepository productRepository,
                                IntegrationSettings integrationSettings,
                                OneCIntegrationService oneCIntegrationService) {
         this.divisionRepository = divisionRepository;
@@ -43,6 +46,7 @@ public class ReferenceController {
         this.tariffBrandedRepository = tariffBrandedRepository;
         this.tariffNonBrandedRepository = tariffNonBrandedRepository;
         this.vehicleRepository = vehicleRepository;
+        this.productRepository = productRepository;
         this.integrationSettings = integrationSettings;
         this.oneCIntegrationService = oneCIntegrationService;
     }
@@ -111,7 +115,6 @@ public class ReferenceController {
         List<Vehicle> vehicles = vehicleRepository.findByCarrier(carrier);
         List<Map<String, Object>> vehicleList = new ArrayList<>();
         for (Vehicle v : vehicles) {
-            // Пропускаем пустые записи
             if (v.getPlateNumber() == null && v.getTrailerPlate() == null && v.getDriverName() == null) {
                 continue;
             }
@@ -404,6 +407,75 @@ public class ReferenceController {
     @PostMapping("/tariffs/non-branded")
     public TariffNonBranded createTariffNonBranded(@RequestBody TariffNonBranded tariff) {
         return tariffNonBrandedRepository.save(tariff);
+    }
+
+    // ========== Products ==========
+    @GetMapping("/products")
+    public List<Product> getProducts() {
+        return productRepository.findAll();
+    }
+
+    @GetMapping("/products/{id}")
+    public ResponseEntity<?> getProductById(@PathVariable Long id) {
+        Product product = productRepository.findById(id).orElse(null);
+        if (product == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(product);
+    }
+
+    @PostMapping("/products")
+    public ResponseEntity<?> createProduct(@RequestBody Product product) {
+        if (product.getName() == null || product.getName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Название продукта обязательно"));
+        }
+
+        Optional<Product> existing = productRepository.findByName(product.getName());
+        if (existing.isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Продукт с таким названием уже существует"));
+        }
+
+        product.setActive(true);
+        return ResponseEntity.ok(productRepository.save(product));
+    }
+
+    @PutMapping("/products/{id}")
+    public ResponseEntity<?> updateProduct(@PathVariable Long id, @RequestBody Map<String, Object> data) {
+        Product product = productRepository.findById(id).orElse(null);
+        if (product == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (data.containsKey("name")) {
+            String newName = data.get("name").toString();
+            if (newName.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Название продукта не может быть пустым"));
+            }
+            Optional<Product> existing = productRepository.findByName(newName);
+            if (existing.isPresent() && existing.get().getId() != id) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Продукт с таким названием уже существует"));
+            }
+            product.setName(newName);
+        }
+
+        if (data.containsKey("description")) {
+            product.setDescription(data.get("description").toString());
+        }
+
+        if (data.containsKey("active")) {
+            product.setActive(Boolean.parseBoolean(data.get("active").toString()));
+        }
+
+        return ResponseEntity.ok(productRepository.save(product));
+    }
+
+    @DeleteMapping("/products/{id}")
+    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+        if (!productRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        productRepository.deleteById(id);
+        return ResponseEntity.ok().build();
     }
 
     // ========== Синхронизация с 1С ==========
