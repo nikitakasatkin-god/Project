@@ -1331,14 +1331,21 @@
             const response = await fetch(`/api/references/carriers/${carrierId}/vehicles`);
             vehicles = await response.json();
 
+            // Фильтруем автомобили с пустым госномером
+            const validVehicles = vehicles.filter(v => v.plateNumber && v.plateNumber.trim() !== '');
+
             const usedVehiclePlates = existingTrips
                 .filter(t => t.status !== 'DELETED' && t.status !== 'CANCELLED')
                 .map(t => t.vehiclePlate).filter(p => p && p !== '');
-            const availableVehicles = vehicles.filter(v => !usedVehiclePlates.includes(v.plateNumber));
+            const availableVehicles = validVehicles.filter(v => !usedVehiclePlates.includes(v.plateNumber));
 
             const vehicleSelect = document.getElementById('vehicleId');
             vehicleSelect.innerHTML = '<option value="">Не выбран</option>' +
                 availableVehicles.map(v => `<option value="${v.id}">${v.plateNumber} (${v.brand} ${v.model})</option>`).join('');
+
+            if (availableVehicles.length === 0 && validVehicles.length === 0) {
+                vehicleSelect.innerHTML = '<option value="">Нет доступных автомобилей</option>';
+            }
         } catch(e) {
             console.error('Ошибка загрузки автомобилей:', e);
         }
@@ -1367,16 +1374,27 @@
             const response = await fetch(`/api/references/carriers/${carrierId}/drivers`);
             drivers = await response.json();
 
+            // Фильтруем пустые значения
+            const validDrivers = drivers.filter(d => d && d.trim() !== '');
+
             const usedDrivers = existingTrips
                 .filter(t => t.status !== 'DELETED' && t.status !== 'CANCELLED')
                 .map(t => t.driverName).filter(d => d && d !== '');
-            const availableDrivers = drivers.filter(d => !usedDrivers.includes(d));
+            const availableDrivers = validDrivers.filter(d => !usedDrivers.includes(d));
 
             const driverSelect = document.getElementById('driverName');
             driverSelect.innerHTML = '<option value="">Не выбран</option>' +
                 availableDrivers.map(d => `<option value="${d}">${d}</option>`).join('');
+
+            if (availableDrivers.length === 0 && validDrivers.length === 0) {
+                driverSelect.innerHTML = '<option value="">Нет доступных водителей</option>';
+            }
         } catch(e) {
             console.error('Ошибка загрузки водителей:', e);
+            const driverSelect = document.getElementById('driverName');
+            if (driverSelect) {
+                driverSelect.innerHTML = '<option value="">Ошибка загрузки водителей</option>';
+            }
         }
     }
 

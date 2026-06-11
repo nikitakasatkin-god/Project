@@ -112,4 +112,10 @@ public class ApplicationController {
     public String settings() {
         return "settings";
     }
+
+    @GetMapping("/carrier-detail")
+    public String carrierDetail(@RequestParam Long id, Model model) {
+        model.addAttribute("carrierId", id);
+        return "carrier-detail";
+    }
 }
