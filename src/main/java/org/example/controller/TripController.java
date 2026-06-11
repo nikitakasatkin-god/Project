@@ -287,7 +287,10 @@ public class TripController {
             vehicle = vehicleRepository.findById(vehicleId).orElse(null);
             if (vehicle != null) {
                 vehiclePlate = vehicle.getPlateNumber();
-                vehicleBrand = vehicle.getBrand() + " " + vehicle.getModel();
+                vehicleBrand = (vehicle.getBrand() != null ? vehicle.getBrand() : "") + " " + (vehicle.getModel() != null ? vehicle.getModel() : "");
+                if (vehicleBrand.trim().isEmpty()) {
+                    vehicleBrand = vehiclePlate;
+                }
             }
         }
 

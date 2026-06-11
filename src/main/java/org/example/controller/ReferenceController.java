@@ -4,11 +4,11 @@ import org.example.config.IntegrationSettings;
 import org.example.model.*;
 import org.example.repository.*;
 import org.example.service.OneCIntegrationService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +54,7 @@ public class ReferenceController {
     private ResponseEntity<?> checkWritePermissionForDirectory() {
         if (isIntegrationMode()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Режим интеграции с 1С активен. Редактирование справочников (подразделения, заводы, склады, перевозчики) запрещено. Данные синхронизируются из 1С."));
+                    .body(Map.of("error", "Режим интеграции с 1С активен. Редактирование справочников запрещено"));
         }
         return null;
     }
@@ -94,10 +94,52 @@ public class ReferenceController {
         return carrierRepository.findAll();
     }
 
+    @GetMapping("/carriers/{id}")
+    public ResponseEntity<?> getCarrierById(@PathVariable Long id) {
+        Carrier carrier = carrierRepository.findById(id).orElse(null);
+        if (carrier == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", carrier.getId());
+        response.put("name", carrier.getName());
+        response.put("contactPerson", carrier.getContactPerson());
+        response.put("phone", carrier.getPhone());
+        response.put("email", carrier.getEmail());
+
+        List<Vehicle> vehicles = vehicleRepository.findByCarrier(carrier);
+        List<Map<String, Object>> vehicleList = new ArrayList<>();
+        for (Vehicle v : vehicles) {
+            // Пропускаем пустые записи
+            if (v.getPlateNumber() == null && v.getTrailerPlate() == null && v.getDriverName() == null) {
+                continue;
+            }
+            Map<String, Object> vehicleMap = new HashMap<>();
+            vehicleMap.put("id", v.getId());
+            vehicleMap.put("plateNumber", v.getPlateNumber() != null ? v.getPlateNumber() : "");
+            vehicleMap.put("brand", v.getBrand() != null ? v.getBrand() : "");
+            vehicleMap.put("model", v.getModel() != null ? v.getModel() : "");
+            vehicleMap.put("trailerPlate", v.getTrailerPlate() != null ? v.getTrailerPlate() : "");
+            vehicleMap.put("driverName", v.getDriverName() != null ? v.getDriverName() : "");
+            vehicleMap.put("driverPhone", v.getDriverPhone() != null ? v.getDriverPhone() : "");
+            vehicleMap.put("driverEmail", v.getDriverEmail() != null ? v.getDriverEmail() : "");
+            vehicleMap.put("isTrailer", v.getIsTrailer() != null ? v.getIsTrailer() : false);
+            vehicleMap.put("isDriver", v.getIsDriver() != null ? v.getIsDriver() : false);
+            vehicleList.add(vehicleMap);
+        }
+        response.put("vehicles", vehicleList);
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/carriers/{id}/vehicles")
     public List<Vehicle> getCarrierVehicles(@PathVariable Long id) {
         return carrierRepository.findById(id)
-                .map(vehicleRepository::findByCarrier)
+                .map(carrier -> vehicleRepository.findByCarrier(carrier)
+                        .stream()
+                        .filter(v -> v.getPlateNumber() != null && !v.getPlateNumber().trim().isEmpty())
+                        .toList())
                 .orElse(List.of());
     }
 
@@ -107,6 +149,7 @@ public class ReferenceController {
                 .map(carrier -> vehicleRepository.findByCarrier(carrier)
                         .stream()
                         .map(Vehicle::getPlateNumber)
+                        .filter(p -> p != null && !p.trim().isEmpty())
                         .distinct()
                         .toList())
                 .orElse(List.of());
@@ -118,7 +161,7 @@ public class ReferenceController {
                 .map(carrier -> vehicleRepository.findByCarrier(carrier)
                         .stream()
                         .map(Vehicle::getTrailerPlate)
-                        .filter(trailer -> trailer != null && !trailer.isEmpty())
+                        .filter(trailer -> trailer != null && !trailer.trim().isEmpty())
                         .distinct()
                         .toList())
                 .orElse(List.of());
@@ -130,7 +173,7 @@ public class ReferenceController {
                 .map(carrier -> vehicleRepository.findByCarrier(carrier)
                         .stream()
                         .map(Vehicle::getDriverName)
-                        .filter(driver -> driver != null && !driver.isEmpty())
+                        .filter(driver -> driver != null && !driver.trim().isEmpty())
                         .distinct()
                         .toList())
                 .orElse(List.of());
@@ -144,10 +187,28 @@ public class ReferenceController {
     }
 
     @PutMapping("/carriers/{id}")
-    public ResponseEntity<?> updateCarrier(@PathVariable Long id, @RequestBody Carrier carrier) {
+    public ResponseEntity<?> updateCarrier(@PathVariable Long id, @RequestBody Map<String, Object> data) {
         ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
         if (permissionCheck != null) return permissionCheck;
-        carrier.setId(id);
+
+        Carrier carrier = carrierRepository.findById(id).orElse(null);
+        if (carrier == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (data.containsKey("name")) {
+            carrier.setName(data.get("name").toString());
+        }
+        if (data.containsKey("contactPerson")) {
+            carrier.setContactPerson(data.get("contactPerson").toString());
+        }
+        if (data.containsKey("phone")) {
+            carrier.setPhone(data.get("phone").toString());
+        }
+        if (data.containsKey("email")) {
+            carrier.setEmail(data.get("email").toString());
+        }
+
         return ResponseEntity.ok(carrierRepository.save(carrier));
     }
 
@@ -156,6 +217,113 @@ public class ReferenceController {
         ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
         if (permissionCheck != null) return permissionCheck;
         carrierRepository.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
+
+    // ========== Vehicles ==========
+    @PostMapping("/carriers/{carrierId}/vehicles")
+    public ResponseEntity<?> addVehicle(@PathVariable Long carrierId, @RequestBody Map<String, Object> data) {
+        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
+        if (permissionCheck != null) return permissionCheck;
+
+        Carrier carrier = carrierRepository.findById(carrierId).orElse(null);
+        if (carrier == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Vehicle vehicle = new Vehicle();
+        vehicle.setCarrier(carrier);
+
+        if (data.containsKey("plateNumber") && data.get("plateNumber") != null && !data.get("plateNumber").toString().isEmpty()) {
+            String plateNumber = data.get("plateNumber").toString();
+            if (plateNumber.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Госномер обязателен"));
+            }
+            boolean exists = vehicleRepository.findAll().stream()
+                    .anyMatch(v -> v.getPlateNumber() != null && v.getPlateNumber().equals(plateNumber));
+            if (exists) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Автомобиль с таким госномером уже существует"));
+            }
+            vehicle.setPlateNumber(plateNumber);
+            vehicle.setBrand(data.get("brand") != null ? data.get("brand").toString() : "");
+            vehicle.setModel(data.get("model") != null ? data.get("model").toString() : "");
+        }
+
+        if (data.containsKey("trailerPlate") && data.get("trailerPlate") != null && !data.get("trailerPlate").toString().isEmpty()) {
+            String trailerPlate = data.get("trailerPlate").toString();
+            if (trailerPlate.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Госномер прицепа обязателен"));
+            }
+            vehicle.setTrailerPlate(trailerPlate);
+            vehicle.setIsTrailer(true);
+        }
+
+        if (data.containsKey("driverName") && data.get("driverName") != null && !data.get("driverName").toString().isEmpty()) {
+            vehicle.setDriverName(data.get("driverName").toString());
+            if (data.containsKey("driverPhone")) {
+                vehicle.setDriverPhone(data.get("driverPhone").toString());
+            }
+            if (data.containsKey("driverEmail")) {
+                vehicle.setDriverEmail(data.get("driverEmail").toString());
+            }
+            vehicle.setIsDriver(true);
+        }
+
+        if ((vehicle.getPlateNumber() == null || vehicle.getPlateNumber().isEmpty()) &&
+                (vehicle.getTrailerPlate() == null || vehicle.getTrailerPlate().isEmpty()) &&
+                (vehicle.getDriverName() == null || vehicle.getDriverName().isEmpty())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Не указаны данные для сохранения"));
+        }
+
+        return ResponseEntity.ok(vehicleRepository.save(vehicle));
+    }
+
+    @PutMapping("/carriers/{carrierId}/vehicles/{vehicleId}")
+    public ResponseEntity<?> updateVehicle(@PathVariable Long carrierId, @PathVariable Long vehicleId, @RequestBody Map<String, Object> data) {
+        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
+        if (permissionCheck != null) return permissionCheck;
+
+        Vehicle vehicle = vehicleRepository.findById(vehicleId).orElse(null);
+        if (vehicle == null || !vehicle.getCarrier().getId().equals(carrierId)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (data.containsKey("plateNumber")) {
+            vehicle.setPlateNumber(data.get("plateNumber").toString());
+        }
+        if (data.containsKey("brand")) {
+            vehicle.setBrand(data.get("brand").toString());
+        }
+        if (data.containsKey("model")) {
+            vehicle.setModel(data.get("model").toString());
+        }
+        if (data.containsKey("trailerPlate")) {
+            vehicle.setTrailerPlate(data.get("trailerPlate").toString());
+        }
+        if (data.containsKey("driverName")) {
+            vehicle.setDriverName(data.get("driverName").toString());
+        }
+        if (data.containsKey("driverPhone")) {
+            vehicle.setDriverPhone(data.get("driverPhone").toString());
+        }
+        if (data.containsKey("driverEmail")) {
+            vehicle.setDriverEmail(data.get("driverEmail").toString());
+        }
+
+        return ResponseEntity.ok(vehicleRepository.save(vehicle));
+    }
+
+    @DeleteMapping("/carriers/{carrierId}/vehicles/{vehicleId}")
+    public ResponseEntity<?> deleteVehicle(@PathVariable Long carrierId, @PathVariable Long vehicleId) {
+        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
+        if (permissionCheck != null) return permissionCheck;
+
+        Vehicle vehicle = vehicleRepository.findById(vehicleId).orElse(null);
+        if (vehicle == null || !vehicle.getCarrier().getId().equals(carrierId)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        vehicleRepository.delete(vehicle);
         return ResponseEntity.ok().build();
     }
 
@@ -217,7 +385,7 @@ public class ReferenceController {
         return ResponseEntity.ok().build();
     }
 
-    // ========== Tariffs (всегда доступны для редактирования) ==========
+    // ========== Tariffs ==========
     @GetMapping("/tariffs/branded")
     public List<TariffBranded> getTariffsBranded() {
         return tariffBrandedRepository.findAll();

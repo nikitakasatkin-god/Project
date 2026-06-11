@@ -101,11 +101,11 @@ public class DataInitializer implements CommandLineRunner {
             carrier2.setPhone("+7(999)234-56-78");
             carrierRepository.save(carrier2);
 
+            // Только автомобили без водителей (водители теперь добавляются отдельно)
             Vehicle v1 = new Vehicle();
             v1.setPlateNumber("А123ВВ77");
             v1.setBrand("KAMAZ");
             v1.setModel("5490");
-            v1.setDriverName("Водитель1");
             v1.setCarrier(carrier1);
             vehicleRepository.save(v1);
 
@@ -113,7 +113,6 @@ public class DataInitializer implements CommandLineRunner {
             v2.setPlateNumber("В456СС77");
             v2.setBrand("MAN");
             v2.setModel("TGX");
-            v2.setDriverName("Водитель2");
             v2.setCarrier(carrier2);
             vehicleRepository.save(v2);
         }
