@@ -577,7 +577,6 @@
         try {
             const response = await fetch(`/api/trips/request/${requestId}`);
             existingTrips = await response.json();
-            console.log('Загружены рейсы:', existingTrips.map(t => ({id: t.id, status: t.status, statusColor: t.statusColor, statusDisplayName: t.statusDisplayName})));
             renderTrips(existingTrips);
         } catch(e) {
             console.error(e);
@@ -642,36 +641,36 @@
         return isOwner && requestData?.status === 'NEW';
     }
 
-    async function loadPickupPointsForEdit() {
+    async function loadPickupPlantsForEdit() {
         try {
-            const response = await fetch('/api/references/plants');
+            const response = await fetch('/api/requests/reference/pickup-points');
             const plants = await response.json();
-            const pickupSelect = document.getElementById('edit_pickupPoint');
+            const pickupSelect = document.getElementById('edit_pickupPlantId');
             if (pickupSelect) {
                 pickupSelect.innerHTML = '<option value="">Выберите пункт погрузки</option>' +
-                    plants.map(p => `<option value="${p.name}">🏭 Завод: ${p.name}</option>`).join('');
+                    plants.map(p => `<option value="${p.id}">🏭 Завод: ${p.name}</option>`).join('');
             }
         } catch(e) {
             console.error('Ошибка загрузки заводов:', e);
-            const pickupSelect = document.getElementById('edit_pickupPoint');
+            const pickupSelect = document.getElementById('edit_pickupPlantId');
             if (pickupSelect) {
                 pickupSelect.innerHTML = '<option value="">Ошибка загрузки заводов</option>';
             }
         }
     }
 
-    async function loadDeliveryPointsForEdit() {
+    async function loadDeliveryWarehousesForEdit() {
         try {
-            const response = await fetch('/api/references/warehouses');
+            const response = await fetch('/api/requests/reference/delivery-points');
             const warehouses = await response.json();
-            const deliverySelect = document.getElementById('edit_deliveryPoint');
+            const deliverySelect = document.getElementById('edit_deliveryWarehouseId');
             if (deliverySelect) {
                 deliverySelect.innerHTML = '<option value="">Выберите пункт разгрузки</option>' +
-                    warehouses.map(w => `<option value="${w.name}">📦 Склад: ${w.name}</option>`).join('');
+                    warehouses.map(w => `<option value="${w.id}">📦 Склад: ${w.name}</option>`).join('');
             }
         } catch(e) {
             console.error('Ошибка загрузки складов:', e);
-            const deliverySelect = document.getElementById('edit_deliveryPoint');
+            const deliverySelect = document.getElementById('edit_deliveryWarehouseId');
             if (deliverySelect) {
                 deliverySelect.innerHTML = '<option value="">Ошибка загрузки складов</option>';
             }
@@ -694,6 +693,9 @@
 
     function enableEditMode() {
         isEditMode = true;
+        loadPickupPlantsForEdit();
+        loadDeliveryWarehousesForEdit();
+        loadProductsForEdit();
         renderRequestInfo();
     }
 
@@ -706,8 +708,8 @@
     async function saveEdit() {
         const productId = document.getElementById('edit_productId')?.value;
         const volume = document.getElementById('edit_volume')?.value;
-        const pickupPoint = document.getElementById('edit_pickupPoint')?.value;
-        const deliveryPoint = document.getElementById('edit_deliveryPoint')?.value;
+        const pickupPlantId = document.getElementById('edit_pickupPlantId')?.value;
+        const deliveryWarehouseId = document.getElementById('edit_deliveryWarehouseId')?.value;
         const pickupStartDate = document.getElementById('edit_pickupStartDate')?.value;
         const pickupEndDate = document.getElementById('edit_pickupEndDate')?.value;
         const pickupStartTime = document.getElementById('edit_pickupStartTime')?.value;
@@ -716,8 +718,8 @@
         const missingFields = [];
         if (!productId || productId === '') missingFields.push('Продукт');
         if (!volume || volume === '') missingFields.push('Объем');
-        if (!pickupPoint || pickupPoint === '') missingFields.push('Пункт погрузки');
-        if (!deliveryPoint || deliveryPoint === '') missingFields.push('Пункт разгрузки');
+        if (!pickupPlantId || pickupPlantId === '') missingFields.push('Пункт погрузки');
+        if (!deliveryWarehouseId || deliveryWarehouseId === '') missingFields.push('Пункт разгрузки');
         if (!pickupStartDate || pickupStartDate === '') missingFields.push('Дата начала погрузки');
         if (!pickupEndDate || pickupEndDate === '') missingFields.push('Дата окончания погрузки');
         if (!pickupStartTime || pickupStartTime === '') missingFields.push('Время начала погрузки');
@@ -752,8 +754,8 @@
         const updateData = {
             productId: parseInt(productId),
             volume: parseFloat(volume),
-            pickupPoint: pickupPoint,
-            deliveryPoint: deliveryPoint,
+            pickupPlantId: parseInt(pickupPlantId),
+            deliveryWarehouseId: parseInt(deliveryWarehouseId),
             pickupStartDate: pickupStartDate,
             pickupEndDate: pickupEndDate,
             pickupStartTime: pickupStartTime,
@@ -806,6 +808,9 @@
         const divisionName = requestData.owner?.division?.name || requestData.division?.name || 'Не указано';
         const productName = requestData.product?.name || '-';
 
+        const pickupPlantName = requestData.pickupPlant?.name || requestData.pickupPoint || '-';
+        const deliveryWarehouseName = requestData.deliveryWarehouse?.name || requestData.deliveryPoint || '-';
+
         const pickupStartDateFormatted = formatDate(requestData.pickupStartDate);
         const pickupEndDateFormatted = formatDate(requestData.pickupEndDate);
         const pickupStartTimeFormatted = formatTime(requestData.pickupStartTime);
@@ -818,10 +823,6 @@
         }
 
         if (isEditMode && canEdit) {
-            loadPickupPointsForEdit();
-            loadDeliveryPointsForEdit();
-            loadProductsForEdit();
-
             container.innerHTML = `
                 <div class="detail-header">
                     <div><span class="detail-label">Заявка №</span><span class="detail-value">${requestData.id}</span></div>
@@ -848,7 +849,7 @@
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Пункт погрузки <span class="required">*</span></div>
-                        <select id="edit_pickupPoint" class="detail-value editable">
+                        <select id="edit_pickupPlantId" class="detail-value editable">
                             <option value="">Выберите пункт погрузки</option>
                         </select>
                     </div>
@@ -862,7 +863,7 @@
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Пункт разгрузки <span class="required">*</span></div>
-                        <select id="edit_deliveryPoint" class="detail-value editable">
+                        <select id="edit_deliveryWarehouseId" class="detail-value editable">
                             <option value="">Выберите пункт разгрузки</option>
                         </select>
                     </div>
@@ -895,8 +896,8 @@
 
             setTimeout(() => {
                 const productSelect = document.getElementById('edit_productId');
-                const pickupSelect = document.getElementById('edit_pickupPoint');
-                const deliverySelect = document.getElementById('edit_deliveryPoint');
+                const pickupSelect = document.getElementById('edit_pickupPlantId');
+                const deliverySelect = document.getElementById('edit_deliveryWarehouseId');
 
                 if (productSelect && requestData.product?.id) {
                     for(let i = 0; i < productSelect.options.length; i++) {
@@ -906,18 +907,18 @@
                         }
                     }
                 }
-                if (pickupSelect && requestData.pickupPoint) {
+                if (pickupSelect && requestData.pickupPlant?.id) {
                     for(let i = 0; i < pickupSelect.options.length; i++) {
-                        if(pickupSelect.options[i].value === requestData.pickupPoint) {
-                            pickupSelect.value = requestData.pickupPoint;
+                        if(pickupSelect.options[i].value == requestData.pickupPlant.id) {
+                            pickupSelect.value = requestData.pickupPlant.id;
                             break;
                         }
                     }
                 }
-                if (deliverySelect && requestData.deliveryPoint) {
+                if (deliverySelect && requestData.deliveryWarehouse?.id) {
                     for(let i = 0; i < deliverySelect.options.length; i++) {
-                        if(deliverySelect.options[i].value === requestData.deliveryPoint) {
-                            deliverySelect.value = requestData.deliveryPoint;
+                        if(deliverySelect.options[i].value == requestData.deliveryWarehouse.id) {
+                            deliverySelect.value = requestData.deliveryWarehouse.id;
                             break;
                         }
                     }
@@ -954,7 +955,7 @@
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Пункт погрузки</div>
-                        <div class="detail-value">${requestData.pickupPoint || '-'}</div>
+                        <div class="detail-value">${pickupPlantName}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Дата начала погрузки</div>
@@ -966,7 +967,7 @@
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Пункт разгрузки</div>
-                        <div class="detail-value">${requestData.deliveryPoint || '-'}</div>
+                        <div class="detail-value">${deliveryWarehouseName}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Дата окончания погрузки</div>
@@ -1044,8 +1045,6 @@
     }
 
     function renderTrips(trips) {
-        console.log('renderTrips получил:', trips.map(t => ({id: t.id, status: t.status, statusColor: t.statusColor, statusDisplayName: t.statusDisplayName})));
-
         const container = document.getElementById('tripsContainer');
         const activeTrips = trips.filter(t => t.status !== 'DELETED');
 
@@ -1337,7 +1336,6 @@
                     existingTrips[tripIndex].status = result.status;
                     existingTrips[tripIndex].statusDisplayName = result.statusDisplayName;
                     existingTrips[tripIndex].statusColor = result.statusColor;
-                    console.log(`Обновлен рейс ${tripId}: статус=${result.status}, цвет=${result.statusColor}`);
                     renderTrips(existingTrips);
                 }
 

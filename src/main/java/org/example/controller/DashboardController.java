@@ -55,21 +55,16 @@ public class DashboardController {
         List<Trip> trips;
         List<Carrier> carriers;
 
-        // Фильтруем данные в зависимости от роли
         if (currentUser.getRole() == Role.ADMIN) {
-            // Админ видит всё
             requests = requestRepository.findAll();
             trips = tripRepository.findAll();
             carriers = carrierRepository.findAll();
         } else if (currentUser.getRole() == Role.LOGIST) {
-            // Логист видит только свои заявки
             requests = requestRepository.findByOwner(currentUser);
-            // Логист видит рейсы только по своим заявкам
             List<Long> requestIds = requests.stream().map(Request::getId).collect(Collectors.toList());
             trips = tripRepository.findAll().stream()
                     .filter(t -> requestIds.contains(t.getRequest().getId()))
                     .collect(Collectors.toList());
-            // Логист видит перевозчиков, которые участвуют в его рейсах
             List<Long> carrierIds = trips.stream()
                     .map(t -> t.getCarrier() != null ? t.getCarrier().getId() : null)
                     .filter(id -> id != null)
@@ -79,11 +74,8 @@ public class DashboardController {
                     .filter(c -> carrierIds.contains(c.getId()))
                     .collect(Collectors.toList());
         } else if (currentUser.getRole() == Role.DISPATCHER) {
-            // Диспетчер видит заявки своего подразделения
             requests = requestRepository.findByDivision(currentUser.getDivision());
-            // Диспетчер видит рейсы только по заявкам своего подразделения
             trips = tripRepository.findByRequest_Division(currentUser.getDivision());
-            // Диспетчер видит перевозчиков, которые работают с его подразделением
             List<Long> carrierIds = trips.stream()
                     .map(t -> t.getCarrier() != null ? t.getCarrier().getId() : null)
                     .filter(id -> id != null)
@@ -98,22 +90,18 @@ public class DashboardController {
             carriers = List.of();
         }
 
-        // Активные заявки (в работе)
         long activeRequests = requests.stream()
                 .filter(r -> r.getStatus() != null && r.getStatus() == RequestStatus.IN_PROGRESS)
                 .count();
         data.put("activeRequests", activeRequests);
 
-        // Рейсы сегодня (только отфильтрованные по роли)
         long todayTrips = trips.stream()
                 .filter(t -> t.getTripDate() != null && t.getTripDate().equals(LocalDate.now()))
                 .count();
         data.put("todayTrips", todayTrips);
 
-        // Количество перевозчиков (только отфильтрованные по роли)
         data.put("carriersCount", (long) carriers.size());
 
-        // Последние 5 заявок (сортировка по ID - сначала новые)
         List<Request> recentRequests = requests.stream()
                 .sorted(Comparator.comparing(Request::getId).reversed())
                 .limit(5)
