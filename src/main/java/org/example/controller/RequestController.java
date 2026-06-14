@@ -72,38 +72,15 @@ public class RequestController {
                 .collect(Collectors.toList());
     }
 
-    // ========== НОВЫЕ ЭНДПОИНТЫ ДЛЯ ЗАВОДОВ И СКЛАДОВ (из БД) ==========
-
+    // ========== ЭНДПОИНТЫ ДЛЯ ЗАВОДОВ И СКЛАДОВ ==========
     @GetMapping("/reference/pickup-points")
-    public List<Map<String, String>> getPickupPoints() {
-        List<Plant> plants = plantRepository.findAll();
-        return plants.stream()
-                .map(plant -> {
-                    Map<String, String> point = new HashMap<>();
-                    point.put("value", plant.getName());
-                    point.put("label", "🏭 Завод: " + plant.getName());
-                    point.put("address", plant.getAddress() != null ? plant.getAddress() : "");
-                    point.put("contactPerson", plant.getContactPerson() != null ? plant.getContactPerson() : "");
-                    point.put("phone", plant.getPhone() != null ? plant.getPhone() : "");
-                    return point;
-                })
-                .collect(Collectors.toList());
+    public List<Plant> getPickupPoints() {
+        return plantRepository.findAll();
     }
 
     @GetMapping("/reference/delivery-points")
-    public List<Map<String, String>> getDeliveryPoints() {
-        List<Warehouse> warehouses = warehouseRepository.findAll();
-        return warehouses.stream()
-                .map(warehouse -> {
-                    Map<String, String> point = new HashMap<>();
-                    point.put("value", warehouse.getName());
-                    point.put("label", "📦 Склад: " + warehouse.getName());
-                    point.put("address", warehouse.getAddress() != null ? warehouse.getAddress() : "");
-                    point.put("contactPerson", warehouse.getContactPerson() != null ? warehouse.getContactPerson() : "");
-                    point.put("phone", warehouse.getPhone() != null ? warehouse.getPhone() : "");
-                    return point;
-                })
-                .collect(Collectors.toList());
+    public List<Warehouse> getDeliveryPoints() {
+        return warehouseRepository.findAll();
     }
 
     @GetMapping
@@ -141,8 +118,9 @@ public class RequestController {
                     response.put("productType", request.getProductType());
                     response.put("product", request.getProduct());
                     response.put("volume", request.getVolume());
-                    response.put("pickupPoint", request.getPickupPoint());
-                    response.put("deliveryPoint", request.getDeliveryPoint());
+                    // Отдаем объекты с id и name
+                    response.put("pickupPlant", request.getPickupPlant());
+                    response.put("deliveryWarehouse", request.getDeliveryWarehouse());
                     response.put("pickupStartDate", request.getPickupStartDate());
                     response.put("pickupEndDate", request.getPickupEndDate());
                     response.put("pickupStartTime", request.getPickupStartTime());
@@ -180,8 +158,8 @@ public class RequestController {
             List<String> missingFields = new java.util.ArrayList<>();
             if (data.get("volume") == null) missingFields.add("Объем");
             if (data.get("productId") == null) missingFields.add("Продукт");
-            if (data.get("pickupPoint") == null) missingFields.add("Пункт погрузки");
-            if (data.get("deliveryPoint") == null) missingFields.add("Пункт разгрузки");
+            if (data.get("pickupPlantId") == null && data.get("pickupPoint") == null) missingFields.add("Пункт погрузки");
+            if (data.get("deliveryWarehouseId") == null && data.get("deliveryPoint") == null) missingFields.add("Пункт разгрузки");
             if (data.get("pickupStartDate") == null) missingFields.add("Дата начала погрузки");
             if (data.get("pickupEndDate") == null) missingFields.add("Дата окончания погрузки");
             if (data.get("pickupStartTime") == null) missingFields.add("Время начала погрузки");
@@ -203,8 +181,30 @@ public class RequestController {
             Product product = productRepository.findById(productId).orElse(null);
             request.setProduct(product);
 
-            request.setPickupPoint(data.get("pickupPoint").toString());
-            request.setDeliveryPoint(data.get("deliveryPoint").toString());
+            // ========== ЗАГРУЗКА ЗАВОДА И СКЛАДА ПО ID ==========
+            if (data.containsKey("pickupPlantId")) {
+                Long plantId = Long.parseLong(data.get("pickupPlantId").toString());
+                Plant plant = plantRepository.findById(plantId).orElse(null);
+                request.setPickupPlant(plant);
+            } else if (data.containsKey("pickupPoint")) {
+                // Для обратной совместимости: ищем завод по имени
+                String plantName = data.get("pickupPoint").toString();
+                Plant plant = plantRepository.findByName(plantName).orElse(null);
+                request.setPickupPlant(plant);
+            }
+
+            if (data.containsKey("deliveryWarehouseId")) {
+                Long warehouseId = Long.parseLong(data.get("deliveryWarehouseId").toString());
+                Warehouse warehouse = warehouseRepository.findById(warehouseId).orElse(null);
+                request.setDeliveryWarehouse(warehouse);
+            } else if (data.containsKey("deliveryPoint")) {
+                // Для обратной совместимости: ищем склад по имени
+                String warehouseName = data.get("deliveryPoint").toString();
+                Warehouse warehouse = warehouseRepository.findByName(warehouseName).orElse(null);
+                request.setDeliveryWarehouse(warehouse);
+            }
+            // =================================================
+
             request.setPickupStartDate(LocalDate.parse(data.get("pickupStartDate").toString()));
             request.setPickupEndDate(LocalDate.parse(data.get("pickupEndDate").toString()));
             request.setPickupStartTime(LocalTime.parse(data.get("pickupStartTime").toString()));
@@ -275,22 +275,44 @@ public class RequestController {
                 }
             }
 
-            if (data.containsKey("pickupPoint")) {
-                String oldValue = request.getPickupPoint();
-                String newValue = data.get("pickupPoint").toString();
-                if (!oldValue.equals(newValue)) {
-                    changes.append("Пункт погрузки: ").append(oldValue).append(" → ").append(newValue).append("; ");
+            // ========== ОБНОВЛЕНИЕ ЗАВОДА ==========
+            if (data.containsKey("pickupPlantId")) {
+                Long newPlantId = Long.parseLong(data.get("pickupPlantId").toString());
+                Plant newPlant = plantRepository.findById(newPlantId).orElse(null);
+                if (newPlant != null) {
+                    String oldPlantName = request.getPickupPlant() != null ? request.getPickupPlant().getName() : "не указан";
+                    changes.append("Пункт погрузки: ").append(oldPlantName).append(" → ").append(newPlant.getName()).append("; ");
+                    request.setPickupPlant(newPlant);
                 }
-                request.setPickupPoint(newValue);
-            }
-            if (data.containsKey("deliveryPoint")) {
-                String oldValue = request.getDeliveryPoint();
-                String newValue = data.get("deliveryPoint").toString();
-                if (!oldValue.equals(newValue)) {
-                    changes.append("Пункт разгрузки: ").append(oldValue).append(" → ").append(newValue).append("; ");
+            } else if (data.containsKey("pickupPoint")) {
+                String newPlantName = data.get("pickupPoint").toString();
+                Plant newPlant = plantRepository.findByName(newPlantName).orElse(null);
+                if (newPlant != null) {
+                    String oldPlantName = request.getPickupPlant() != null ? request.getPickupPlant().getName() : "не указан";
+                    changes.append("Пункт погрузки: ").append(oldPlantName).append(" → ").append(newPlant.getName()).append("; ");
+                    request.setPickupPlant(newPlant);
                 }
-                request.setDeliveryPoint(newValue);
             }
+
+            // ========== ОБНОВЛЕНИЕ СКЛАДА ==========
+            if (data.containsKey("deliveryWarehouseId")) {
+                Long newWarehouseId = Long.parseLong(data.get("deliveryWarehouseId").toString());
+                Warehouse newWarehouse = warehouseRepository.findById(newWarehouseId).orElse(null);
+                if (newWarehouse != null) {
+                    String oldWarehouseName = request.getDeliveryWarehouse() != null ? request.getDeliveryWarehouse().getName() : "не указан";
+                    changes.append("Пункт разгрузки: ").append(oldWarehouseName).append(" → ").append(newWarehouse.getName()).append("; ");
+                    request.setDeliveryWarehouse(newWarehouse);
+                }
+            } else if (data.containsKey("deliveryPoint")) {
+                String newWarehouseName = data.get("deliveryPoint").toString();
+                Warehouse newWarehouse = warehouseRepository.findByName(newWarehouseName).orElse(null);
+                if (newWarehouse != null) {
+                    String oldWarehouseName = request.getDeliveryWarehouse() != null ? request.getDeliveryWarehouse().getName() : "не указан";
+                    changes.append("Пункт разгрузки: ").append(oldWarehouseName).append(" → ").append(newWarehouse.getName()).append("; ");
+                    request.setDeliveryWarehouse(newWarehouse);
+                }
+            }
+
             if (data.containsKey("pickupStartDate")) {
                 LocalDate oldValue = request.getPickupStartDate();
                 LocalDate newValue = LocalDate.parse(data.get("pickupStartDate").toString());

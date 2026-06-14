@@ -33,16 +33,19 @@ public class Request {
 
     private Double volume;
 
-    private String pickupPoint;
+    // ========== ИСПРАВЛЕНО: теперь это связи с таблицами ==========
+    @ManyToOne
+    @JoinColumn(name = "pickup_plant_id")
+    private Plant pickupPlant;           // вместо pickupPoint (String)
 
-    private String deliveryPoint;
+    @ManyToOne
+    @JoinColumn(name = "delivery_warehouse_id")
+    private Warehouse deliveryWarehouse;  // вместо deliveryPoint (String)
+    // =============================================================
 
     private LocalDate pickupStartDate;
-
     private LocalDate pickupEndDate;
-
     private LocalTime pickupStartTime;
-
     private LocalTime pickupEndTime;
 
     @Enumerated(EnumType.STRING)
@@ -58,7 +61,6 @@ public class Request {
     private List<RequestHistory> history = new ArrayList<>();
 
     private LocalDateTime createdAt;
-
     private LocalDateTime completedAt;
 
     @PrePersist
@@ -66,38 +68,66 @@ public class Request {
         createdAt = LocalDateTime.now();
     }
 
+    // ========== GETTERS AND SETTERS ==========
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
     public User getOwner() { return owner; }
     public void setOwner(User owner) { this.owner = owner; }
+
     public Division getDivision() { return division; }
     public void setDivision(Division division) { this.division = division; }
+
     public ProductType getProductType() { return productType; }
     public void setProductType(ProductType productType) { this.productType = productType; }
+
     public Product getProduct() { return product; }
     public void setProduct(Product product) { this.product = product; }
+
     public Double getVolume() { return volume; }
     public void setVolume(Double volume) { this.volume = volume; }
-    public String getPickupPoint() { return pickupPoint; }
-    public void setPickupPoint(String pickupPoint) { this.pickupPoint = pickupPoint; }
-    public String getDeliveryPoint() { return deliveryPoint; }
-    public void setDeliveryPoint(String deliveryPoint) { this.deliveryPoint = deliveryPoint; }
+
+    public Plant getPickupPlant() { return pickupPlant; }
+    public void setPickupPlant(Plant pickupPlant) { this.pickupPlant = pickupPlant; }
+
+    public Warehouse getDeliveryWarehouse() { return deliveryWarehouse; }
+    public void setDeliveryWarehouse(Warehouse deliveryWarehouse) { this.deliveryWarehouse = deliveryWarehouse; }
+
+    // Вспомогательные методы для совместимости с существующим кодом
+    @Transient
+    public String getPickupPoint() {
+        return pickupPlant != null ? pickupPlant.getName() : null;
+    }
+
+    @Transient
+    public String getDeliveryPoint() {
+        return deliveryWarehouse != null ? deliveryWarehouse.getName() : null;
+    }
+
     public LocalDate getPickupStartDate() { return pickupStartDate; }
     public void setPickupStartDate(LocalDate pickupStartDate) { this.pickupStartDate = pickupStartDate; }
+
     public LocalDate getPickupEndDate() { return pickupEndDate; }
     public void setPickupEndDate(LocalDate pickupEndDate) { this.pickupEndDate = pickupEndDate; }
+
     public LocalTime getPickupStartTime() { return pickupStartTime; }
     public void setPickupStartTime(LocalTime pickupStartTime) { this.pickupStartTime = pickupStartTime; }
+
     public LocalTime getPickupEndTime() { return pickupEndTime; }
     public void setPickupEndTime(LocalTime pickupEndTime) { this.pickupEndTime = pickupEndTime; }
+
     public RequestStatus getStatus() { return status; }
     public void setStatus(RequestStatus status) { this.status = status; }
+
     public List<Trip> getTrips() { return trips; }
     public void setTrips(List<Trip> trips) { this.trips = trips; }
+
     public List<RequestHistory> getHistory() { return history; }
     public void setHistory(List<RequestHistory> history) { this.history = history; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
     public LocalDateTime getCompletedAt() { return completedAt; }
     public void setCompletedAt(LocalDateTime completedAt) { this.completedAt = completedAt; }
 }

@@ -778,7 +778,7 @@
         }
     }
 
-    function applyFilters() {
+        function applyFilters() {
         const filterStatus = document.getElementById('filterStatus').value;
         const filterId = document.getElementById('filterId').value;
         const filterVolumeFrom = document.getElementById('filterVolumeFrom').value;
@@ -807,10 +807,10 @@
             filtered = filtered.filter(r => r.product?.id == filterProductId);
         }
         if (filterPickupPoint) {
-            filtered = filtered.filter(r => r.pickupPoint === filterPickupPoint);
+            filtered = filtered.filter(r => (r.pickupPlant?.name || r.pickupPoint) === filterPickupPoint);
         }
         if (filterDeliveryPoint) {
-            filtered = filtered.filter(r => r.deliveryPoint === filterDeliveryPoint);
+            filtered = filtered.filter(r => (r.deliveryWarehouse?.name || r.deliveryPoint) === filterDeliveryPoint);
         }
         if (filterDateFrom) {
             filtered = filtered.filter(r => r.createdAt && r.createdAt.split('T')[0] >= filterDateFrom);
@@ -818,6 +818,10 @@
         if (filterDateTo) {
             filtered = filtered.filter(r => r.createdAt && r.createdAt.split('T')[0] <= filterDateTo);
         }
+
+        // ========== СОРТИРОВКА ПО ID (НОВЫЕ СВЕРХУ) ==========
+        filtered.sort((a, b) => b.id - a.id);
+        // ====================================================
 
         renderRequests(filtered);
     }
@@ -832,35 +836,47 @@
         return map[status] || status;
     }
 
-    function renderRequests(requests) {
+        function renderRequests(requests) {
         const container = document.getElementById('requestsContainer');
-        if (!requests.length) {
+
+        // ========== СОРТИРОВКА ПО ID (НОВЫЕ СВЕРХУ) ==========
+        const sortedRequests = [...requests].sort((a, b) => b.id - a.id);
+        // =====================================================
+
+        if (!sortedRequests.length) {
             container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Нет созданных заявок</div>' +
                 ((currentUserRole === 'LOGIST' || currentUserRole === 'ADMIN') ? '<button class="btn-primary" onclick="openCreateModal()">Создать заявку</button>' : '') +
                 '</div>';
             return;
         }
+
         container.innerHTML = `
             <div class="requests-grid">
-                ${requests.map(req => `
-                    <div class="request-card" data-id="${req.id}">
-                        <div class="request-card-header">
-                            <span class="request-id">Заявка №${req.id}</span>
-                            <span class="status-badge status-${getStatusClass(req.status)}">${getStatusText(req.status)}</span>
+                ${sortedRequests.map(req => {
+                    // Получаем названия из объектов или из старых полей (для обратной совместимости)
+                    const pickupName = req.pickupPlant?.name || req.pickupPoint || '-';
+                    const deliveryName = req.deliveryWarehouse?.name || req.deliveryPoint || '-';
+
+                    return `
+                        <div class="request-card" data-id="${req.id}">
+                            <div class="request-card-header">
+                                <span class="request-id">Заявка №${req.id}</span>
+                                <span class="status-badge status-${getStatusClass(req.status)}">${getStatusText(req.status)}</span>
+                            </div>
+                            <div class="request-card-body">
+                                <div class="request-info"><span class="info-label">Продукт:</span> ${req.product?.name || '-'}</div>
+                                <div class="request-info"><span class="info-label">Объем:</span> ${req.volume} т</div>
+                                <div class="request-info"><span class="info-label">Погрузка:</span> ${pickupName}</div>
+                                <div class="request-info"><span class="info-label">Разгрузка:</span> ${deliveryName}</div>
+                                <div class="request-info"><span class="info-label">Дата:</span> ${req.pickupStartDate || '-'} - ${req.pickupEndDate || '-'}</div>
+                            </div>
+                            <div class="request-card-footer">
+                                <button class="link-button" onclick="viewRequest(${req.id})">Подробнее →</button>
+                                ${req.status === 'NEW' && (currentUserRole === 'LOGIST' || currentUserRole === 'ADMIN') ? `<button class="delete-btn" onclick="deleteRequest(${req.id})">🗑️</button>` : ''}
+                            </div>
                         </div>
-                        <div class="request-card-body">
-                            <div class="request-info"><span class="info-label">Продукт:</span> ${req.product?.name || '-'}</div>
-                            <div class="request-info"><span class="info-label">Объем:</span> ${req.volume} т</div>
-                            <div class="request-info"><span class="info-label">Погрузка:</span> ${req.pickupPoint || '-'}</div>
-                            <div class="request-info"><span class="info-label">Разгрузка:</span> ${req.deliveryPoint || '-'}</div>
-                            <div class="request-info"><span class="info-label">Дата:</span> ${req.pickupStartDate || '-'} - ${req.pickupEndDate || '-'}</div>
-                        </div>
-                        <div class="request-card-footer">
-                            <button class="link-button" onclick="viewRequest(${req.id})">Подробнее →</button>
-                            ${req.status === 'NEW' && (currentUserRole === 'LOGIST' || currentUserRole === 'ADMIN') ? `<button class="delete-btn" onclick="deleteRequest(${req.id})">🗑️</button>` : ''}
-                        </div>
-                    </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         `;
     }
