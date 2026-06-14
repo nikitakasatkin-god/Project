@@ -92,6 +92,96 @@ public class ReferenceController {
         return ResponseEntity.ok().build();
     }
 
+    // ========== Plants (Заводы) ==========
+    @GetMapping("/plants")
+    public List<Plant> getPlants() {
+        return plantRepository.findAll();
+    }
+
+    @GetMapping("/plants/{id}")
+    public ResponseEntity<Plant> getPlantById(@PathVariable Long id) {
+        return plantRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/plants")
+    public ResponseEntity<?> createPlant(@RequestBody Plant plant) {
+        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
+        if (permissionCheck != null) return permissionCheck;
+        if (plant.getName() == null || plant.getName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Название завода обязательно"));
+        }
+        return ResponseEntity.ok(plantRepository.save(plant));
+    }
+
+    @PutMapping("/plants/{id}")
+    public ResponseEntity<?> updatePlant(@PathVariable Long id, @RequestBody Plant plant) {
+        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
+        if (permissionCheck != null) return permissionCheck;
+        if (!plantRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        plant.setId(id);
+        return ResponseEntity.ok(plantRepository.save(plant));
+    }
+
+    @DeleteMapping("/plants/{id}")
+    public ResponseEntity<?> deletePlant(@PathVariable Long id) {
+        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
+        if (permissionCheck != null) return permissionCheck;
+        if (!plantRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        plantRepository.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
+
+    // ========== Warehouses (Склады) ==========
+    @GetMapping("/warehouses")
+    public List<Warehouse> getWarehouses() {
+        return warehouseRepository.findAll();
+    }
+
+    @GetMapping("/warehouses/{id}")
+    public ResponseEntity<Warehouse> getWarehouseById(@PathVariable Long id) {
+        return warehouseRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/warehouses")
+    public ResponseEntity<?> createWarehouse(@RequestBody Warehouse warehouse) {
+        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
+        if (permissionCheck != null) return permissionCheck;
+        if (warehouse.getName() == null || warehouse.getName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Название склада обязательно"));
+        }
+        return ResponseEntity.ok(warehouseRepository.save(warehouse));
+    }
+
+    @PutMapping("/warehouses/{id}")
+    public ResponseEntity<?> updateWarehouse(@PathVariable Long id, @RequestBody Warehouse warehouse) {
+        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
+        if (permissionCheck != null) return permissionCheck;
+        if (!warehouseRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        warehouse.setId(id);
+        return ResponseEntity.ok(warehouseRepository.save(warehouse));
+    }
+
+    @DeleteMapping("/warehouses/{id}")
+    public ResponseEntity<?> deleteWarehouse(@PathVariable Long id) {
+        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
+        if (permissionCheck != null) return permissionCheck;
+        if (!warehouseRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        warehouseRepository.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
+
     // ========== Carriers ==========
     @GetMapping("/carriers")
     public List<Carrier> getCarriers() {
@@ -330,85 +420,6 @@ public class ReferenceController {
         return ResponseEntity.ok().build();
     }
 
-    // ========== Plants ==========
-    @GetMapping("/plants")
-    public List<Plant> getPlants() {
-        return plantRepository.findAll();
-    }
-
-    @PostMapping("/plants")
-    public ResponseEntity<?> createPlant(@RequestBody Plant plant) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
-        return ResponseEntity.ok(plantRepository.save(plant));
-    }
-
-    @PutMapping("/plants/{id}")
-    public ResponseEntity<?> updatePlant(@PathVariable Long id, @RequestBody Plant plant) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
-        plant.setId(id);
-        return ResponseEntity.ok(plantRepository.save(plant));
-    }
-
-    @DeleteMapping("/plants/{id}")
-    public ResponseEntity<?> deletePlant(@PathVariable Long id) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
-        plantRepository.deleteById(id);
-        return ResponseEntity.ok().build();
-    }
-
-    // ========== Warehouses ==========
-    @GetMapping("/warehouses")
-    public List<Warehouse> getWarehouses() {
-        return warehouseRepository.findAll();
-    }
-
-    @PostMapping("/warehouses")
-    public ResponseEntity<?> createWarehouse(@RequestBody Warehouse warehouse) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
-        return ResponseEntity.ok(warehouseRepository.save(warehouse));
-    }
-
-    @PutMapping("/warehouses/{id}")
-    public ResponseEntity<?> updateWarehouse(@PathVariable Long id, @RequestBody Warehouse warehouse) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
-        warehouse.setId(id);
-        return ResponseEntity.ok(warehouseRepository.save(warehouse));
-    }
-
-    @DeleteMapping("/warehouses/{id}")
-    public ResponseEntity<?> deleteWarehouse(@PathVariable Long id) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
-        warehouseRepository.deleteById(id);
-        return ResponseEntity.ok().build();
-    }
-
-    // ========== Tariffs ==========
-    @GetMapping("/tariffs/branded")
-    public List<TariffBranded> getTariffsBranded() {
-        return tariffBrandedRepository.findAll();
-    }
-
-    @PostMapping("/tariffs/branded")
-    public TariffBranded createTariffBranded(@RequestBody TariffBranded tariff) {
-        return tariffBrandedRepository.save(tariff);
-    }
-
-    @GetMapping("/tariffs/non-branded")
-    public List<TariffNonBranded> getTariffsNonBranded() {
-        return tariffNonBrandedRepository.findAll();
-    }
-
-    @PostMapping("/tariffs/non-branded")
-    public TariffNonBranded createTariffNonBranded(@RequestBody TariffNonBranded tariff) {
-        return tariffNonBrandedRepository.save(tariff);
-    }
-
     // ========== Products ==========
     @GetMapping("/products")
     public List<Product> getProducts() {
@@ -426,6 +437,9 @@ public class ReferenceController {
 
     @PostMapping("/products")
     public ResponseEntity<?> createProduct(@RequestBody Product product) {
+        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
+        if (permissionCheck != null) return permissionCheck;
+
         if (product.getName() == null || product.getName().trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Название продукта обязательно"));
         }
@@ -441,6 +455,9 @@ public class ReferenceController {
 
     @PutMapping("/products/{id}")
     public ResponseEntity<?> updateProduct(@PathVariable Long id, @RequestBody Map<String, Object> data) {
+        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
+        if (permissionCheck != null) return permissionCheck;
+
         Product product = productRepository.findById(id).orElse(null);
         if (product == null) {
             return ResponseEntity.notFound().build();
@@ -471,11 +488,35 @@ public class ReferenceController {
 
     @DeleteMapping("/products/{id}")
     public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
+        if (permissionCheck != null) return permissionCheck;
+
         if (!productRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
         productRepository.deleteById(id);
         return ResponseEntity.ok().build();
+    }
+
+    // ========== Tariffs ==========
+    @GetMapping("/tariffs/branded")
+    public List<TariffBranded> getTariffsBranded() {
+        return tariffBrandedRepository.findAll();
+    }
+
+    @PostMapping("/tariffs/branded")
+    public TariffBranded createTariffBranded(@RequestBody TariffBranded tariff) {
+        return tariffBrandedRepository.save(tariff);
+    }
+
+    @GetMapping("/tariffs/non-branded")
+    public List<TariffNonBranded> getTariffsNonBranded() {
+        return tariffNonBrandedRepository.findAll();
+    }
+
+    @PostMapping("/tariffs/non-branded")
+    public TariffNonBranded createTariffNonBranded(@RequestBody TariffNonBranded tariff) {
+        return tariffNonBrandedRepository.save(tariff);
     }
 
     // ========== Синхронизация с 1С ==========

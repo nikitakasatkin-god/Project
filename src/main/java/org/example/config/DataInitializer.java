@@ -16,6 +16,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PlantRepository plantRepository;
     private final WarehouseRepository warehouseRepository;
     private final TripStatusRepository tripStatusRepository;
+    private final ProductRepository productRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(UserRepository userRepository,
@@ -25,6 +26,7 @@ public class DataInitializer implements CommandLineRunner {
                            PlantRepository plantRepository,
                            WarehouseRepository warehouseRepository,
                            TripStatusRepository tripStatusRepository,
+                           ProductRepository productRepository,
                            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.divisionRepository = divisionRepository;
@@ -33,6 +35,7 @@ public class DataInitializer implements CommandLineRunner {
         this.plantRepository = plantRepository;
         this.warehouseRepository = warehouseRepository;
         this.tripStatusRepository = tripStatusRepository;
+        this.productRepository = productRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -87,6 +90,19 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(dispatcher);
         }
 
+        // Create products
+        if (productRepository.count() == 0) {
+            String[] products = {"Продукт А", "Продукт Б", "Продукт В", "Продукт Г"};
+            for (String productName : products) {
+                Product product = new Product();
+                product.setName(productName);
+                product.setDescription("Описание " + productName);
+                product.setActive(true);
+                productRepository.save(product);
+            }
+            System.out.println("Создано продуктов: " + productRepository.count());
+        }
+
         // Create carriers
         if (carrierRepository.count() == 0) {
             Carrier carrier1 = new Carrier();
@@ -101,7 +117,6 @@ public class DataInitializer implements CommandLineRunner {
             carrier2.setPhone("+7(999)234-56-78");
             carrierRepository.save(carrier2);
 
-            // Только автомобили без водителей (водители теперь добавляются отдельно)
             Vehicle v1 = new Vehicle();
             v1.setPlateNumber("А123ВВ77");
             v1.setBrand("KAMAZ");
@@ -117,38 +132,44 @@ public class DataInitializer implements CommandLineRunner {
             vehicleRepository.save(v2);
         }
 
-        // Create plants
+        // ========== СОЗДАНИЕ ЗАВОДОВ (из БД) ==========
         if (plantRepository.count() == 0) {
             String[][] plants = {
-                    {"Завод №1", "г. Москва, ул. Заводская, 1"},
-                    {"Завод №2", "г. Санкт-Петербург, ул. Промышленная, 15"},
-                    {"Завод №3", "г. Нижний Новгород, ул. Индустриальная, 8"},
-                    {"Завод №4", "г. Казань, ул. Производственная, 22"},
-                    {"Завод №5", "г. Екатеринбург, ул. Станкостроительная, 5"}
+                    {"Завод №1", "г. Москва, ул. Заводская, 1", "Иванов И.И.", "+7(495)111-22-33"},
+                    {"Завод №2", "г. Санкт-Петербург, ул. Промышленная, 15", "Петров П.П.", "+7(812)222-33-44"},
+                    {"Завод №3", "г. Нижний Новгород, ул. Индустриальная, 8", "Сидоров С.С.", "+7(831)333-44-55"},
+                    {"Завод №4", "г. Казань, ул. Производственная, 22", "Кузнецов К.К.", "+7(843)444-55-66"},
+                    {"Завод №5", "г. Екатеринбург, ул. Станкостроительная, 5", "Михайлов М.М.", "+7(343)555-66-77"}
             };
             for (String[] plant : plants) {
                 Plant p = new Plant();
                 p.setName(plant[0]);
                 p.setAddress(plant[1]);
+                p.setContactPerson(plant[2]);
+                p.setPhone(plant[3]);
                 plantRepository.save(p);
             }
+            System.out.println("Создано заводов: " + plantRepository.count());
         }
 
-        // Create warehouses
+        // ========== СОЗДАНИЕ СКЛАДОВ (из БД) ==========
         if (warehouseRepository.count() == 0) {
             String[][] warehouses = {
-                    {"Склад №1", "г. Москва, ул. Складская, 5"},
-                    {"Склад №2", "г. Санкт-Петербург, ул. Логистическая, 10"},
-                    {"Склад №3", "г. Нижний Новгород, ул. Транспортная, 12"},
-                    {"Склад №4", "г. Казань, ул. Приемная, 7"},
-                    {"Склад №5", "г. Екатеринбург, ул. Отгрузочная, 3"}
+                    {"Склад №1", "г. Москва, ул. Складская, 5", "Васильев В.В.", "+7(495)777-88-99"},
+                    {"Склад №2", "г. Санкт-Петербург, ул. Логистическая, 10", "Алексеев А.А.", "+7(812)888-99-00"},
+                    {"Склад №3", "г. Нижний Новгород, ул. Транспортная, 12", "Егоров Е.Е.", "+7(831)999-00-11"},
+                    {"Склад №4", "г. Казань, ул. Приемная, 7", "Николаев Н.Н.", "+7(843)000-11-22"},
+                    {"Склад №5", "г. Екатеринбург, ул. Отгрузочная, 3", "Дмитриев Д.Д.", "+7(343)111-22-33"}
             };
             for (String[] warehouse : warehouses) {
                 Warehouse w = new Warehouse();
                 w.setName(warehouse[0]);
                 w.setAddress(warehouse[1]);
+                w.setContactPerson(warehouse[2]);
+                w.setPhone(warehouse[3]);
                 warehouseRepository.save(w);
             }
+            System.out.println("Создано складов: " + warehouseRepository.count());
         }
 
         // Initialize trip statuses
@@ -160,6 +181,7 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println("Carriers: " + carrierRepository.count());
         System.out.println("Plants: " + plantRepository.count());
         System.out.println("Warehouses: " + warehouseRepository.count());
+        System.out.println("Products: " + productRepository.count());
         System.out.println("Trip Statuses: " + tripStatusRepository.count());
     }
 
