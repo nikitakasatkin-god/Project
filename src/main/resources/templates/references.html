@@ -76,6 +76,7 @@
         .dispatcher-only { display: none; }
         .admin-only { display: none; }
         body[data-role="ADMIN"] .admin-only { display: block; }
+        body[data-role="ADMIN"] .admin-only-flex { display: flex; }
         body[data-role="LOGIST"] .logist-only { display: block; }
         body[data-role="DISPATCHER"] .dispatcher-only { display: block; }
 
@@ -112,9 +113,7 @@
             color: var(--text-secondary);
             transition: all 0.2s;
         }
-        .theme-toggle:hover {
-            background: var(--hover-bg);
-        }
+        .theme-toggle:hover { background: var(--hover-bg); }
         .tabs {
             display: flex;
             gap: 8px;
@@ -566,7 +565,7 @@
         </div>
         <table class="data-table">
             <thead><tr><th>ID</th><th>Логин</th><th>ФИО</th><th>Роль</th><th>Подразделение</th><th>Статус</th><th>Действия</th></tr></thead>
-            <tbody id="users-tbody"><tr><td colspan="7" class="loading">Загрузка...</td></tr></tbody>
+            <tbody id="users-tbody"><tr></span></tr></tbody>
         </table>
     </div>
 
@@ -636,13 +635,15 @@
         </div>
         <div id="filterPlantsPanel" class="filter-panel">
             <div class="filter-row">
-                <div class="filter-field"><label>Название</label><input type="text" id="filterPlantName" placeholder="Название"></div>
+                <div class="filter-field"><label>Название</label><input type="text" id="filterPlantName" placeholder="Название завода"></div>
                 <div class="filter-field"><label>Адрес</label><input type="text" id="filterPlantAddress" placeholder="Адрес"></div>
+                <div class="filter-field"><label>Контактное лицо</label><input type="text" id="filterPlantContactPerson" placeholder="Контактное лицо"></div>
+                <div class="filter-field"><label>Телефон</label><input type="text" id="filterPlantPhone" placeholder="Телефон"></div>
             </div>
             <div class="filter-actions"><button class="btn-clear" onclick="clearPlantFilters()">Сбросить</button><button class="btn-apply" onclick="applyPlantFilters()">Применить</button></div>
         </div>
         <table class="data-table">
-            <thead><tr><th>ID</th><th>Название</th><th>Адрес</th><th>Действия</th></tr></thead>
+            <thead><tr><th>ID</th><th>Название</th><th>Адрес</th><th>Контактное лицо</th><th>Телефон</th><th>Действия</th></tr></thead>
             <tbody id="plants-tbody"></tbody>
         </table>
     </div>
@@ -655,13 +656,15 @@
         </div>
         <div id="filterWarehousesPanel" class="filter-panel">
             <div class="filter-row">
-                <div class="filter-field"><label>Название</label><input type="text" id="filterWarehouseName" placeholder="Название"></div>
+                <div class="filter-field"><label>Название</label><input type="text" id="filterWarehouseName" placeholder="Название склада"></div>
                 <div class="filter-field"><label>Адрес</label><input type="text" id="filterWarehouseAddress" placeholder="Адрес"></div>
+                <div class="filter-field"><label>Контактное лицо</label><input type="text" id="filterWarehouseContactPerson" placeholder="Контактное лицо"></div>
+                <div class="filter-field"><label>Телефон</label><input type="text" id="filterWarehousePhone" placeholder="Телефон"></div>
             </div>
             <div class="filter-actions"><button class="btn-clear" onclick="clearWarehouseFilters()">Сбросить</button><button class="btn-apply" onclick="applyWarehouseFilters()">Применить</button></div>
         </div>
         <table class="data-table">
-            <thead><tr><th>ID</th><th>Название</th><th>Адрес</th><th>Действия</th></tr></thead>
+            <thead><tr><th>ID</th><th>Название</th><th>Адрес</th><th>Контактное лицо</th><th>Телефон</th><th>Действия</th></tr></thead>
             <tbody id="warehouses-tbody"></tbody>
         </table>
     </div>
@@ -687,17 +690,93 @@
     </div>
 </div>
 
-<!-- Модальные окна -->
-<div id="divisionModal" class="modal"><div class="modal-content"><h3 id="divisionModalTitle">Добавление подразделения</h3><div class="form-group"><label>Название</label><input type="text" id="divisionName" class="form-control"></div><div class="form-group"><label>Описание</label><textarea id="divisionDescription" rows="3" class="form-control"></textarea></div><div style="display: flex; justify-content: flex-end; gap: 12px;"><button class="btn-secondary" onclick="closeDivisionModal()">Отмена</button><button class="btn-primary" onclick="saveDivision()">Сохранить</button></div></div></div>
+<!-- Модальное окно для подразделения -->
+<div id="divisionModal" class="modal">
+    <div class="modal-content">
+        <h3 id="divisionModalTitle">Добавление подразделения</h3>
+        <div class="form-group"><label>Название</label><input type="text" id="divisionName" class="form-control"></div>
+        <div class="form-group"><label>Описание</label><textarea id="divisionDescription" rows="3" class="form-control"></textarea></div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px;"><button class="btn-secondary" onclick="closeDivisionModal()">Отмена</button><button class="btn-primary" onclick="saveDivision()">Сохранить</button></div>
+    </div>
+</div>
 
-<div id="userModal" class="modal"><div class="modal-content"><h3 id="userModalTitle">Добавление пользователя</h3><div class="form-group"><label>Логин *</label><input type="text" id="userUsername" class="form-control"></div><div class="form-group"><label>Пароль <span id="passwordRequired">*</span></label><input type="password" id="userPassword" class="form-control"><small id="passwordHint" style="color:var(--text-muted);"></small></div><div class="form-group"><label>ФИО</label><input type="text" id="userFullName" class="form-control"></div><div class="form-group"><label>Роль *</label><select id="userRole" class="form-control"><option value="ADMIN">Администратор</option><option value="LOGIST">Логист</option><option value="DISPATCHER">Диспетчер</option></select></div><div class="form-group"><label>Подразделение</label><select id="userDivision" class="form-control"><option value="">Не выбрано</option></select></div><div style="display: flex; justify-content: flex-end; gap: 12px;"><button class="btn-secondary" onclick="closeUserModal()">Отмена</button><button class="btn-primary" onclick="saveUser()">Сохранить</button></div></div></div>
+<!-- Модальное окно для пользователя -->
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <h3 id="userModalTitle">Добавление пользователя</h3>
+        <div class="form-group"><label>Логин *</label><input type="text" id="userUsername" class="form-control"></div>
+        <div class="form-group"><label>Пароль <span id="passwordRequired">*</span></label><input type="password" id="userPassword" class="form-control"><small id="passwordHint" style="color:var(--text-muted);"></small></div>
+        <div class="form-group"><label>ФИО</label><input type="text" id="userFullName" class="form-control"></div>
+        <div class="form-group"><label>Роль *</label><select id="userRole" class="form-control"><option value="ADMIN">Администратор</option><option value="LOGIST">Логист</option><option value="DISPATCHER">Диспетчер</option></select></div>
+        <div class="form-group"><label>Подразделение</label><select id="userDivision" class="form-control"><option value="">Не выбрано</option></select></div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px;"><button class="btn-secondary" onclick="closeUserModal()">Отмена</button><button class="btn-primary" onclick="saveUser()">Сохранить</button></div>
+    </div>
+</div>
 
-<div id="addUserModal" class="modal"><div class="modal-content"><h3>Добавить пользователя в подразделение</h3><input type="text" id="userSearchInput" placeholder="Поиск..." class="search-input"><div id="unassignedUsersList" class="users-list-modal"></div><div style="display: flex; justify-content: flex-end; gap: 12px;"><button class="btn-secondary" onclick="closeAddUserModal()">Отмена</button><button class="btn-primary" onclick="addSelectedUsers()">Добавить</button></div></div></div>
+<!-- Модальное окно для добавления пользователя в подразделение -->
+<div id="addUserModal" class="modal">
+    <div class="modal-content">
+        <h3>Добавить пользователя в подразделение</h3>
+        <input type="text" id="userSearchInput" placeholder="Поиск..." class="search-input">
+        <div id="unassignedUsersList" class="users-list-modal"></div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px;"><button class="btn-secondary" onclick="closeAddUserModal()">Отмена</button><button class="btn-primary" onclick="addSelectedUsers()">Добавить</button></div>
+    </div>
+</div>
 
-<div id="tripStatusModal" class="modal"><div class="modal-content"><h3 id="tripStatusModalTitle">Добавление статуса</h3><input type="hidden" id="tripStatusId"><div class="form-group"><label>Код *</label><input type="text" id="tripStatusCode" class="form-control"></div><div class="form-group"><label>Название *</label><input type="text" id="tripStatusName" class="form-control"></div><div class="form-group"><label>Описание</label><textarea id="tripStatusDescription" class="form-control" rows="2"></textarea></div><div class="form-group"><label>Цвет</label><input type="color" id="tripStatusColor" class="form-control" value="#6b7280"></div><div class="form-group"><label>Порядок</label><input type="number" id="tripStatusSortOrder" class="form-control" value="0"></div><div style="display: flex; justify-content: flex-end; gap: 12px;"><button class="btn-secondary" onclick="closeTripStatusModal()">Отмена</button><button class="btn-primary" onclick="saveTripStatus()">Сохранить</button></div></div></div>
+<!-- Модальное окно для статуса рейса -->
+<div id="tripStatusModal" class="modal">
+    <div class="modal-content">
+        <h3 id="tripStatusModalTitle">Добавление статуса</h3>
+        <input type="hidden" id="tripStatusId">
+        <div class="form-group"><label>Код *</label><input type="text" id="tripStatusCode" class="form-control"></div>
+        <div class="form-group"><label>Название *</label><input type="text" id="tripStatusName" class="form-control"></div>
+        <div class="form-group"><label>Описание</label><textarea id="tripStatusDescription" class="form-control" rows="2"></textarea></div>
+        <div class="form-group"><label>Цвет</label><input type="color" id="tripStatusColor" class="form-control" value="#6b7280"></div>
+        <div class="form-group"><label>Порядок</label><input type="number" id="tripStatusSortOrder" class="form-control" value="0"></div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px;"><button class="btn-secondary" onclick="closeTripStatusModal()">Отмена</button><button class="btn-primary" onclick="saveTripStatus()">Сохранить</button></div>
+    </div>
+</div>
 
-<div id="carrierModal" class="modal"><div class="modal-content"><h3 id="carrierModalTitle">Добавление перевозчика</h3><input type="hidden" id="carrierId"><div class="form-group"><label>Название *</label><input type="text" id="carrierName" class="form-control"></div><div class="form-group"><label>Контактное лицо</label><input type="text" id="carrierContactPerson" class="form-control"></div><div class="form-group"><label>Телефон</label><input type="text" id="carrierPhone" class="form-control"></div><div class="form-group"><label>Email</label><input type="email" id="carrierEmail" class="form-control"></div><div style="display: flex; justify-content: flex-end; gap: 12px;"><button class="btn-secondary" onclick="closeCarrierModal()">Отмена</button><button class="btn-primary" onclick="saveCarrier()">Сохранить</button></div></div></div>
+<!-- Модальное окно для перевозчика -->
+<div id="carrierModal" class="modal">
+    <div class="modal-content">
+        <h3 id="carrierModalTitle">Добавление перевозчика</h3>
+        <input type="hidden" id="carrierId">
+        <div class="form-group"><label>Название *</label><input type="text" id="carrierName" class="form-control"></div>
+        <div class="form-group"><label>Контактное лицо</label><input type="text" id="carrierContactPerson" class="form-control"></div>
+        <div class="form-group"><label>Телефон</label><input type="text" id="carrierPhone" class="form-control"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="carrierEmail" class="form-control"></div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px;"><button class="btn-secondary" onclick="closeCarrierModal()">Отмена</button><button class="btn-primary" onclick="saveCarrier()">Сохранить</button></div>
+    </div>
+</div>
 
+<!-- Модальное окно для завода -->
+<div id="plantModal" class="modal">
+    <div class="modal-content">
+        <h3 id="plantModalTitle">Добавление завода</h3>
+        <input type="hidden" id="plantId">
+        <div class="form-group"><label>Название *</label><input type="text" id="plantName" class="form-control" placeholder="Завод №1"></div>
+        <div class="form-group"><label>Адрес</label><input type="text" id="plantAddress" class="form-control" placeholder="г. Москва, ул. Заводская, 1"></div>
+        <div class="form-group"><label>Контактное лицо</label><input type="text" id="plantContactPerson" class="form-control" placeholder="Иванов И.И."></div>
+        <div class="form-group"><label>Телефон</label><input type="text" id="plantPhone" class="form-control" placeholder="+7(495)111-22-33"></div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;"><button class="btn-secondary" onclick="closePlantModal()">Отмена</button><button class="btn-primary" onclick="savePlant()">Сохранить</button></div>
+    </div>
+</div>
+
+<!-- Модальное окно для склада -->
+<div id="warehouseModal" class="modal">
+    <div class="modal-content">
+        <h3 id="warehouseModalTitle">Добавление склада</h3>
+        <input type="hidden" id="warehouseId">
+        <div class="form-group"><label>Название *</label><input type="text" id="warehouseName" class="form-control" placeholder="Склад №1"></div>
+        <div class="form-group"><label>Адрес</label><input type="text" id="warehouseAddress" class="form-control" placeholder="г. Москва, ул. Складская, 5"></div>
+        <div class="form-group"><label>Контактное лицо</label><input type="text" id="warehouseContactPerson" class="form-control" placeholder="Васильев В.В."></div>
+        <div class="form-group"><label>Телефон</label><input type="text" id="warehousePhone" class="form-control" placeholder="+7(495)777-88-99"></div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;"><button class="btn-secondary" onclick="closeWarehouseModal()">Отмена</button><button class="btn-primary" onclick="saveWarehouse()">Сохранить</button></div>
+    </div>
+</div>
+
+<!-- Модальное окно для продукта -->
 <div id="productModal" class="modal">
     <div class="modal-content">
         <h3 id="productModalTitle">Добавление продукта</h3>
@@ -719,6 +798,7 @@
 </div>
 
 <script>
+    // ========== НАВИГАЦИЯ ==========
     function navigateToReferences(tabId) {
         localStorage.setItem('referencesTab', tabId);
         window.location.href = '/references';
@@ -732,7 +812,8 @@
     function switchToTab(tabId) {
         localStorage.setItem('referencesTab', tabId);
         document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
+        const targetTab = document.getElementById(tabId);
+        if (targetTab) targetTab.classList.add('active');
         document.querySelectorAll('.tab').forEach(tab => {
             tab.classList.remove('active');
             if (tab.getAttribute('data-tab') === tabId) tab.classList.add('active');
@@ -757,6 +838,7 @@
         }
     }
 
+    // ========== ТЕМА ==========
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -786,7 +868,7 @@
         menuItem.classList.toggle('open');
         const submenu = menuItem.querySelector('.submenu');
         if (submenu) submenu.classList.toggle('show');
-        event.stopPropagation();
+        if (event) event.stopPropagation();
     }
 
     document.querySelectorAll('.tab').forEach(tab => {
@@ -890,8 +972,10 @@
             if (!response.ok) throw new Error();
             allDivisions = await response.json();
             allDivisions.sort((a, b) => a.id - b.id);
+            window.userDivisions = allDivisions;
             renderDivisions();
         } catch(e) {
+            console.error('Ошибка загрузки подразделений:', e);
             document.getElementById('divisionsContainer').innerHTML = '<div class="empty-state">Ошибка загрузки</div>';
         }
     }
@@ -984,78 +1068,200 @@
         }
     }
 
-    // ========== USERS ==========
+    // ========== USERS (ПОЛНОСТЬЮ ИСПРАВЛЕНО) ==========
+    let usersLoading = false;
+
     async function loadUsers() {
+        if (usersLoading) {
+            console.log('Загрузка пользователей уже выполняется');
+            return;
+        }
+
+        usersLoading = true;
+        const tbody = document.getElementById('users-tbody');
+
         try {
+            if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="loading">Загрузка...</span></span>';
+
             const response = await fetch('/api/users');
-            if (!response.ok) throw new Error();
+            if (!response.ok) throw new Error('Ошибка загрузки пользователей');
             allUsers = await response.json();
+
+            if (!Array.isArray(allUsers)) {
+                console.warn('allUsers не массив, преобразуем');
+                allUsers = Object.values(allUsers);
+            }
+
             allUsers.sort((a, b) => a.id - b.id);
+            console.log('Загружено пользователей:', allUsers.length);
+
             const divResponse = await fetch('/api/divisions');
-            const divisions = await divResponse.json();
+            if (divResponse.ok) {
+                const divisions = await divResponse.json();
+                const divisionSelect = document.getElementById('filterUserDivision');
+                if (divisionSelect) {
+                    divisionSelect.innerHTML = '<option value="">Все</option>' +
+                        divisions.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+                    divisionSelect.value = '';
+                }
+                window.userDivisions = divisions;
+            }
+
+            // Очищаем ВСЕ фильтры
+            const usernameInput = document.getElementById('filterUserUsername');
+            const fullNameInput = document.getElementById('filterUserFullName');
+            const roleSelect = document.getElementById('filterUserRole');
+            const activeSelect = document.getElementById('filterUserActive');
             const divisionSelect = document.getElementById('filterUserDivision');
-            divisionSelect.innerHTML = '<option value="">Все</option>' + divisions.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+
+            if (usernameInput) usernameInput.value = '';
+            if (fullNameInput) fullNameInput.value = '';
+            if (roleSelect) roleSelect.value = '';
+            if (activeSelect) activeSelect.value = '';
+            if (divisionSelect) divisionSelect.value = '';
+
             renderUsers();
-        } catch(e) { document.getElementById('users-tbody').innerHTML = '<tr><td colspan="7" class="empty-state">Ошибка загрузки</span></span>'; }
+
+        } catch(e) {
+            console.error('Ошибка загрузки пользователей:', e);
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Ошибка загрузки пользователей: ' + e.message + '</span></span>';
+            }
+        } finally {
+            usersLoading = false;
+        }
     }
 
     function renderUsers() {
-        const filterUsername = document.getElementById('filterUserUsername')?.value.toLowerCase() || '';
-        const filterFullName = document.getElementById('filterUserFullName')?.value.toLowerCase() || '';
+        const tbody = document.getElementById('users-tbody');
+        if (!tbody) {
+            console.error('tbody не найден');
+            return;
+        }
+
+        if (!allUsers || !Array.isArray(allUsers)) {
+            console.log('Данные пользователей еще не загружены');
+            tbody.innerHTML = '<tr><td colspan="7" class="loading">Загрузка...</span></span>';
+            return;
+        }
+
+        if (allUsers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Нет пользователей</span></span>';
+            return;
+        }
+
+        const filterUsername = document.getElementById('filterUserUsername')?.value?.toLowerCase() || '';
+        const filterFullName = document.getElementById('filterUserFullName')?.value?.toLowerCase() || '';
         const filterRole = document.getElementById('filterUserRole')?.value || '';
         const filterDivisionId = document.getElementById('filterUserDivision')?.value || '';
         const filterActive = document.getElementById('filterUserActive')?.value || '';
-        let filtered = allUsers;
-        if (filterUsername) filtered = filtered.filter(u => u.username.toLowerCase().includes(filterUsername));
-        if (filterFullName) filtered = filtered.filter(u => (u.fullName || '').toLowerCase().includes(filterFullName));
-        if (filterRole) filtered = filtered.filter(u => u.role === filterRole);
-        if (filterDivisionId) filtered = filtered.filter(u => u.division?.id == filterDivisionId);
-        if (filterActive) filtered = filtered.filter(u => u.active == (filterActive === 'true'));
-        const tbody = document.getElementById('users-tbody');
-        if (!filtered.length) { tbody.innerHTML = '<td><td colspan="7" class="empty-state">Нет пользователей</span></span>'; return; }
+
+        console.log('Фильтры:', {filterUsername, filterFullName, filterRole, filterDivisionId, filterActive});
+
+        let filtered = [...allUsers];
+
+        if (filterUsername) {
+            filtered = filtered.filter(u => (u.username || '').toLowerCase().includes(filterUsername));
+        }
+        if (filterFullName) {
+            filtered = filtered.filter(u => (u.fullName || '').toLowerCase().includes(filterFullName));
+        }
+        if (filterRole && filterRole !== '') {
+            filtered = filtered.filter(u => u.role === filterRole);
+        }
+        if (filterDivisionId && filterDivisionId !== '') {
+            filtered = filtered.filter(u => u.division?.id == filterDivisionId);
+        }
+        if (filterActive && filterActive !== '') {
+            filtered = filtered.filter(u => u.active == (filterActive === 'true'));
+        }
+
+        console.log('Отфильтровано:', filtered.length);
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Нет пользователей по фильтру</span></span>';
+            return;
+        }
+
         const isDisabled = isOneCIntegrationEnabled;
-        tbody.innerHTML = filtered.map(user => `
-            <tr>
-                <td>${user.id}</td>
-                <td>${escapeHtml(user.username)}</span></span>
-                <td>${escapeHtml(user.fullName || '-')}</span></span>
-                <td>${getRoleName(user.role)}</span></span>
-                <td>${user.division?.name || '-'}</span></span>
-                <td>${user.active ? '🟢 Активен' : '🔴 Неактивен'}</span></span>
-                <td><button class="btn-secondary" onclick="editUser(${user.id})" ${isDisabled ? 'disabled' : ''}>✏️</button> <button class="btn-secondary" onclick="deleteUser(${user.id})" ${isDisabled ? 'disabled' : ''}>🗑️</button></span>
-            </tr>
-        `).join('');
+
+        tbody.innerHTML = filtered.map(user => {
+            const divisionName = user.division?.name ? escapeHtml(user.division.name) : '-';
+            return `
+                <tr>
+                    <td>${user.id}</span></span>
+                    <td>${escapeHtml(user.username)}</span></span>
+                    <td>${escapeHtml(user.fullName || '-')}</span></span>
+                    <td>${getRoleName(user.role)}</span></span>
+                    <td>${divisionName}</span></span>
+                    <td>${user.active ? '🟢 Активен' : '🔴 Неактивен'}</span></span>
+                    <td>
+                        <button class="btn-secondary" onclick="editUser(${user.id})" ${isDisabled ? 'disabled' : ''}>✏️</button>
+                        <button class="btn-danger" onclick="deleteUser(${user.id})" ${isDisabled ? 'disabled' : ''}>🗑️</button>
+                     </span>
+                </tr>
+            `;
+        }).join('');
+
+        console.log('Рендер выполнен, отображено:', filtered.length);
     }
 
     function clearUserFilters() {
-        document.getElementById('filterUserUsername').value = '';
-        document.getElementById('filterUserFullName').value = '';
-        document.getElementById('filterUserRole').value = '';
-        document.getElementById('filterUserDivision').value = '';
-        document.getElementById('filterUserActive').value = '';
+        const usernameInput = document.getElementById('filterUserUsername');
+        const fullNameInput = document.getElementById('filterUserFullName');
+        const roleSelect = document.getElementById('filterUserRole');
+        const divisionSelect = document.getElementById('filterUserDivision');
+        const activeSelect = document.getElementById('filterUserActive');
+
+        if (usernameInput) usernameInput.value = '';
+        if (fullNameInput) fullNameInput.value = '';
+        if (roleSelect) roleSelect.value = '';
+        if (divisionSelect) divisionSelect.value = '';
+        if (activeSelect) activeSelect.value = '';
+
+        renderUsers();
+        showNotification('Фильтры сброшены', 'success');
+    }
+
+    function applyUserFilters() {
         renderUsers();
     }
 
-    function applyUserFilters() { renderUsers(); }
-
     async function loadDivisionsForSelect(selectedId = null) {
         try {
-            const response = await fetch('/api/divisions');
-            const divisions = await response.json();
+            let divisions = window.userDivisions;
+            if (!divisions) {
+                const response = await fetch('/api/divisions');
+                divisions = await response.json();
+                window.userDivisions = divisions;
+            }
             divisions.sort((a, b) => a.id - b.id);
             const select = document.getElementById('userDivision');
-            select.innerHTML = '<option value="">Не выбрано</option>' + divisions.map(d => `<option value="${d.id}" ${selectedId === d.id ? 'selected' : ''}>${escapeHtml(d.name)}</option>`).join('');
-        } catch(e) { console.error(e); }
+            if (select) {
+                select.innerHTML = '<option value="">Не выбрано</option>' +
+                    divisions.map(d => `<option value="${d.id}" ${selectedId === d.id ? 'selected' : ''}>${escapeHtml(d.name)}</option>`).join('');
+            }
+        } catch(e) {
+            console.error('Ошибка загрузки подразделений:', e);
+            const select = document.getElementById('userDivision');
+            if (select) {
+                select.innerHTML = '<option value="">Ошибка загрузки</option>';
+            }
+        }
     }
 
     function openUserModal() {
         if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
         currentUserId = null;
         document.getElementById('userModalTitle').innerText = 'Добавление пользователя';
-        document.getElementById('userUsername').value = ''; document.getElementById('userUsername').disabled = false;
-        document.getElementById('userPassword').value = ''; document.getElementById('userPassword').disabled = false;
-        document.getElementById('passwordRequired').innerText = '*'; document.getElementById('passwordHint').innerText = '';
-        document.getElementById('userFullName').value = ''; document.getElementById('userRole').value = 'LOGIST';
+        document.getElementById('userUsername').value = '';
+        document.getElementById('userUsername').disabled = false;
+        document.getElementById('userPassword').value = '';
+        document.getElementById('userPassword').disabled = false;
+        document.getElementById('passwordRequired').innerText = '*';
+        document.getElementById('passwordHint').innerText = '';
+        document.getElementById('userFullName').value = '';
+        document.getElementById('userRole').value = 'LOGIST';
         loadDivisionsForSelect();
         document.getElementById('userModal').style.display = 'flex';
     }
@@ -1076,7 +1282,9 @@
             document.getElementById('userRole').value = user.role;
             loadDivisionsForSelect(user.division?.id);
             document.getElementById('userModal').style.display = 'flex';
-        } else { alert('Пользователь не найден'); }
+        } else {
+            alert('Пользователь не найден');
+        }
     }
 
     async function saveUser() {
@@ -1086,26 +1294,43 @@
         const fullName = document.getElementById('userFullName').value;
         const role = document.getElementById('userRole').value;
         const divisionId = document.getElementById('userDivision').value;
+
         if (!username) { alert('Введите логин'); return; }
         const isNewUser = (currentUserId === null);
         if (isNewUser && !password) { alert('Введите пароль'); return; }
+
         const data = { username, fullName, role };
         if (password && password.trim() !== '') data.password = password;
-        if (divisionId && divisionId !== '' && divisionId !== 'null') { data.divisionId = parseInt(divisionId); }
-        else { data.divisionId = null; }
+        if (divisionId && divisionId !== '' && divisionId !== 'null') {
+            data.divisionId = parseInt(divisionId);
+        } else {
+            data.divisionId = null;
+        }
+
         try {
             let response;
             if (!isNewUser) {
-                response = await fetch(`/api/users/${currentUserId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                response = await fetch(`/api/users/${currentUserId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
             } else {
-                response = await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
             }
             if (response.ok) {
                 closeUserModal();
                 await loadUsers();
                 await loadDivisions();
                 showNotification(isNewUser ? 'Пользователь создан' : 'Пользователь обновлен', 'success');
-            } else { const error = await response.json(); alert(error.error || 'Ошибка'); }
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Ошибка');
+            }
         } catch(e) { alert('Ошибка: ' + e.message); }
     }
 
@@ -1114,13 +1339,21 @@
         if (confirm('Удалить пользователя?')) {
             try {
                 const response = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-                if (response.ok) { await loadUsers(); await loadDivisions(); showNotification('Пользователь удален', 'success'); }
-                else { alert('Ошибка'); }
+                if (response.ok) {
+                    await loadUsers();
+                    await loadDivisions();
+                    showNotification('Пользователь удален', 'success');
+                } else { alert('Ошибка'); }
             } catch(e) { alert('Ошибка'); }
         }
     }
 
-    function closeUserModal() { document.getElementById('userModal').style.display = 'none'; document.getElementById('userUsername').disabled = false; document.getElementById('userPassword').value = ''; currentUserId = null; }
+    function closeUserModal() {
+        document.getElementById('userModal').style.display = 'none';
+        document.getElementById('userUsername').disabled = false;
+        document.getElementById('userPassword').value = '';
+        currentUserId = null;
+    }
 
     async function openAddUserModal(divisionId) {
         if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
@@ -1172,7 +1405,7 @@
             allStatuses = await response.json();
             renderTripStatuses();
         } catch(e) {
-            document.getElementById('tripStatusesTbody').innerHTML = '<td><td colspan="8" class="empty-state">Ошибка загрузки</span></span>';
+            document.getElementById('tripStatusesTbody').innerHTML = '<tr><td colspan="8" class="empty-state">Ошибка загрузки</span></span>';
         }
     }
 
@@ -1355,9 +1588,9 @@
         if (filterPhone) filtered = filtered.filter(c => (c.phone || '').toLowerCase().includes(filterPhone));
         const container = document.getElementById('carriers-tbody');
         const isDisabled = isOneCIntegrationEnabled;
-        if (!filtered.length) { container.innerHTML = '</tr><td colspan="5" class="empty-state">Нет перевозчиков</span></span>'; return; }
+        if (!filtered.length) { container.innerHTML = '<tr><td colspan="5" class="empty-state">Нет перевозчиков</span></span>'; return; }
         container.innerHTML = filtered.map(c => `
-            <tr>
+            <td>
                 <td>${c.id}</td>
                 <td><a href="/carrier-detail?id=${c.id}" class="link-button" style="font-weight:600;">${escapeHtml(c.name)}</a></td>
                 <td>${escapeHtml(c.contactPerson || '-')}</td>
@@ -1450,24 +1683,43 @@
             const response = await fetch('/api/references/plants');
             allPlants = await response.json();
             renderPlants();
-        } catch(e) { console.error(e); }
+        } catch(e) {
+            console.error(e);
+            document.getElementById('plants-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">Ошибка загрузки</span></span>';
+        }
     }
 
     function renderPlants() {
         const filterName = document.getElementById('filterPlantName')?.value.toLowerCase() || '';
         const filterAddress = document.getElementById('filterPlantAddress')?.value.toLowerCase() || '';
+        const filterContactPerson = document.getElementById('filterPlantContactPerson')?.value.toLowerCase() || '';
+        const filterPhone = document.getElementById('filterPlantPhone')?.value.toLowerCase() || '';
+
         let filtered = allPlants;
         if (filterName) filtered = filtered.filter(p => p.name.toLowerCase().includes(filterName));
         if (filterAddress) filtered = filtered.filter(p => (p.address || '').toLowerCase().includes(filterAddress));
+        if (filterContactPerson) filtered = filtered.filter(p => (p.contactPerson || '').toLowerCase().includes(filterContactPerson));
+        if (filterPhone) filtered = filtered.filter(p => (p.phone || '').toLowerCase().includes(filterPhone));
+
         const container = document.getElementById('plants-tbody');
         const isDisabled = isOneCIntegrationEnabled;
-        if (!filtered.length) { container.innerHTML = '<tr><td colspan="4" class="empty-state">Нет заводов</span></span>'; return; }
+
+        if (!filtered.length) {
+            container.innerHTML = '<tr><td colspan="6" class="empty-state">Нет заводов</span></span>';
+            return;
+        }
+
         container.innerHTML = filtered.map(p => `
             <tr>
                 <td>${p.id}</td>
-                <td>${escapeHtml(p.name)}</span></span>
-                <td>${escapeHtml(p.address || '-')}</span></span>
-                <td><button class="btn-secondary" onclick="editPlant(${p.id})" ${isDisabled ? 'disabled' : ''}>✏️</button></span>
+                <td><strong>${escapeHtml(p.name)}</strong></td>
+                <td>${escapeHtml(p.address || '-')}</td>
+                <td>${escapeHtml(p.contactPerson || '-')}</td>
+                <td>${escapeHtml(p.phone || '-')}</td>
+                <td>
+                    <button class="btn-secondary" onclick="editPlant(${p.id})" ${isDisabled ? 'disabled' : ''}>✏️</button>
+                    <button class="btn-danger" onclick="deletePlant(${p.id})" ${isDisabled ? 'disabled' : ''}>🗑️</button>
+                 </span>
             </tr>
         `).join('');
     }
@@ -1475,6 +1727,8 @@
     function clearPlantFilters() {
         document.getElementById('filterPlantName').value = '';
         document.getElementById('filterPlantAddress').value = '';
+        document.getElementById('filterPlantContactPerson').value = '';
+        document.getElementById('filterPlantPhone').value = '';
         renderPlants();
     }
 
@@ -1482,12 +1736,72 @@
 
     function openPlantModal() {
         if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
-        alert('Добавление завода (требуется реализация)');
+        document.getElementById('plantId').value = '';
+        document.getElementById('plantName').value = '';
+        document.getElementById('plantAddress').value = '';
+        document.getElementById('plantContactPerson').value = '';
+        document.getElementById('plantPhone').value = '';
+        document.getElementById('plantModalTitle').innerText = 'Добавление завода';
+        document.getElementById('plantModal').style.display = 'flex';
     }
 
     function editPlant(id) {
         if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
-        alert('Редактирование завода ' + id);
+        const plant = allPlants.find(p => p.id === id);
+        if (plant) {
+            document.getElementById('plantId').value = plant.id;
+            document.getElementById('plantName').value = plant.name;
+            document.getElementById('plantAddress').value = plant.address || '';
+            document.getElementById('plantContactPerson').value = plant.contactPerson || '';
+            document.getElementById('plantPhone').value = plant.phone || '';
+            document.getElementById('plantModalTitle').innerText = 'Редактирование завода';
+            document.getElementById('plantModal').style.display = 'flex';
+        }
+    }
+
+    function closePlantModal() { document.getElementById('plantModal').style.display = 'none'; }
+
+    async function savePlant() {
+        if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
+        const id = document.getElementById('plantId').value;
+        const name = document.getElementById('plantName').value.trim();
+        const address = document.getElementById('plantAddress').value;
+        const contactPerson = document.getElementById('plantContactPerson').value;
+        const phone = document.getElementById('plantPhone').value;
+
+        if (!name) { showNotification('Введите название завода', 'error'); return; }
+
+        const data = { name, address, contactPerson, phone };
+
+        try {
+            let response;
+            if (id) {
+                response = await fetch(`/api/references/plants/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            } else {
+                response = await fetch('/api/references/plants', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            }
+            if (response.ok) {
+                showNotification(id ? 'Завод обновлен' : 'Завод создан', 'success');
+                closePlantModal();
+                await loadPlants();
+            } else {
+                const error = await response.json();
+                showNotification(error.error || 'Ошибка при сохранении', 'error');
+            }
+        } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
+    }
+
+    async function deletePlant(id) {
+        if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
+        if (confirm('Удалить завод? Это действие нельзя отменить.')) {
+            try {
+                const response = await fetch(`/api/references/plants/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showNotification('Завод удален', 'success');
+                    await loadPlants();
+                } else { showNotification('Ошибка при удалении', 'error'); }
+            } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
+        }
     }
 
     // ========== WAREHOUSES ==========
@@ -1496,24 +1810,43 @@
             const response = await fetch('/api/references/warehouses');
             allWarehouses = await response.json();
             renderWarehouses();
-        } catch(e) { console.error(e); }
+        } catch(e) {
+            console.error(e);
+            document.getElementById('warehouses-tbody').innerHTML = '<td><td colspan="6" class="empty-state">Ошибка загрузки</span></span>';
+        }
     }
 
     function renderWarehouses() {
         const filterName = document.getElementById('filterWarehouseName')?.value.toLowerCase() || '';
         const filterAddress = document.getElementById('filterWarehouseAddress')?.value.toLowerCase() || '';
+        const filterContactPerson = document.getElementById('filterWarehouseContactPerson')?.value.toLowerCase() || '';
+        const filterPhone = document.getElementById('filterWarehousePhone')?.value.toLowerCase() || '';
+
         let filtered = allWarehouses;
         if (filterName) filtered = filtered.filter(w => w.name.toLowerCase().includes(filterName));
         if (filterAddress) filtered = filtered.filter(w => (w.address || '').toLowerCase().includes(filterAddress));
+        if (filterContactPerson) filtered = filtered.filter(w => (w.contactPerson || '').toLowerCase().includes(filterContactPerson));
+        if (filterPhone) filtered = filtered.filter(w => (w.phone || '').toLowerCase().includes(filterPhone));
+
         const container = document.getElementById('warehouses-tbody');
         const isDisabled = isOneCIntegrationEnabled;
-        if (!filtered.length) { container.innerHTML = '<tr><td colspan="4" class="empty-state">Нет складов</span></span>'; return; }
+
+        if (!filtered.length) {
+            container.innerHTML = '<tr><td colspan="6" class="empty-state">Нет складов</span></span>';
+            return;
+        }
+
         container.innerHTML = filtered.map(w => `
             <tr>
                 <td>${w.id}</td>
-                <td>${escapeHtml(w.name)}</span></span>
-                <td>${escapeHtml(w.address || '-')}</span></span>
-                <td><button class="btn-secondary" onclick="editWarehouse(${w.id})" ${isDisabled ? 'disabled' : ''}>✏️</button></span>
+                <td><strong>${escapeHtml(w.name)}</strong></td>
+                <td>${escapeHtml(w.address || '-')}</td>
+                <td>${escapeHtml(w.contactPerson || '-')}</td>
+                <td>${escapeHtml(w.phone || '-')}</td>
+                <td>
+                    <button class="btn-secondary" onclick="editWarehouse(${w.id})" ${isDisabled ? 'disabled' : ''}>✏️</button>
+                    <button class="btn-danger" onclick="deleteWarehouse(${w.id})" ${isDisabled ? 'disabled' : ''}>🗑️</button>
+                 </span>
             </tr>
         `).join('');
     }
@@ -1521,6 +1854,8 @@
     function clearWarehouseFilters() {
         document.getElementById('filterWarehouseName').value = '';
         document.getElementById('filterWarehouseAddress').value = '';
+        document.getElementById('filterWarehouseContactPerson').value = '';
+        document.getElementById('filterWarehousePhone').value = '';
         renderWarehouses();
     }
 
@@ -1528,12 +1863,72 @@
 
     function openWarehouseModal() {
         if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
-        alert('Добавление склада (требуется реализация)');
+        document.getElementById('warehouseId').value = '';
+        document.getElementById('warehouseName').value = '';
+        document.getElementById('warehouseAddress').value = '';
+        document.getElementById('warehouseContactPerson').value = '';
+        document.getElementById('warehousePhone').value = '';
+        document.getElementById('warehouseModalTitle').innerText = 'Добавление склада';
+        document.getElementById('warehouseModal').style.display = 'flex';
     }
 
     function editWarehouse(id) {
         if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
-        alert('Редактирование склада ' + id);
+        const warehouse = allWarehouses.find(w => w.id === id);
+        if (warehouse) {
+            document.getElementById('warehouseId').value = warehouse.id;
+            document.getElementById('warehouseName').value = warehouse.name;
+            document.getElementById('warehouseAddress').value = warehouse.address || '';
+            document.getElementById('warehouseContactPerson').value = warehouse.contactPerson || '';
+            document.getElementById('warehousePhone').value = warehouse.phone || '';
+            document.getElementById('warehouseModalTitle').innerText = 'Редактирование склада';
+            document.getElementById('warehouseModal').style.display = 'flex';
+        }
+    }
+
+    function closeWarehouseModal() { document.getElementById('warehouseModal').style.display = 'none'; }
+
+    async function saveWarehouse() {
+        if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
+        const id = document.getElementById('warehouseId').value;
+        const name = document.getElementById('warehouseName').value.trim();
+        const address = document.getElementById('warehouseAddress').value;
+        const contactPerson = document.getElementById('warehouseContactPerson').value;
+        const phone = document.getElementById('warehousePhone').value;
+
+        if (!name) { showNotification('Введите название склада', 'error'); return; }
+
+        const data = { name, address, contactPerson, phone };
+
+        try {
+            let response;
+            if (id) {
+                response = await fetch(`/api/references/warehouses/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            } else {
+                response = await fetch('/api/references/warehouses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            }
+            if (response.ok) {
+                showNotification(id ? 'Склад обновлен' : 'Склад создан', 'success');
+                closeWarehouseModal();
+                await loadWarehouses();
+            } else {
+                const error = await response.json();
+                showNotification(error.error || 'Ошибка при сохранении', 'error');
+            }
+        } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
+    }
+
+    async function deleteWarehouse(id) {
+        if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
+        if (confirm('Удалить склад? Это действие нельзя отменить.')) {
+            try {
+                const response = await fetch(`/api/references/warehouses/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showNotification('Склад удален', 'success');
+                    await loadWarehouses();
+                } else { showNotification('Ошибка при удалении', 'error'); }
+            } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
+        }
     }
 
     // ========== PRODUCTS ==========
@@ -1554,19 +1949,13 @@
         const filterActive = document.getElementById('filterProductActive')?.value || '';
 
         let filtered = allProducts;
-        if (filterName) {
-            filtered = filtered.filter(p => p.name.toLowerCase().includes(filterName));
-        }
-        if (filterDescription) {
-            filtered = filtered.filter(p => (p.description || '').toLowerCase().includes(filterDescription));
-        }
-        if (filterActive) {
-            filtered = filtered.filter(p => p.active == (filterActive === 'true'));
-        }
+        if (filterName) filtered = filtered.filter(p => p.name.toLowerCase().includes(filterName));
+        if (filterDescription) filtered = filtered.filter(p => (p.description || '').toLowerCase().includes(filterDescription));
+        if (filterActive) filtered = filtered.filter(p => p.active == (filterActive === 'true'));
 
         const container = document.getElementById('products-tbody');
         if (!filtered.length) {
-            container.innerHTML = '</table><td colspan="6" class="empty-state">Нет продуктов</span></span>';
+            container.innerHTML = '<tr><td colspan="6" class="empty-state">Нет продуктов</span></span>';
             return;
         }
 
@@ -1592,9 +1981,7 @@
         renderProducts();
     }
 
-    function applyProductFilters() {
-        renderProducts();
-    }
+    function applyProductFilters() { renderProducts(); }
 
     function openProductModal() {
         if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
@@ -1633,36 +2020,18 @@
         const name = document.getElementById('productName').value.trim();
         const description = document.getElementById('productDescription').value;
 
-        if (!name) {
-            showNotification('Введите название продукта', 'error');
-            return;
-        }
+        if (!name) { showNotification('Введите название продукта', 'error'); return; }
 
-        const data = {
-            name: name,
-            description: description
-        };
-
-        if (id) {
-            data.active = document.getElementById('productActive').value === 'true';
-        }
+        const data = { name: name, description: description };
+        if (id) { data.active = document.getElementById('productActive').value === 'true'; }
 
         try {
             let response;
             if (id) {
-                response = await fetch(`/api/references/products/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
+                response = await fetch(`/api/references/products/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             } else {
-                response = await fetch('/api/references/products', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
+                response = await fetch('/api/references/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             }
-
             if (response.ok) {
                 showNotification(id ? 'Продукт обновлен' : 'Продукт добавлен', 'success');
                 closeProductModal();
@@ -1671,9 +2040,7 @@
                 const error = await response.json();
                 showNotification(error.error || 'Ошибка при сохранении', 'error');
             }
-        } catch(e) {
-            showNotification('Ошибка: ' + e.message, 'error');
-        }
+        } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
     }
 
     async function deleteProduct(id) {
@@ -1684,17 +2051,13 @@
                 if (response.ok) {
                     showNotification('Продукт удален', 'success');
                     await loadProducts();
-                } else {
-                    showNotification('Ошибка при удалении', 'error');
-                }
-            } catch(e) {
-                showNotification('Ошибка: ' + e.message, 'error');
-            }
+                } else { showNotification('Ошибка при удалении', 'error'); }
+            } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
         }
     }
 
     window.onclick = function(event) {
-        const modals = ['divisionModal', 'userModal', 'addUserModal', 'tripStatusModal', 'carrierModal', 'productModal'];
+        const modals = ['divisionModal', 'userModal', 'addUserModal', 'tripStatusModal', 'carrierModal', 'plantModal', 'warehouseModal', 'productModal'];
         modals.forEach(modalId => {
             const modal = document.getElementById(modalId);
             if (event.target === modal) modal.style.display = 'none';

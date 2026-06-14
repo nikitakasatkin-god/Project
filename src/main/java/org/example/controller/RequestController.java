@@ -14,6 +14,7 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/requests")
@@ -24,6 +25,8 @@ public class RequestController {
     private final UserRepository userRepository;
     private final DivisionRepository divisionRepository;
     private final ProductRepository productRepository;
+    private final PlantRepository plantRepository;
+    private final WarehouseRepository warehouseRepository;
     private final ExternalSystemStub externalSystemStub;
     private final RequestAutoProcessingService processingService;
 
@@ -32,6 +35,8 @@ public class RequestController {
                              UserRepository userRepository,
                              DivisionRepository divisionRepository,
                              ProductRepository productRepository,
+                             PlantRepository plantRepository,
+                             WarehouseRepository warehouseRepository,
                              ExternalSystemStub externalSystemStub,
                              RequestAutoProcessingService processingService) {
         this.requestRepository = requestRepository;
@@ -39,6 +44,8 @@ public class RequestController {
         this.userRepository = userRepository;
         this.divisionRepository = divisionRepository;
         this.productRepository = productRepository;
+        this.plantRepository = plantRepository;
+        this.warehouseRepository = warehouseRepository;
         this.externalSystemStub = externalSystemStub;
         this.processingService = processingService;
     }
@@ -60,10 +67,43 @@ public class RequestController {
 
     @GetMapping("/reference/products")
     public List<Product> getProducts() {
-        // Возвращаем только активные продукты для выбора
         return productRepository.findAll().stream()
                 .filter(p -> p.getActive() != null && p.getActive())
-                .toList();
+                .collect(Collectors.toList());
+    }
+
+    // ========== НОВЫЕ ЭНДПОИНТЫ ДЛЯ ЗАВОДОВ И СКЛАДОВ (из БД) ==========
+
+    @GetMapping("/reference/pickup-points")
+    public List<Map<String, String>> getPickupPoints() {
+        List<Plant> plants = plantRepository.findAll();
+        return plants.stream()
+                .map(plant -> {
+                    Map<String, String> point = new HashMap<>();
+                    point.put("value", plant.getName());
+                    point.put("label", "🏭 Завод: " + plant.getName());
+                    point.put("address", plant.getAddress() != null ? plant.getAddress() : "");
+                    point.put("contactPerson", plant.getContactPerson() != null ? plant.getContactPerson() : "");
+                    point.put("phone", plant.getPhone() != null ? plant.getPhone() : "");
+                    return point;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/reference/delivery-points")
+    public List<Map<String, String>> getDeliveryPoints() {
+        List<Warehouse> warehouses = warehouseRepository.findAll();
+        return warehouses.stream()
+                .map(warehouse -> {
+                    Map<String, String> point = new HashMap<>();
+                    point.put("value", warehouse.getName());
+                    point.put("label", "📦 Склад: " + warehouse.getName());
+                    point.put("address", warehouse.getAddress() != null ? warehouse.getAddress() : "");
+                    point.put("contactPerson", warehouse.getContactPerson() != null ? warehouse.getContactPerson() : "");
+                    point.put("phone", warehouse.getPhone() != null ? warehouse.getPhone() : "");
+                    return point;
+                })
+                .collect(Collectors.toList());
     }
 
     @GetMapping
@@ -84,7 +124,7 @@ public class RequestController {
         if (type != null && !type.isEmpty()) {
             requests = requests.stream()
                     .filter(r -> r.getProductType() != null && r.getProductType().name().equals(type))
-                    .toList();
+                    .collect(Collectors.toList());
         }
 
         return requests;
@@ -122,50 +162,6 @@ public class RequestController {
         return requestRepository.findById(id)
                 .map(request -> ResponseEntity.ok(requestHistoryRepository.findByRequestOrderByChangedAtAsc(request)))
                 .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/reference/pickup-points")
-    public List<Map<String, String>> getPickupPoints() {
-        List<Map<String, String>> points = new java.util.ArrayList<>();
-
-        String[][] plants = {
-                {"Завод №1", "🏭 Завод: Завод №1"},
-                {"Завод №2", "🏭 Завод: Завод №2"},
-                {"Завод №3", "🏭 Завод: Завод №3"},
-                {"Завод №4", "🏭 Завод: Завод №4"},
-                {"Завод №5", "🏭 Завод: Завод №5"}
-        };
-
-        for (String[] plant : plants) {
-            Map<String, String> p = new HashMap<>();
-            p.put("value", plant[0]);
-            p.put("label", plant[1]);
-            points.add(p);
-        }
-
-        return points;
-    }
-
-    @GetMapping("/reference/delivery-points")
-    public List<Map<String, String>> getDeliveryPoints() {
-        List<Map<String, String>> points = new java.util.ArrayList<>();
-
-        String[][] warehouses = {
-                {"Склад №1", "📦 Склад: Склад №1"},
-                {"Склад №2", "📦 Склад: Склад №2"},
-                {"Склад №3", "📦 Склад: Склад №3"},
-                {"Склад №4", "📦 Склад: Склад №4"},
-                {"Склад №5", "📦 Склад: Склад №5"}
-        };
-
-        for (String[] warehouse : warehouses) {
-            Map<String, String> w = new HashMap<>();
-            w.put("value", warehouse[0]);
-            w.put("label", warehouse[1]);
-            points.add(w);
-        }
-
-        return points;
     }
 
     @PostMapping
