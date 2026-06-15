@@ -340,20 +340,6 @@
             </div>
         </div>
 
-        <!-- Небрендовая продукция - скрыта -->
-        <!--
-        <div class="menu-item has-submenu">
-            <div class="menu-title" onclick="toggleSubmenu(this)">
-                Небрендовая продукция
-                <span class="arrow">▼</span>
-            </div>
-            <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
-                <div class="submenu-item" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
-            </div>
-        </div>
-        -->
-
         <div class="menu-item has-submenu admin-only">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Справочники
@@ -367,6 +353,7 @@
                 <div class="submenu-item" onclick="navigateToReferences('carriers')">Перевозчики</div>
                 <div class="submenu-item" onclick="navigateToReferences('plants')">Заводы</div>
                 <div class="submenu-item" onclick="navigateToReferences('warehouses')">Склады</div>
+                <div class="submenu-item" onclick="navigateToReferences('products')">Продукты</div>
             </div>
         </div>
 
@@ -377,7 +364,6 @@
             </div>
             <div class="submenu">
                 <div class="submenu-item" onclick="navigateToSettings('sync')">Синхронизация</div>
-                <div class="submenu-item" onclick="navigateToSettings('onec')">Интеграция с 1С</div>
                 <div class="submenu-item" onclick="navigateToSettings('auto')">Автообработка заявок</div>
                 <div class="submenu-item" onclick="navigateToSettings('theme')">Оформление</div>
             </div>
