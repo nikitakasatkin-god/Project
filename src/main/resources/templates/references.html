@@ -63,20 +63,27 @@
         .sidebar-menu { padding: 20px 0; }
         .menu-item { padding: 12px 24px; cursor: pointer; transition: all 0.3s; }
         .menu-item:hover { background: var(--hover-bg); }
-        .menu-title { font-weight: 600; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
+        .menu-title {
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
         .has-submenu { position: relative; }
         .submenu { margin-top: 8px; margin-left: 20px; display: none; }
         .submenu.show { display: block; }
-        .submenu-item { padding: 8px 12px; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 14px; }
+        .submenu-item {
+            padding: 8px 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
         .submenu-item:hover { background: var(--hover-bg); color: #667eea; }
         .arrow { font-size: 12px; transition: transform 0.2s; }
         .has-submenu.open .arrow { transform: rotate(180deg); }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-direction: row;
-        }
 
         .logist-only { display: none; }
         .dispatcher-only { display: none; }
@@ -102,10 +109,30 @@
             align-items: center;
             box-shadow: var(--shadow);
             transition: background 0.3s ease;
+            flex-wrap: wrap;
+            gap: 16px;
         }
         .page-title { font-size: 24px; font-weight: 700; color: var(--text-primary); }
-        .user-info { display: flex; align-items: center; gap: 12px; }
-        .logout-btn { padding: 8px 16px; background: #fee2e2; color: #dc2626; border-radius: 8px; text-decoration: none; font-size: 14px; }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-direction: row;
+        }
+        .user-name {
+            font-weight: 600;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .logout-btn {
+            padding: 8px 16px;
+            background: #fee2e2;
+            color: #dc2626;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            white-space: nowrap;
+        }
         .theme-toggle {
             background: none;
             border: 1px solid var(--border-color);
@@ -118,6 +145,7 @@
             font-size: 14px;
             color: var(--text-secondary);
             transition: all 0.2s;
+            white-space: nowrap;
         }
         .theme-toggle:hover { background: var(--hover-bg); }
         .tabs {
@@ -334,6 +362,9 @@
             font-weight: 600;
             color: var(--text-secondary);
         }
+        .data-table tr:hover {
+            background: var(--hover-bg);
+        }
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -468,6 +499,8 @@
             .main-content { margin-left: 0; }
             .divisions-grid { grid-template-columns: 1fr; }
             .filter-row { grid-template-columns: 1fr; }
+            .top-bar { flex-direction: column; align-items: flex-start; }
+            .user-info { width: 100%; justify-content: flex-start; }
         }
     </style>
 </head>
@@ -517,11 +550,9 @@
 <div class="main-content">
     <div class="top-bar">
         <h1 class="page-title">Справочники</h1>
-        <div class="user-info" style="display: flex; align-items: center; gap: 16px; flex-direction: row;">
+        <div class="user-info">
             <span class="user-name" id="currentUsername">Загрузка...</span>
-            <button class="theme-toggle" id="themeToggle">
-                <span>🌙</span> Тема
-            </button>
+            <button class="theme-toggle" id="themeToggle"><span>🌙</span> Тема</button>
             <a href="/logout" class="logout-btn">Выйти</a>
         </div>
     </div>
@@ -572,7 +603,7 @@
         </div>
         <table class="data-table">
             <thead><tr><th>ID</th><th>Логин</th><th>ФИО</th><th>Роль</th><th>Подразделение</th><th>Статус</th><th>Действия</th></tr></thead>
-            <tbody id="users-tbody"><tr></span></tr></tbody>
+            <tbody id="users-tbody"></tbody>
         </table>
     </div>
 
@@ -697,7 +728,7 @@
     </div>
 </div>
 
-<!-- Модальное окно для подразделения -->
+<!-- Модальные окна -->
 <div id="divisionModal" class="modal">
     <div class="modal-content">
         <h3 id="divisionModalTitle">Добавление подразделения</h3>
@@ -707,53 +738,19 @@
     </div>
 </div>
 
-<!-- Модальное окно для пользователя -->
 <div id="userModal" class="modal">
     <div class="modal-content">
         <h3 id="userModalTitle">Добавление пользователя</h3>
-        <div class="form-group">
-            <label>Логин *</label>
-            <input type="text" id="userUsername" class="form-control">
-        </div>
-        <div class="form-group">
-            <label>Пароль <span id="passwordRequired">*</span></label>
-            <input type="password" id="userPassword" class="form-control">
-            <small id="passwordHint" style="color:var(--text-muted);"></small>
-        </div>
-        <div class="form-group">
-            <label>ФИО</label>
-            <input type="text" id="userFullName" class="form-control">
-        </div>
-        <div class="form-group">
-            <label>Роль *</label>
-            <select id="userRole" class="form-control">
-                <option value="ADMIN">Администратор</option>
-                <option value="LOGIST">Логист</option>
-                <option value="DISPATCHER">Диспетчер</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Подразделение</label>
-            <select id="userDivision" class="form-control">
-                <option value="">Не выбрано</option>
-            </select>
-        </div>
-        <div class="form-group" id="userActiveField" style="display: none;">
-            <label>Статус</label>
-            <select id="userActive" class="form-control">
-                <option value="true">Активен</option>
-                <option value="false">Неактивен</option>
-            </select>
-        </div>
-        <!-- ================================================= -->
-        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
-            <button class="btn-secondary" onclick="closeUserModal()">Отмена</button>
-            <button class="btn-primary" onclick="saveUser()">Сохранить</button>
-        </div>
+        <div class="form-group"><label>Логин *</label><input type="text" id="userUsername" class="form-control"></div>
+        <div class="form-group"><label>Пароль <span id="passwordRequired">*</span></label><input type="password" id="userPassword" class="form-control"><small id="passwordHint" style="color:var(--text-muted);"></small></div>
+        <div class="form-group"><label>ФИО</label><input type="text" id="userFullName" class="form-control"></div>
+        <div class="form-group"><label>Роль *</label><select id="userRole" class="form-control"><option value="ADMIN">Администратор</option><option value="LOGIST">Логист</option><option value="DISPATCHER">Диспетчер</option></select></div>
+        <div class="form-group"><label>Подразделение</label><select id="userDivision" class="form-control"><option value="">Не выбрано</option></select></div>
+        <div class="form-group" id="userActiveField" style="display: none;"><label>Статус</label><select id="userActive" class="form-control"><option value="true">Активен</option><option value="false">Неактивен</option></select></div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;"><button class="btn-secondary" onclick="closeUserModal()">Отмена</button><button class="btn-primary" onclick="saveUser()">Сохранить</button></div>
     </div>
 </div>
 
-<!-- Модальное окно для добавления пользователя в подразделение -->
 <div id="addUserModal" class="modal">
     <div class="modal-content">
         <h3>Добавить пользователя в подразделение</h3>
@@ -763,7 +760,6 @@
     </div>
 </div>
 
-<!-- Модальное окно для статуса рейса -->
 <div id="tripStatusModal" class="modal">
     <div class="modal-content">
         <h3 id="tripStatusModalTitle">Добавление статуса</h3>
@@ -777,7 +773,6 @@
     </div>
 </div>
 
-<!-- Модальное окно для перевозчика -->
 <div id="carrierModal" class="modal">
     <div class="modal-content">
         <h3 id="carrierModalTitle">Добавление перевозчика</h3>
@@ -790,7 +785,6 @@
     </div>
 </div>
 
-<!-- Модальное окно для завода -->
 <div id="plantModal" class="modal">
     <div class="modal-content">
         <h3 id="plantModalTitle">Добавление завода</h3>
@@ -803,7 +797,6 @@
     </div>
 </div>
 
-<!-- Модальное окно для склада -->
 <div id="warehouseModal" class="modal">
     <div class="modal-content">
         <h3 id="warehouseModalTitle">Добавление склада</h3>
@@ -816,24 +809,14 @@
     </div>
 </div>
 
-<!-- Модальное окно для продукта -->
 <div id="productModal" class="modal">
     <div class="modal-content">
         <h3 id="productModalTitle">Добавление продукта</h3>
         <input type="hidden" id="productId">
         <div class="form-group"><label>Название *</label><input type="text" id="productName" class="form-control" placeholder="Введите название продукта"></div>
         <div class="form-group"><label>Описание</label><textarea id="productDescription" rows="3" class="form-control" placeholder="Описание продукта"></textarea></div>
-        <div class="form-group" id="productActiveField" style="display: none;">
-            <label>Статус</label>
-            <select id="productActive" class="form-control">
-                <option value="true">Активен</option>
-                <option value="false">Неактивен</option>
-            </select>
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
-            <button class="btn-secondary" onclick="closeProductModal()">Отмена</button>
-            <button class="btn-primary" onclick="saveProduct()">Сохранить</button>
-        </div>
+        <div class="form-group" id="productActiveField" style="display: none;"><label>Статус</label><select id="productActive" class="form-control"><option value="true">Активен</option><option value="false">Неактивен</option></select></div>
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;"><button class="btn-secondary" onclick="closeProductModal()">Отмена</button><button class="btn-primary" onclick="saveProduct()">Сохранить</button></div>
     </div>
 </div>
 
@@ -858,6 +841,21 @@
             tab.classList.remove('active');
             if (tab.getAttribute('data-tab') === tabId) tab.classList.add('active');
         });
+
+        // Сбрасываем фильтры при открытии вкладки пользователей
+        if (tabId === 'users') {
+            const divisionSelect = document.getElementById('filterUserDivision');
+            if (divisionSelect) divisionSelect.value = '';
+            const roleSelect = document.getElementById('filterUserRole');
+            if (roleSelect) roleSelect.value = '';
+            const activeSelect = document.getElementById('filterUserActive');
+            if (activeSelect) activeSelect.value = '';
+            const usernameInput = document.getElementById('filterUserUsername');
+            if (usernameInput) usernameInput.value = '';
+            const fullNameInput = document.getElementById('filterUserFullName');
+            if (fullNameInput) fullNameInput.value = '';
+        }
+
         if (tabId === 'divisions') loadDivisions();
         if (tabId === 'users') loadUsers();
         if (tabId === 'trip-statuses') loadTripStatuses();
@@ -1108,10 +1106,30 @@
         }
     }
 
-    // ========== USERS (ПОЛНОСТЬЮ ИСПРАВЛЕНО) ==========
+    // ========== USERS ==========
     let usersLoading = false;
 
     async function loadUsers() {
+        // Принудительный сброс фильтра подразделений при каждой загрузке
+        const divisionSelect = document.getElementById('filterUserDivision');
+        if (divisionSelect) {
+            // Сбрасываем значение только если оно есть и оно не "Все"
+            const currentVal = divisionSelect.value;
+            if (currentVal && currentVal !== '') {
+                // Проверяем, существует ли такое значение в опциях
+                let exists = false;
+                for (let i = 0; i < divisionSelect.options.length; i++) {
+                    if (divisionSelect.options[i].value === currentVal) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    divisionSelect.value = '';
+                }
+            }
+        }
+
         if (usersLoading) {
             console.log('Загрузка пользователей уже выполняется');
             return;
@@ -1121,14 +1139,13 @@
         const tbody = document.getElementById('users-tbody');
 
         try {
-            if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="loading">Загрузка...</span></span>';
+            if (tbody) tbody.innerHTML = '</table><td colspan="7" class="loading">Загрузка...</span></span>';
 
             const response = await fetch('/api/users');
             if (!response.ok) throw new Error('Ошибка загрузки пользователей');
             allUsers = await response.json();
 
             if (!Array.isArray(allUsers)) {
-                console.warn('allUsers не массив, преобразуем');
                 allUsers = Object.values(allUsers);
             }
 
@@ -1138,27 +1155,21 @@
             const divResponse = await fetch('/api/divisions');
             if (divResponse.ok) {
                 const divisions = await divResponse.json();
-                const divisionSelect = document.getElementById('filterUserDivision');
-                if (divisionSelect) {
-                    divisionSelect.innerHTML = '<option value="">Все</option>' +
+                const divisionFilterSelect = document.getElementById('filterUserDivision');
+                if (divisionFilterSelect) {
+                    // Сохраняем текущее значение
+                    const currentValue = divisionFilterSelect.value;
+                    divisionFilterSelect.innerHTML = '<option value="">Все</option>' +
                         divisions.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
-                    divisionSelect.value = '';
+                    // Восстанавливаем значение, только если оно существует
+                    if (currentValue && divisions.some(d => d.id == currentValue)) {
+                        divisionFilterSelect.value = currentValue;
+                    } else {
+                        divisionFilterSelect.value = '';
+                    }
                 }
                 window.userDivisions = divisions;
             }
-
-            // Очищаем ВСЕ фильтры
-            const usernameInput = document.getElementById('filterUserUsername');
-            const fullNameInput = document.getElementById('filterUserFullName');
-            const roleSelect = document.getElementById('filterUserRole');
-            const activeSelect = document.getElementById('filterUserActive');
-            const divisionSelect = document.getElementById('filterUserDivision');
-
-            if (usernameInput) usernameInput.value = '';
-            if (fullNameInput) fullNameInput.value = '';
-            if (roleSelect) roleSelect.value = '';
-            if (activeSelect) activeSelect.value = '';
-            if (divisionSelect) divisionSelect.value = '';
 
             renderUsers();
 
@@ -1174,18 +1185,9 @@
 
     function renderUsers() {
         const tbody = document.getElementById('users-tbody');
-        if (!tbody) {
-            console.error('tbody не найден');
-            return;
-        }
+        if (!tbody) return;
 
-        if (!allUsers || !Array.isArray(allUsers)) {
-            console.log('Данные пользователей еще не загружены');
-            tbody.innerHTML = '<tr><td colspan="7" class="loading">Загрузка...</span></span>';
-            return;
-        }
-
-        if (allUsers.length === 0) {
+        if (!allUsers || !Array.isArray(allUsers) || allUsers.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Нет пользователей</span></span>';
             return;
         }
@@ -1195,8 +1197,6 @@
         const filterRole = document.getElementById('filterUserRole')?.value || '';
         const filterDivisionId = document.getElementById('filterUserDivision')?.value || '';
         const filterActive = document.getElementById('filterUserActive')?.value || '';
-
-        console.log('Фильтры:', {filterUsername, filterFullName, filterRole, filterDivisionId, filterActive});
 
         let filtered = [...allUsers];
 
@@ -1209,14 +1209,13 @@
         if (filterRole && filterRole !== '') {
             filtered = filtered.filter(u => u.role === filterRole);
         }
-        if (filterDivisionId && filterDivisionId !== '') {
+        // Важно: проверяем что filterDivisionId не пустая строка и не null
+        if (filterDivisionId && filterDivisionId !== '' && filterDivisionId !== 'null') {
             filtered = filtered.filter(u => u.division?.id == filterDivisionId);
         }
         if (filterActive && filterActive !== '') {
             filtered = filtered.filter(u => u.active == (filterActive === 'true'));
         }
-
-        console.log('Отфильтровано:', filtered.length);
 
         if (filtered.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Нет пользователей по фильтру</span></span>';
@@ -1242,8 +1241,6 @@
                 </tr>
             `;
         }).join('');
-
-        console.log('Рендер выполнен, отображено:', filtered.length);
     }
 
     function clearUserFilters() {
@@ -1306,9 +1303,7 @@
         document.getElementById('userFullName').value = '';
         document.getElementById('userRole').value = 'LOGIST';
         loadDivisionsForSelect();
-
         document.getElementById('userActiveField').style.display = 'none';
-
         document.getElementById('userModal').style.display = 'flex';
     }
 
@@ -1330,13 +1325,9 @@
             document.getElementById('userFullName').value = user.fullName || '';
             document.getElementById('userRole').value = user.role;
             loadDivisionsForSelect(user.division?.id);
-
             document.getElementById('userActiveField').style.display = 'block';
             document.getElementById('userActive').value = user.active ? 'true' : 'false';
-
             document.getElementById('userModal').style.display = 'flex';
-        } else {
-            alert('Пользователь не найден');
         }
     }
 
@@ -1390,8 +1381,20 @@
             }
             if (response.ok) {
                 closeUserModal();
+                // Принудительно сбрасываем все фильтры перед перезагрузкой
+                const divisionSelect = document.getElementById('filterUserDivision');
+                if (divisionSelect) divisionSelect.value = '';
+                const roleSelect = document.getElementById('filterUserRole');
+                if (roleSelect) roleSelect.value = '';
+                const activeSelect = document.getElementById('filterUserActive');
+                if (activeSelect) activeSelect.value = '';
+                const usernameInput = document.getElementById('filterUserUsername');
+                if (usernameInput) usernameInput.value = '';
+                const fullNameInput = document.getElementById('filterUserFullName');
+                if (fullNameInput) fullNameInput.value = '';
+
+                // Полная перезагрузка данных
                 await loadUsers();
-                await loadDivisions();
                 showNotification(isNewUser ? 'Пользователь создан' : 'Пользователь обновлен', 'success');
             } else {
                 const error = await response.json();
@@ -1639,26 +1642,41 @@
 
     // ========== CARRIERS ==========
     async function loadCarriers() {
+        const tbody = document.getElementById('carriers-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="loading">Загрузка...</td></tr>';
         try {
             const response = await fetch('/api/references/carriers');
+            if (!response.ok) throw new Error('Ошибка загрузки');
             allCarriers = await response.json();
+            allCarriers.sort((a, b) => a.id - b.id);
             renderCarriers();
-        } catch(e) { console.error(e); }
+        } catch(e) {
+            console.error(e);
+            if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Ошибка загрузки перевозчиков</span></span>';
+        }
     }
 
     function renderCarriers() {
+        const tbody = document.getElementById('carriers-tbody');
+        if (!tbody) return;
+        if (!allCarriers || allCarriers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Нет перевозчиков</span></span>';
+            return;
+        }
         const filterName = document.getElementById('filterCarrierName')?.value.toLowerCase() || '';
         const filterContactPerson = document.getElementById('filterCarrierContactPerson')?.value.toLowerCase() || '';
         const filterPhone = document.getElementById('filterCarrierPhone')?.value.toLowerCase() || '';
-        let filtered = allCarriers;
-        if (filterName) filtered = filtered.filter(c => c.name.toLowerCase().includes(filterName));
+        let filtered = [...allCarriers];
+        if (filterName) filtered = filtered.filter(c => (c.name || '').toLowerCase().includes(filterName));
         if (filterContactPerson) filtered = filtered.filter(c => (c.contactPerson || '').toLowerCase().includes(filterContactPerson));
         if (filterPhone) filtered = filtered.filter(c => (c.phone || '').toLowerCase().includes(filterPhone));
-        const container = document.getElementById('carriers-tbody');
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Нет перевозчиков по фильтру</span></span>';
+            return;
+        }
         const isDisabled = isOneCIntegrationEnabled;
-        if (!filtered.length) { container.innerHTML = '<tr><td colspan="5" class="empty-state">Нет перевозчиков</span></span>'; return; }
-        container.innerHTML = filtered.map(c => `
-            <td>
+        tbody.innerHTML = filtered.map(c => `
+            <tr>
                 <td>${c.id}</td>
                 <td><a href="/carrier-detail?id=${c.id}" class="link-button" style="font-weight:600;">${escapeHtml(c.name)}</a></td>
                 <td>${escapeHtml(c.contactPerson || '-')}</td>
@@ -1773,7 +1791,7 @@
         const isDisabled = isOneCIntegrationEnabled;
 
         if (!filtered.length) {
-            container.innerHTML = '<tr><td colspan="6" class="empty-state">Нет заводов</span></span>';
+            container.innerHTML = '<td><td colspan="6" class="empty-state">Нет заводов</span></span>';
             return;
         }
 
@@ -1784,10 +1802,7 @@
                 <td>${escapeHtml(p.address || '-')}</td>
                 <td>${escapeHtml(p.contactPerson || '-')}</td>
                 <td>${escapeHtml(p.phone || '-')}</td>
-                <td>
-                    <button class="btn-secondary" onclick="editPlant(${p.id})" ${isDisabled ? 'disabled' : ''}>✏️</button>
-                    <button class="btn-danger" onclick="deletePlant(${p.id})" ${isDisabled ? 'disabled' : ''}>🗑️</button>
-                 </span>
+                <td><button class="btn-secondary" onclick="editPlant(${p.id})" ${isDisabled ? 'disabled' : ''}>✏️</button> <button class="btn-danger" onclick="deletePlant(${p.id})" ${isDisabled ? 'disabled' : ''}>🗑️</button></span>
             </tr>
         `).join('');
     }
@@ -1880,7 +1895,7 @@
             renderWarehouses();
         } catch(e) {
             console.error(e);
-            document.getElementById('warehouses-tbody').innerHTML = '<td><td colspan="6" class="empty-state">Ошибка загрузки</span></span>';
+            document.getElementById('warehouses-tbody').innerHTML = '<table><td colspan="6" class="empty-state">Ошибка загрузки</span></span>';
         }
     }
 
@@ -1911,10 +1926,7 @@
                 <td>${escapeHtml(w.address || '-')}</td>
                 <td>${escapeHtml(w.contactPerson || '-')}</td>
                 <td>${escapeHtml(w.phone || '-')}</td>
-                <td>
-                    <button class="btn-secondary" onclick="editWarehouse(${w.id})" ${isDisabled ? 'disabled' : ''}>✏️</button>
-                    <button class="btn-danger" onclick="deleteWarehouse(${w.id})" ${isDisabled ? 'disabled' : ''}>🗑️</button>
-                 </span>
+                <td><button class="btn-secondary" onclick="editWarehouse(${w.id})" ${isDisabled ? 'disabled' : ''}>✏️</button> <button class="btn-danger" onclick="deleteWarehouse(${w.id})" ${isDisabled ? 'disabled' : ''}>🗑️</button></span>
             </tr>
         `).join('');
     }
@@ -2034,10 +2046,7 @@
                 <td>${escapeHtml(p.description || '-')}</td>
                 <td>${p.active ? '<span style="color:#10b981;">🟢 Активен</span>' : '<span style="color:#ef4444;">🔴 Неактивен</span>'}</td>
                 <td>${formatDate(p.createdAt)}</span></span>
-                <td>
-                    <button class="btn-secondary" onclick="editProduct(${p.id})">✏️</button>
-                    <button class="btn-danger" onclick="deleteProduct(${p.id})">🗑️</button>
-                 </span>
+                <td><button class="btn-secondary" onclick="editProduct(${p.id})">✏️</button> <button class="btn-danger" onclick="deleteProduct(${p.id})">🗑️</button></span>
             </tr>
         `).join('');
     }
@@ -2123,6 +2132,25 @@
             } catch(e) { showNotification('Ошибка: ' + e.message, 'error'); }
         }
     }
+
+    // Принудительное исправление шапки после загрузки страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        const userInfo = document.querySelector('.user-info');
+        if (userInfo) {
+            userInfo.style.display = 'flex';
+            userInfo.style.flexDirection = 'row';
+            userInfo.style.alignItems = 'center';
+            userInfo.style.gap = '16px';
+        }
+        const topBar = document.querySelector('.top-bar');
+        if (topBar) {
+            topBar.style.display = 'flex';
+            topBar.style.justifyContent = 'space-between';
+            topBar.style.alignItems = 'center';
+            topBar.style.flexWrap = 'wrap';
+            topBar.style.gap = '16px';
+        }
+    });
 
     window.onclick = function(event) {
         const modals = ['divisionModal', 'userModal', 'addUserModal', 'tripStatusModal', 'carrierModal', 'plantModal', 'warehouseModal', 'productModal'];
