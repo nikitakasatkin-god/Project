@@ -27,7 +27,6 @@ public class AuthController {
         return "login";
     }
 
-    // Добавьте этот метод для API
     @GetMapping("/api/auth/current-user")
     @ResponseBody
     public ResponseEntity<?> getCurrentUser() {
@@ -49,6 +48,7 @@ public class AuthController {
         response.put("role", user.getRole().name());
         response.put("divisionId", user.getDivision() != null ? user.getDivision().getId() : null);
         response.put("divisionName", user.getDivision() != null ? user.getDivision().getName() : null);
+        response.put("createdAt", user.getCreatedAt());
 
         return ResponseEntity.ok(response);
     }

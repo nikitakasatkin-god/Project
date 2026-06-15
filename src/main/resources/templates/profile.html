@@ -73,17 +73,14 @@
         .arrow { font-size: 12px; transition: transform 0.2s; }
         .has-submenu.open .arrow { transform: rotate(180deg); }
 
-        /* Скрытие элементов по ролям */
         .logist-only { display: none; }
         .dispatcher-only { display: none; }
         .admin-only { display: none; }
-
         body[data-role="ADMIN"] .admin-only { display: block; }
         body[data-role="ADMIN"] .admin-only-flex { display: flex; }
         body[data-role="LOGIST"] .logist-only { display: block; }
         body[data-role="DISPATCHER"] .dispatcher-only { display: block; }
 
-        /* Скрываем справочники и настройки для не-админов */
         body[data-role="LOGIST"] .menu-item.admin-only,
         body[data-role="DISPATCHER"] .menu-item.admin-only {
             display: none !important;
@@ -173,14 +170,6 @@
         }
         .info-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
         .info-value { font-size: 16px; font-weight: 600; color: var(--text-primary); }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); }
             .main-content { margin-left: 0; }
@@ -194,7 +183,6 @@
     <div class="sidebar-menu">
         <div class="menu-item" onclick="window.location.href='/dashboard'"><div class="menu-title">Главная</div></div>
 
-        <!-- Брендовая продукция -->
         <div class="menu-item has-submenu">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Брендовая продукция
@@ -206,21 +194,6 @@
             </div>
         </div>
 
-        <!-- Небрендовая продукция - скрыта -->
-        <!--
-        <div class="menu-item has-submenu">
-            <div class="menu-title" onclick="toggleSubmenu(this)">
-                Небрендовая продукция
-                <span class="arrow">▼</span>
-            </div>
-            <div class="submenu">
-                <div class="submenu-item" onclick="window.location.href='/requests?type=NON_BRANDED'">Заявки</div>
-                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=NON_BRANDED'">Рейсы</div>
-            </div>
-        </div>
-        -->
-
-        <!-- Справочники - только для админа -->
         <div class="menu-item has-submenu admin-only">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Справочники
@@ -237,7 +210,6 @@
             </div>
         </div>
 
-        <!-- Настройки - только для админа -->
         <div class="menu-item has-submenu admin-only">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Настройки
@@ -251,7 +223,6 @@
             </div>
         </div>
 
-        <!-- Профиль -->
         <div class="menu-item has-submenu">
             <div class="menu-title" onclick="toggleSubmenu(this)">
                 Профиль
@@ -288,18 +259,15 @@
 
         <div class="info-grid">
             <div class="info-item"><div class="info-label">Имя пользователя</div><div class="info-value" id="usernameValue"></div></div>
+            <div class="info-item"><div class="info-label">ФИО</div><div class="info-value" id="fullNameValue"></div></div>
             <div class="info-item"><div class="info-label">Роль</div><div class="info-value" id="roleValue"></div></div>
             <div class="info-item"><div class="info-label">Подразделение</div><div class="info-value" id="divisionValue"></div></div>
-        </div>
-
-        <div style="margin-top: 30px;">
-            <button class="btn-primary" onclick="alert('Функция смены пароля (заглушка)')">Сменить пароль</button>
+            <div class="info-item"><div class="info-label">Дата регистрации</div><div class="info-value" id="createdAtValue"></div></div>
         </div>
     </div>
 </div>
 
 <script>
-    // ========== НАВИГАЦИЯ ==========
     function navigateToReferences(tabId) {
         localStorage.setItem('referencesTab', tabId);
         window.location.href = '/references';
@@ -310,7 +278,6 @@
         window.location.href = '/settings';
     }
 
-    // ========== ТЕМА ==========
     function initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -340,6 +307,12 @@
         if (event) event.stopPropagation();
     }
 
+    function formatDateTime(dateTimeStr) {
+        if (!dateTimeStr) return '-';
+        const date = new Date(dateTimeStr);
+        return date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+    }
+
     async function loadUserProfile() {
         try {
             const response = await fetch('/api/auth/current-user');
@@ -348,7 +321,10 @@
                 document.getElementById('username').innerText = user.username || user.fullName || 'User';
                 document.getElementById('usernameValue').innerText = user.username || '-';
                 document.getElementById('fullName').innerText = user.fullName || user.username || '-';
+                document.getElementById('fullNameValue').innerText = user.fullName || '-';
                 document.getElementById('divisionValue').innerText = user.divisionName || 'Не указано';
+                document.getElementById('createdAtValue').innerText = formatDateTime(user.createdAt) || '-';
+                document.body.setAttribute('data-role', user.role);
 
                 let roleText = '';
                 if (user.role === 'ADMIN') roleText = 'Администратор';
@@ -357,9 +333,6 @@
 
                 document.getElementById('roleValue').innerText = roleText;
                 document.getElementById('roleBadge').innerText = roleText;
-
-                // Устанавливаем data-role на body для скрытия элементов по ролям
-                document.body.setAttribute('data-role', user.role);
             }
         } catch(e) {
             console.error('Ошибка загрузки профиля:', e);
