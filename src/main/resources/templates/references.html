@@ -704,12 +704,45 @@
 <div id="userModal" class="modal">
     <div class="modal-content">
         <h3 id="userModalTitle">Добавление пользователя</h3>
-        <div class="form-group"><label>Логин *</label><input type="text" id="userUsername" class="form-control"></div>
-        <div class="form-group"><label>Пароль <span id="passwordRequired">*</span></label><input type="password" id="userPassword" class="form-control"><small id="passwordHint" style="color:var(--text-muted);"></small></div>
-        <div class="form-group"><label>ФИО</label><input type="text" id="userFullName" class="form-control"></div>
-        <div class="form-group"><label>Роль *</label><select id="userRole" class="form-control"><option value="ADMIN">Администратор</option><option value="LOGIST">Логист</option><option value="DISPATCHER">Диспетчер</option></select></div>
-        <div class="form-group"><label>Подразделение</label><select id="userDivision" class="form-control"><option value="">Не выбрано</option></select></div>
-        <div style="display: flex; justify-content: flex-end; gap: 12px;"><button class="btn-secondary" onclick="closeUserModal()">Отмена</button><button class="btn-primary" onclick="saveUser()">Сохранить</button></div>
+        <div class="form-group">
+            <label>Логин *</label>
+            <input type="text" id="userUsername" class="form-control">
+        </div>
+        <div class="form-group">
+            <label>Пароль <span id="passwordRequired">*</span></label>
+            <input type="password" id="userPassword" class="form-control">
+            <small id="passwordHint" style="color:var(--text-muted);"></small>
+        </div>
+        <div class="form-group">
+            <label>ФИО</label>
+            <input type="text" id="userFullName" class="form-control">
+        </div>
+        <div class="form-group">
+            <label>Роль *</label>
+            <select id="userRole" class="form-control">
+                <option value="ADMIN">Администратор</option>
+                <option value="LOGIST">Логист</option>
+                <option value="DISPATCHER">Диспетчер</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Подразделение</label>
+            <select id="userDivision" class="form-control">
+                <option value="">Не выбрано</option>
+            </select>
+        </div>
+        <div class="form-group" id="userActiveField" style="display: none;">
+            <label>Статус</label>
+            <select id="userActive" class="form-control">
+                <option value="true">Активен</option>
+                <option value="false">Неактивен</option>
+            </select>
+        </div>
+        <!-- ================================================= -->
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+            <button class="btn-secondary" onclick="closeUserModal()">Отмена</button>
+            <button class="btn-primary" onclick="saveUser()">Сохранить</button>
+        </div>
     </div>
 </div>
 
@@ -1251,7 +1284,10 @@
     }
 
     function openUserModal() {
-        if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено', 'error');
+            return;
+        }
         currentUserId = null;
         document.getElementById('userModalTitle').innerText = 'Добавление пользователя';
         document.getElementById('userUsername').value = '';
@@ -1263,11 +1299,17 @@
         document.getElementById('userFullName').value = '';
         document.getElementById('userRole').value = 'LOGIST';
         loadDivisionsForSelect();
+
+        document.getElementById('userActiveField').style.display = 'none';
+
         document.getElementById('userModal').style.display = 'flex';
     }
 
     function editUser(id) {
-        if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено', 'error');
+            return;
+        }
         const user = allUsers.find(u => u.id === id);
         if (user) {
             currentUserId = user.id;
@@ -1281,6 +1323,10 @@
             document.getElementById('userFullName').value = user.fullName || '';
             document.getElementById('userRole').value = user.role;
             loadDivisionsForSelect(user.division?.id);
+
+            document.getElementById('userActiveField').style.display = 'block';
+            document.getElementById('userActive').value = user.active ? 'true' : 'false';
+
             document.getElementById('userModal').style.display = 'flex';
         } else {
             alert('Пользователь не найден');
@@ -1288,16 +1334,25 @@
     }
 
     async function saveUser() {
-        if (isOneCIntegrationEnabled) { showNotification('Редактирование запрещено', 'error'); return; }
+        if (isOneCIntegrationEnabled) {
+            showNotification('Редактирование запрещено', 'error');
+            return;
+        }
         const username = document.getElementById('userUsername').value.trim();
         const password = document.getElementById('userPassword').value;
         const fullName = document.getElementById('userFullName').value;
         const role = document.getElementById('userRole').value;
         const divisionId = document.getElementById('userDivision').value;
 
-        if (!username) { alert('Введите логин'); return; }
+        if (!username) {
+            alert('Введите логин');
+            return;
+        }
         const isNewUser = (currentUserId === null);
-        if (isNewUser && !password) { alert('Введите пароль'); return; }
+        if (isNewUser && !password) {
+            alert('Введите пароль');
+            return;
+        }
 
         const data = { username, fullName, role };
         if (password && password.trim() !== '') data.password = password;
@@ -1305,6 +1360,10 @@
             data.divisionId = parseInt(divisionId);
         } else {
             data.divisionId = null;
+        }
+
+        if (!isNewUser) {
+            data.active = document.getElementById('userActive').value === 'true';
         }
 
         try {
@@ -1331,7 +1390,9 @@
                 const error = await response.json();
                 alert(error.error || 'Ошибка');
             }
-        } catch(e) { alert('Ошибка: ' + e.message); }
+        } catch(e) {
+            alert('Ошибка: ' + e.message);
+        }
     }
 
     async function deleteUser(id) {
