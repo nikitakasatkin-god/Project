@@ -402,9 +402,16 @@
             const response = await fetch('/api/sync/dispatch-statuses');
             if (response.ok) {
                 const statuses = await response.json();
-                resultDiv.className = 'sync-status success';
-                resultDiv.innerHTML = `✅ Соединение установлено. Получено: ${statuses.length}`;
-                showNotification('Соединение установлено', 'success');
+                if (statuses && statuses.length > 0) {
+                    resultDiv.className = 'sync-status success';
+                    resultDiv.innerHTML = `✅ Соединение установлено. Получено статусов: ${statuses.length}`;
+                    showNotification('Соединение установлено', 'success');
+                } else {
+                    // ⚠️ ВАЖНО: статусов нет - значит соединение НЕ установлено
+                    resultDiv.className = 'sync-status error';
+                    resultDiv.innerHTML = '❌ Не удалось подключиться к системе диспетчеризации. Сервер не отвечает.';
+                    showNotification('Диспетчеризация недоступна', 'error');
+                }
             } else {
                 resultDiv.className = 'sync-status error';
                 resultDiv.innerHTML = `❌ Ошибка: ${response.status}`;
@@ -412,6 +419,7 @@
         } catch(e) {
             resultDiv.className = 'sync-status error';
             resultDiv.innerHTML = `❌ Ошибка: ${e.message}`;
+            showNotification('Ошибка соединения', 'error');
         }
         setTimeout(() => { resultDiv.style.display = 'none'; }, 5000);
     }

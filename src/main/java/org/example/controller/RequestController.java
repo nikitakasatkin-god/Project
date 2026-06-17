@@ -253,6 +253,7 @@ public class RequestController {
 
             StringBuilder changes = new StringBuilder();
 
+            // ========== ОБЪЕМ ==========
             if (data.containsKey("volume")) {
                 double oldVolume = request.getVolume();
                 double newVolume = Double.parseDouble(data.get("volume").toString());
@@ -262,6 +263,7 @@ public class RequestController {
                 request.setVolume(newVolume);
             }
 
+            // ========== ПРОДУКТ ==========
             if (data.containsKey("productId")) {
                 Long oldProductId = request.getProduct() != null ? request.getProduct().getId() : null;
                 Long newProductId = Long.parseLong(data.get("productId").toString());
@@ -275,44 +277,65 @@ public class RequestController {
                 }
             }
 
-            // ========== ОБНОВЛЕНИЕ ЗАВОДА ==========
+            // ========== ЗАВОД (ПУНКТ ПОГРУЗКИ) ==========
             if (data.containsKey("pickupPlantId")) {
                 Long newPlantId = Long.parseLong(data.get("pickupPlantId").toString());
                 Plant newPlant = plantRepository.findById(newPlantId).orElse(null);
                 if (newPlant != null) {
-                    String oldPlantName = request.getPickupPlant() != null ? request.getPickupPlant().getName() : "не указан";
-                    changes.append("Пункт погрузки: ").append(oldPlantName).append(" → ").append(newPlant.getName()).append("; ");
-                    request.setPickupPlant(newPlant);
+                    // ✅ Проверяем, действительно ли изменился завод
+                    Long oldPlantId = request.getPickupPlant() != null ? request.getPickupPlant().getId() : null;
+                    if (oldPlantId == null || !oldPlantId.equals(newPlantId)) {
+                        String oldPlantName = request.getPickupPlant() != null ? request.getPickupPlant().getName() : "не указан";
+                        changes.append("Пункт погрузки: ").append(oldPlantName).append(" → ").append(newPlant.getName()).append("; ");
+                        request.setPickupPlant(newPlant);
+                    } else {
+                        // Если завод не изменился, но был передан в запросе - просто устанавливаем (без записи в историю)
+                        request.setPickupPlant(newPlant);
+                    }
                 }
             } else if (data.containsKey("pickupPoint")) {
+                // Для обратной совместимости
                 String newPlantName = data.get("pickupPoint").toString();
                 Plant newPlant = plantRepository.findByName(newPlantName).orElse(null);
                 if (newPlant != null) {
                     String oldPlantName = request.getPickupPlant() != null ? request.getPickupPlant().getName() : "не указан";
-                    changes.append("Пункт погрузки: ").append(oldPlantName).append(" → ").append(newPlant.getName()).append("; ");
-                    request.setPickupPlant(newPlant);
+                    if (!oldPlantName.equals(newPlantName)) {
+                        changes.append("Пункт погрузки: ").append(oldPlantName).append(" → ").append(newPlant.getName()).append("; ");
+                        request.setPickupPlant(newPlant);
+                    }
                 }
             }
 
-            // ========== ОБНОВЛЕНИЕ СКЛАДА ==========
+            // ========== СКЛАД (ПУНКТ РАЗГРУЗКИ) ==========
             if (data.containsKey("deliveryWarehouseId")) {
                 Long newWarehouseId = Long.parseLong(data.get("deliveryWarehouseId").toString());
                 Warehouse newWarehouse = warehouseRepository.findById(newWarehouseId).orElse(null);
                 if (newWarehouse != null) {
-                    String oldWarehouseName = request.getDeliveryWarehouse() != null ? request.getDeliveryWarehouse().getName() : "не указан";
-                    changes.append("Пункт разгрузки: ").append(oldWarehouseName).append(" → ").append(newWarehouse.getName()).append("; ");
-                    request.setDeliveryWarehouse(newWarehouse);
+                    // ✅ Проверяем, действительно ли изменился склад
+                    Long oldWarehouseId = request.getDeliveryWarehouse() != null ? request.getDeliveryWarehouse().getId() : null;
+                    if (oldWarehouseId == null || !oldWarehouseId.equals(newWarehouseId)) {
+                        String oldWarehouseName = request.getDeliveryWarehouse() != null ? request.getDeliveryWarehouse().getName() : "не указан";
+                        changes.append("Пункт разгрузки: ").append(oldWarehouseName).append(" → ").append(newWarehouse.getName()).append("; ");
+                        request.setDeliveryWarehouse(newWarehouse);
+                    } else {
+                        // Если склад не изменился, но был передан в запросе - просто устанавливаем (без записи в историю)
+                        request.setDeliveryWarehouse(newWarehouse);
+                    }
                 }
             } else if (data.containsKey("deliveryPoint")) {
+                // Для обратной совместимости
                 String newWarehouseName = data.get("deliveryPoint").toString();
                 Warehouse newWarehouse = warehouseRepository.findByName(newWarehouseName).orElse(null);
                 if (newWarehouse != null) {
                     String oldWarehouseName = request.getDeliveryWarehouse() != null ? request.getDeliveryWarehouse().getName() : "не указан";
-                    changes.append("Пункт разгрузки: ").append(oldWarehouseName).append(" → ").append(newWarehouse.getName()).append("; ");
-                    request.setDeliveryWarehouse(newWarehouse);
+                    if (!oldWarehouseName.equals(newWarehouseName)) {
+                        changes.append("Пункт разгрузки: ").append(oldWarehouseName).append(" → ").append(newWarehouse.getName()).append("; ");
+                        request.setDeliveryWarehouse(newWarehouse);
+                    }
                 }
             }
 
+            // ========== ДАТА НАЧАЛА ПОГРУЗКИ ==========
             if (data.containsKey("pickupStartDate")) {
                 LocalDate oldValue = request.getPickupStartDate();
                 LocalDate newValue = LocalDate.parse(data.get("pickupStartDate").toString());
@@ -321,6 +344,8 @@ public class RequestController {
                 }
                 request.setPickupStartDate(newValue);
             }
+
+            // ========== ДАТА ОКОНЧАНИЯ ПОГРУЗКИ ==========
             if (data.containsKey("pickupEndDate")) {
                 LocalDate oldValue = request.getPickupEndDate();
                 LocalDate newValue = LocalDate.parse(data.get("pickupEndDate").toString());
@@ -329,6 +354,8 @@ public class RequestController {
                 }
                 request.setPickupEndDate(newValue);
             }
+
+            // ========== ВРЕМЯ НАЧАЛА ПОГРУЗКИ ==========
             if (data.containsKey("pickupStartTime")) {
                 LocalTime oldValue = request.getPickupStartTime();
                 LocalTime newValue = LocalTime.parse(data.get("pickupStartTime").toString());
@@ -337,6 +364,8 @@ public class RequestController {
                 }
                 request.setPickupStartTime(newValue);
             }
+
+            // ========== ВРЕМЯ ОКОНЧАНИЯ ПОГРУЗКИ ==========
             if (data.containsKey("pickupEndTime")) {
                 LocalTime oldValue = request.getPickupEndTime();
                 LocalTime newValue = LocalTime.parse(data.get("pickupEndTime").toString());
@@ -348,6 +377,7 @@ public class RequestController {
 
             Request saved = requestRepository.save(request);
 
+            // ✅ Сохраняем историю ТОЛЬКО если были изменения
             if (changes.length() > 0) {
                 addHistory(saved, saved.getStatus().name(), "Редактирование: " + changes.toString(),
                         "user:" + currentUser.getUsername(), currentUser.getFullName());

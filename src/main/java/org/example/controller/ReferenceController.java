@@ -1,10 +1,7 @@
 package org.example.controller;
 
-import org.example.config.IntegrationSettings;
 import org.example.model.*;
 import org.example.repository.*;
-import org.example.service.OneCIntegrationService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,8 +23,6 @@ public class ReferenceController {
     private final TariffNonBrandedRepository tariffNonBrandedRepository;
     private final VehicleRepository vehicleRepository;
     private final ProductRepository productRepository;
-    private final IntegrationSettings integrationSettings;
-    private final OneCIntegrationService oneCIntegrationService;
 
     public ReferenceController(DivisionRepository divisionRepository,
                                CarrierRepository carrierRepository,
@@ -36,9 +31,7 @@ public class ReferenceController {
                                TariffBrandedRepository tariffBrandedRepository,
                                TariffNonBrandedRepository tariffNonBrandedRepository,
                                VehicleRepository vehicleRepository,
-                               ProductRepository productRepository,
-                               IntegrationSettings integrationSettings,
-                               OneCIntegrationService oneCIntegrationService) {
+                               ProductRepository productRepository) {
         this.divisionRepository = divisionRepository;
         this.carrierRepository = carrierRepository;
         this.plantRepository = plantRepository;
@@ -47,20 +40,6 @@ public class ReferenceController {
         this.tariffNonBrandedRepository = tariffNonBrandedRepository;
         this.vehicleRepository = vehicleRepository;
         this.productRepository = productRepository;
-        this.integrationSettings = integrationSettings;
-        this.oneCIntegrationService = oneCIntegrationService;
-    }
-
-    private boolean isIntegrationMode() {
-        return integrationSettings.isOnecIntegrationEnabled();
-    }
-
-    private ResponseEntity<?> checkWritePermissionForDirectory() {
-        if (isIntegrationMode()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Режим интеграции с 1С активен. Редактирование справочников запрещено"));
-        }
-        return null;
     }
 
     // ========== Divisions ==========
@@ -71,23 +50,17 @@ public class ReferenceController {
 
     @PostMapping("/divisions")
     public ResponseEntity<?> createDivision(@RequestBody Division division) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
         return ResponseEntity.ok(divisionRepository.save(division));
     }
 
     @PutMapping("/divisions/{id}")
     public ResponseEntity<?> updateDivision(@PathVariable Long id, @RequestBody Division division) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
         division.setId(id);
         return ResponseEntity.ok(divisionRepository.save(division));
     }
 
     @DeleteMapping("/divisions/{id}")
     public ResponseEntity<?> deleteDivision(@PathVariable Long id) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
         divisionRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
@@ -107,8 +80,6 @@ public class ReferenceController {
 
     @PostMapping("/plants")
     public ResponseEntity<?> createPlant(@RequestBody Plant plant) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
         if (plant.getName() == null || plant.getName().trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Название завода обязательно"));
         }
@@ -117,8 +88,6 @@ public class ReferenceController {
 
     @PutMapping("/plants/{id}")
     public ResponseEntity<?> updatePlant(@PathVariable Long id, @RequestBody Plant plant) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
         if (!plantRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -128,8 +97,6 @@ public class ReferenceController {
 
     @DeleteMapping("/plants/{id}")
     public ResponseEntity<?> deletePlant(@PathVariable Long id) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
         if (!plantRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -152,8 +119,6 @@ public class ReferenceController {
 
     @PostMapping("/warehouses")
     public ResponseEntity<?> createWarehouse(@RequestBody Warehouse warehouse) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
         if (warehouse.getName() == null || warehouse.getName().trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Название склада обязательно"));
         }
@@ -162,8 +127,6 @@ public class ReferenceController {
 
     @PutMapping("/warehouses/{id}")
     public ResponseEntity<?> updateWarehouse(@PathVariable Long id, @RequestBody Warehouse warehouse) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
         if (!warehouseRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -173,8 +136,6 @@ public class ReferenceController {
 
     @DeleteMapping("/warehouses/{id}")
     public ResponseEntity<?> deleteWarehouse(@PathVariable Long id) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
         if (!warehouseRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -274,16 +235,11 @@ public class ReferenceController {
 
     @PostMapping("/carriers")
     public ResponseEntity<?> createCarrier(@RequestBody Carrier carrier) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
         return ResponseEntity.ok(carrierRepository.save(carrier));
     }
 
     @PutMapping("/carriers/{id}")
     public ResponseEntity<?> updateCarrier(@PathVariable Long id, @RequestBody Map<String, Object> data) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
-
         Carrier carrier = carrierRepository.findById(id).orElse(null);
         if (carrier == null) {
             return ResponseEntity.notFound().build();
@@ -307,8 +263,6 @@ public class ReferenceController {
 
     @DeleteMapping("/carriers/{id}")
     public ResponseEntity<?> deleteCarrier(@PathVariable Long id) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
         carrierRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
@@ -316,9 +270,6 @@ public class ReferenceController {
     // ========== Vehicles ==========
     @PostMapping("/carriers/{carrierId}/vehicles")
     public ResponseEntity<?> addVehicle(@PathVariable Long carrierId, @RequestBody Map<String, Object> data) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
-
         Carrier carrier = carrierRepository.findById(carrierId).orElse(null);
         if (carrier == null) {
             return ResponseEntity.notFound().build();
@@ -373,9 +324,6 @@ public class ReferenceController {
 
     @PutMapping("/carriers/{carrierId}/vehicles/{vehicleId}")
     public ResponseEntity<?> updateVehicle(@PathVariable Long carrierId, @PathVariable Long vehicleId, @RequestBody Map<String, Object> data) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
-
         Vehicle vehicle = vehicleRepository.findById(vehicleId).orElse(null);
         if (vehicle == null || !vehicle.getCarrier().getId().equals(carrierId)) {
             return ResponseEntity.notFound().build();
@@ -408,9 +356,6 @@ public class ReferenceController {
 
     @DeleteMapping("/carriers/{carrierId}/vehicles/{vehicleId}")
     public ResponseEntity<?> deleteVehicle(@PathVariable Long carrierId, @PathVariable Long vehicleId) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
-
         Vehicle vehicle = vehicleRepository.findById(vehicleId).orElse(null);
         if (vehicle == null || !vehicle.getCarrier().getId().equals(carrierId)) {
             return ResponseEntity.notFound().build();
@@ -437,9 +382,6 @@ public class ReferenceController {
 
     @PostMapping("/products")
     public ResponseEntity<?> createProduct(@RequestBody Product product) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
-
         if (product.getName() == null || product.getName().trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Название продукта обязательно"));
         }
@@ -455,9 +397,6 @@ public class ReferenceController {
 
     @PutMapping("/products/{id}")
     public ResponseEntity<?> updateProduct(@PathVariable Long id, @RequestBody Map<String, Object> data) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
-
         Product product = productRepository.findById(id).orElse(null);
         if (product == null) {
             return ResponseEntity.notFound().build();
@@ -488,9 +427,6 @@ public class ReferenceController {
 
     @DeleteMapping("/products/{id}")
     public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
-        ResponseEntity<?> permissionCheck = checkWritePermissionForDirectory();
-        if (permissionCheck != null) return permissionCheck;
-
         if (!productRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -517,15 +453,5 @@ public class ReferenceController {
     @PostMapping("/tariffs/non-branded")
     public TariffNonBranded createTariffNonBranded(@RequestBody TariffNonBranded tariff) {
         return tariffNonBrandedRepository.save(tariff);
-    }
-
-    // ========== Синхронизация с 1С ==========
-    @PostMapping("/sync-from-1c")
-    public ResponseEntity<?> syncFromOneC() {
-        if (!isIntegrationMode()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Интеграция с 1С отключена"));
-        }
-        oneCIntegrationService.syncAllDirectories();
-        return ResponseEntity.ok(Map.of("success", true, "message", "Синхронизация с 1С запущена"));
     }
 }

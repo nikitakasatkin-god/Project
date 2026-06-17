@@ -2,6 +2,7 @@ package org.example.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +11,7 @@ import jakarta.annotation.PreDestroy;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class SyncSettingsService {
@@ -21,12 +23,23 @@ public class SyncSettingsService {
     private ScheduledFuture<?> scheduledSendTask;
     private ScheduledFuture<?> scheduledReceiveTask;
 
-    private long sendIntervalMs = 60000;
-    private boolean sendEnabled = true;
-    private int sendBatchSize = 10;
+    // ✅ Флаг "жив" ли основной планировщик
+    private final AtomicBoolean isAlive = new AtomicBoolean(true);
 
-    private long receiveIntervalMs = 60000;
-    private boolean receiveEnabled = true;
+    @Value("${sync.send.interval:60000}")
+    private long sendIntervalMs;
+
+    @Value("${sync.send.enabled:true}")
+    private boolean sendEnabled;
+
+    @Value("${sync.send.batch.size:10}")
+    private int sendBatchSize;
+
+    @Value("${sync.receive.interval:60000}")
+    private long receiveIntervalMs;
+
+    @Value("${sync.receive.enabled:true}")
+    private boolean receiveEnabled;
 
     public SyncSettingsService(SyncService syncService) {
         this.syncService = syncService;
@@ -38,29 +51,20 @@ public class SyncSettingsService {
 
     @PostConstruct
     public void init() {
-        // Загружаем настройки из System properties
-        try {
-            this.sendIntervalMs = Long.parseLong(System.getProperty("sync.send.interval", "60000"));
-        } catch (NumberFormatException e) {
-            this.sendIntervalMs = 60000;
-        }
-        this.sendEnabled = Boolean.parseBoolean(System.getProperty("sync.send.enabled", "true"));
-        this.sendBatchSize = Integer.parseInt(System.getProperty("sync.send.batch.size", "10"));
-
-        try {
-            this.receiveIntervalMs = Long.parseLong(System.getProperty("sync.receive.interval", "60000"));
-        } catch (NumberFormatException e) {
-            this.receiveIntervalMs = 60000;
-        }
-        this.receiveEnabled = Boolean.parseBoolean(System.getProperty("sync.receive.enabled", "true"));
-
-        log.info("Инициализация сервиса настроек синхронизации");
+        log.info("=== ИНИЦИАЛИЗАЦИЯ ОСНОВНОГО ПЛАНИРОВЩИКА ===");
         log.info("Отправка: интервал={} мс ({} сек), включена={}, размер пакета={}",
                 sendIntervalMs, sendIntervalMs / 1000, sendEnabled, sendBatchSize);
         log.info("Получение: интервал={} мс ({} сек), включено={}",
                 receiveIntervalMs, receiveIntervalMs / 1000, receiveEnabled);
 
-        startSchedulers();
+        try {
+            startSchedulers();
+            isAlive.set(true);
+            log.info("✅ Основной планировщик успешно запущен");
+        } catch (Exception e) {
+            log.error("❌ Ошибка запуска основного планировщика: {}", e.getMessage());
+            isAlive.set(false);
+        }
     }
 
     @PreDestroy
@@ -91,23 +95,30 @@ public class SyncSettingsService {
             return;
         }
 
-        scheduledSendTask = taskScheduler.scheduleWithFixedDelay(() -> {
-            try {
-                log.info("=== АВТОМАТИЧЕСКАЯ ОТПРАВКА РЕЙСОВ (интервал: {} сек) ===", sendIntervalMs / 1000);
-                int sentCount = syncService.sendTripsToDispatch();
-                if (sentCount > 0) {
-                    log.info("✅ Отправлено {} рейсов в систему диспетчеризации", sentCount);
-                } else if (sentCount == 0) {
-                    log.debug("Нет рейсов для отправки");
-                } else {
-                    log.error("❌ Ошибка при отправке рейсов");
+        try {
+            scheduledSendTask = taskScheduler.scheduleWithFixedDelay(() -> {
+                try {
+                    isAlive.set(true);
+                    log.info("=== АВТОМАТИЧЕСКАЯ ОТПРАВКА РЕЙСОВ (интервал: {} сек) ===", sendIntervalMs / 1000);
+                    int sentCount = syncService.sendTripsToDispatch();
+                    if (sentCount > 0) {
+                        log.info("✅ Отправлено {} рейсов в систему диспетчеризации", sentCount);
+                    } else if (sentCount == 0) {
+                        log.debug("Нет рейсов для отправки");
+                    } else {
+                        log.error("❌ Ошибка при отправке рейсов");
+                    }
+                } catch (Exception e) {
+                    log.error("❌ Ошибка в основном планировщике (отправка): {}", e.getMessage());
+                    isAlive.set(false);
                 }
-            } catch (Exception e) {
-                log.error("Ошибка при отправке: {}", e.getMessage(), e);
-            }
-        }, sendIntervalMs);
+            }, sendIntervalMs);
 
-        log.info("Планировщик отправки запущен с интервалом {} мс ({} сек)", sendIntervalMs, sendIntervalMs / 1000);
+            log.info("Планировщик отправки запущен с интервалом {} мс ({} сек)", sendIntervalMs, sendIntervalMs / 1000);
+        } catch (Exception e) {
+            log.error("❌ Ошибка запуска планировщика отправки: {}", e.getMessage());
+            isAlive.set(false);
+        }
     }
 
     public void stopSendScheduler() {
@@ -119,7 +130,7 @@ public class SyncSettingsService {
     }
 
     public void restartSendScheduler() {
-        log.info("Перезапуск планировщика отправки с новыми настройками");
+        log.info("Перезапуск планировщика отправки");
         stopSendScheduler();
         startSendScheduler();
     }
@@ -136,23 +147,30 @@ public class SyncSettingsService {
             return;
         }
 
-        scheduledReceiveTask = taskScheduler.scheduleWithFixedDelay(() -> {
-            try {
-                log.info("=== АВТОМАТИЧЕСКОЕ ПОЛУЧЕНИЕ СТАТУСОВ (интервал: {} сек) ===", receiveIntervalMs / 1000);
-                int receivedCount = syncService.receiveStatusesFromDispatch();
-                if (receivedCount > 0) {
-                    log.info("✅ Получено {} обновлений статусов из диспетчеризации", receivedCount);
-                } else if (receivedCount == 0) {
-                    log.debug("Нет обновлений статусов");
-                } else if (receivedCount < 0) {
-                    log.error("❌ Ошибка при получении статусов");
+        try {
+            scheduledReceiveTask = taskScheduler.scheduleWithFixedDelay(() -> {
+                try {
+                    isAlive.set(true);
+                    log.info("=== АВТОМАТИЧЕСКОЕ ПОЛУЧЕНИЕ СТАТУСОВ (интервал: {} сек) ===", receiveIntervalMs / 1000);
+                    int receivedCount = syncService.receiveStatusesFromDispatch();
+                    if (receivedCount > 0) {
+                        log.info("✅ Получено {} обновлений статусов из диспетчеризации", receivedCount);
+                    } else if (receivedCount == 0) {
+                        log.debug("Нет обновлений статусов");
+                    } else if (receivedCount < 0) {
+                        log.error("❌ Ошибка при получении статусов");
+                    }
+                } catch (Exception e) {
+                    log.error("❌ Ошибка в основном планировщике (получение): {}", e.getMessage());
+                    isAlive.set(false);
                 }
-            } catch (Exception e) {
-                log.error("Ошибка при получении статусов: {}", e.getMessage(), e);
-            }
-        }, receiveIntervalMs);
+            }, receiveIntervalMs);
 
-        log.info("Планировщик получения запущен с интервалом {} мс ({} сек)", receiveIntervalMs, receiveIntervalMs / 1000);
+            log.info("Планировщик получения запущен с интервалом {} мс ({} сек)", receiveIntervalMs, receiveIntervalMs / 1000);
+        } catch (Exception e) {
+            log.error("❌ Ошибка запуска планировщика получения: {}", e.getMessage());
+            isAlive.set(false);
+        }
     }
 
     public void stopReceiveScheduler() {
@@ -164,7 +182,7 @@ public class SyncSettingsService {
     }
 
     public void restartReceiveScheduler() {
-        log.info("Перезапуск планировщика получения с новыми настройками");
+        log.info("Перезапуск планировщика получения");
         stopReceiveScheduler();
         startReceiveScheduler();
     }
@@ -177,7 +195,6 @@ public class SyncSettingsService {
         boolean needRestartSend = false;
         boolean needRestartReceive = false;
 
-        // Обновление настроек отправки
         if (newSettings.containsKey("sendIntervalSeconds")) {
             long newIntervalSeconds = Long.parseLong(newSettings.get("sendIntervalSeconds").toString());
             long newIntervalMs = newIntervalSeconds * 1000;
@@ -185,7 +202,7 @@ public class SyncSettingsService {
                 this.sendIntervalMs = newIntervalMs;
                 System.setProperty("sync.send.interval", String.valueOf(newIntervalMs));
                 needRestartSend = true;
-                log.info("Интервал отправки изменен с {} на {} секунд", sendIntervalMs / 1000, newIntervalSeconds);
+                log.info("Интервал отправки изменен на {} секунд", newIntervalSeconds);
             }
         }
 
@@ -205,12 +222,9 @@ public class SyncSettingsService {
                 this.sendBatchSize = newBatchSize;
                 System.setProperty("sync.send.batch.size", String.valueOf(newBatchSize));
                 log.info("Размер пакета отправки изменен на: {}", newBatchSize);
-                // При изменении размера пакета не нужно перезапускать планировщик
-                // Он используется в SyncService при отправке
             }
         }
 
-        // Обновление настроек получения
         if (newSettings.containsKey("receiveIntervalSeconds")) {
             long newIntervalSeconds = Long.parseLong(newSettings.get("receiveIntervalSeconds").toString());
             long newIntervalMs = newIntervalSeconds * 1000;
@@ -218,7 +232,7 @@ public class SyncSettingsService {
                 this.receiveIntervalMs = newIntervalMs;
                 System.setProperty("sync.receive.interval", String.valueOf(newIntervalMs));
                 needRestartReceive = true;
-                log.info("Интервал получения изменен с {} на {} секунд", receiveIntervalMs / 1000, newIntervalSeconds);
+                log.info("Интервал получения изменен на {} секунд", newIntervalSeconds);
             }
         }
 
@@ -232,7 +246,6 @@ public class SyncSettingsService {
             }
         }
 
-        // Перезапускаем планировщики с новыми настройками (без перезапуска всего приложения!)
         if (needRestartSend) {
             restartSendScheduler();
         }
@@ -241,13 +254,12 @@ public class SyncSettingsService {
             restartReceiveScheduler();
         }
 
+        isAlive.set(true);
+
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("message", "Настройки синхронизации применены");
         response.put("settings", getSettings());
-
-        log.info("Настройки успешно применены. Отправка: интервал={} мс, включена={}, размер пакета={}; Получение: интервал={} мс, включено={}",
-                sendIntervalMs, sendEnabled, sendBatchSize, receiveIntervalMs, receiveEnabled);
 
         return response;
     }
@@ -261,28 +273,17 @@ public class SyncSettingsService {
         settings.put("receiveIntervalMs", receiveIntervalMs);
         settings.put("receiveIntervalSeconds", receiveIntervalMs / 1000);
         settings.put("receiveEnabled", receiveEnabled);
+        settings.put("isAlive", isAlive.get());
         return settings;
     }
 
-    // ==================== Геттеры для доступа к настройкам из других сервисов ====================
-
-    public long getSendIntervalMs() {
-        return sendIntervalMs;
+    public boolean isAlive() {
+        return isAlive.get();
     }
 
-    public boolean isSendEnabled() {
-        return sendEnabled;
-    }
-
-    public int getSendBatchSize() {
-        return sendBatchSize;
-    }
-
-    public long getReceiveIntervalMs() {
-        return receiveIntervalMs;
-    }
-
-    public boolean isReceiveEnabled() {
-        return receiveEnabled;
-    }
+    public long getSendIntervalMs() { return sendIntervalMs; }
+    public boolean isSendEnabled() { return sendEnabled; }
+    public int getSendBatchSize() { return sendBatchSize; }
+    public long getReceiveIntervalMs() { return receiveIntervalMs; }
+    public boolean isReceiveEnabled() { return receiveEnabled; }
 }
