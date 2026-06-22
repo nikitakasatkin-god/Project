@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Рейсы - Логистика</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #f5f7fb;
+            --bg-secondary: #ffffff;
+            --text-primary: #1a1f36;
+            --text-secondary: #374151;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --card-bg: #ffffff;
+            --sidebar-bg: #ffffff;
+            --header-bg: #ffffff;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --input-bg: #ffffff;
+            --hover-bg: #f9fafb;
+        }
+
+        body.dark-theme {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #eeeeee;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --card-bg: #0f3460;
+            --sidebar-bg: #0f3460;
+            --header-bg: #16213e;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --input-bg: #1e2a4a;
+            --hover-bg: #1a2744;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100%;
+            background: var(--sidebar-bg);
+            box-shadow: 2px 0 20px rgba(0,0,0,0.05);
+            overflow-y: auto;
+            z-index: 100;
+            transition: background 0.3s ease;
+        }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid var(--border-color); }
+        .sidebar-header h2 {
+            font-size: 22px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .sidebar-menu { padding: 16px 0; }
+        .menu-item { padding: 12px 24px; cursor: pointer; transition: all 0.2s; }
+        .menu-item:hover { background: var(--hover-bg); }
+        .menu-title {
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .has-submenu { position: relative; }
+        .submenu { margin-top: 8px; margin-left: 20px; display: none; }
+        .submenu.show { display: block; }
+        .submenu-item {
+            padding: 8px 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .submenu-item:hover { background: var(--hover-bg); color: #667eea; }
+        .arrow { font-size: 12px; transition: transform 0.2s; }
+        .has-submenu.open .arrow { transform: rotate(180deg); }
+
+        .logist-only { display: none; }
+        .dispatcher-only { display: none; }
+        .admin-only { display: none; }
+        body[data-role="ADMIN"] .admin-only { display: block; }
+        body[data-role="LOGIST"] .logist-only { display: block; }
+        body[data-role="DISPATCHER"] .dispatcher-only { display: block; }
+
+        .main-content { margin-left: 280px; padding: 24px; min-height: 100vh; }
+        .top-bar {
+            background: var(--header-bg);
+            border-radius: 16px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
+        }
+        .page-title { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+        .user-info { display: flex; align-items: center; gap: 16px; }
+        .user-name { font-weight: 600; color: var(--text-secondary); }
+        .logout-btn {
+            padding: 8px 16px;
+            background: #fee2e2;
+            color: #dc2626;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--hover-bg);
+        }
+        .content-panel {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .filter-group { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+        .btn-filter {
+            background: var(--hover-bg);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+        .btn-filter:hover {
+            background: var(--bg-primary);
+        }
+        .btn-filter.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .filter-panel {
+            display: none;
+            background: var(--hover-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .filter-panel.show {
+            display: block;
+        }
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .filter-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .filter-field label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .filter-field input, .filter-field select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+        .filter-field input:focus, .filter-field select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+        .btn-clear {
+            background: var(--hover-bg);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .btn-apply {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .data-table th {
+            background: var(--hover-bg);
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .status-trip-new { background: #f3f4f6; color: #6b7280; }
+        .status-trip-arrived_loading { background: #fef3c7; color: #d97706; }
+        .status-trip-loaded { background: #dbeafe; color: #2563eb; }
+        .status-trip-processed { background: #d1fae5; color: #059669; }
+        .status-trip-cancelled { background: #fee2e2; color: #dc2626; }
+        .sync-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .sync-not-set { background: #f3f4f6; color: #6b7280; }
+        .sync-pending { background: #fef3c7; color: #d97706; }
+        .sync-completed { background: #d1fae5; color: #059669; }
+        .link-button {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .btn-edit {
+            background: #eef2ff;
+            color: #4338ca;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-edit:hover {
+            background: #e0e7ff;
+        }
+        .btn-delete {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-delete:hover {
+            background: #fecaca;
+        }
+        .empty-state { text-align: center; padding: 60px 20px; }
+        .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+        .empty-text { font-size: 16px; color: var(--text-muted); margin-bottom: 20px; }
+        .loading { text-align: center; padding: 40px; color: var(--text-muted); }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; }
+            .filter-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-header"><h2>Логистика</h2></div>
+    <div class="sidebar-menu">
+        <div class="menu-item" onclick="window.location.href='/dashboard'"><div class="menu-title">Главная</div></div>
+
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Брендовая продукция
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=BRANDED'">Заявки</div>
+                <div class="submenu-item" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
+            </div>
+        </div>
+
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Справочники
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="navigateToReferences('divisions')">Подразделения</div>
+                <div class="submenu-item" onclick="navigateToReferences('users')">Пользователи</div>
+                <div class="submenu-item" onclick="navigateToReferences('trip-statuses')">Статусы рейсов</div>
+                <div class="submenu-item" onclick="navigateToReferences('dispatch-mappings')">Сопоставление статусов</div>
+                <div class="submenu-item" onclick="navigateToReferences('carriers')">Перевозчики</div>
+                <div class="submenu-item" onclick="navigateToReferences('plants')">Заводы</div>
+                <div class="submenu-item" onclick="navigateToReferences('warehouses')">Склады</div>
+                <div class="submenu-item" onclick="navigateToReferences('products')">Продукты</div>
+            </div>
+        </div>
+
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Настройки
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="navigateToSettings('sync')">Синхронизация</div>
+                <div class="submenu-item" onclick="navigateToSettings('auto')">Автообработка заявок</div>
+                <div class="submenu-item" onclick="navigateToSettings('theme')">Оформление</div>
+            </div>
+        </div>
+
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">
+                Профиль
+                <span class="arrow">▼</span>
+            </div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/profile'">Личные данные</div>
+                <div class="submenu-item" onclick="window.location.href='/logout'">Выход</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="top-bar">
+        <h1 class="page-title" id="page-title">Рейсы (Брендовая продукция)</h1>
+        <div class="user-info">
+            <span class="user-name" id="username">Загрузка...</span>
+            <button class="theme-toggle" id="themeToggle">
+                <span>🌙</span> Тема
+            </button>
+            <a href="/logout" class="logout-btn">Выйти</a>
+        </div>
+    </div>
+
+    <div class="content-panel">
+        <div class="panel-header">
+            <div class="filter-group">
+                <button class="btn-filter" id="filterBtn">
+                    <span>🔍</span> Фильтр
+                </button>
+            </div>
+        </div>
+
+        <div id="filterPanel" class="filter-panel">
+            <div class="filter-row">
+                <div class="filter-field">
+                    <label>Статус рейса</label>
+                    <select id="filterStatus">
+                        <option value="ALL">Все</option>
+                        <option value="NEW">Новый</option>
+                        <option value="ARRIVED_LOADING">Прибыл на погрузку</option>
+                        <option value="LOADED">Погружен</option>
+                        <option value="IN_TRANSIT">В пути</option>
+                        <option value="PROCESSED">Обработан</option>
+                        <option value="CANCELLED">Отменен</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>Статус обмена</label>
+                    <select id="filterSync">
+                        <option value="ALL">Все</option>
+                        <option value="NOT_SET">Не установлен</option>
+                        <option value="PENDING">Ожидает синхронизации</option>
+                        <option value="COMPLETED">Синхронизирован</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>ID рейса</label>
+                    <input type="number" id="filterId" placeholder="Номер рейса">
+                </div>
+                <div class="filter-field">
+                    <label>ID заявки</label>
+                    <input type="number" id="filterRequestId" placeholder="Номер заявки">
+                </div>
+                <div class="filter-field">
+                    <label>Перевозчик</label>
+                    <select id="filterCarrier">
+                        <option value="">Все</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label>Госномер</label>
+                    <input type="text" id="filterVehiclePlate" placeholder="Госномер">
+                </div>
+                <div class="filter-field">
+                    <label>Водитель</label>
+                    <input type="text" id="filterDriverName" placeholder="Водитель">
+                </div>
+                <div class="filter-field">
+                    <label>Дата рейса от</label>
+                    <input type="date" id="filterDateFrom">
+                </div>
+                <div class="filter-field">
+                    <label>Дата рейса до</label>
+                    <input type="date" id="filterDateTo">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn-clear" onclick="clearFilters()">Сбросить фильтры</button>
+                <button class="btn-apply" onclick="applyAdvancedFilters()">Применить</button>
+            </div>
+        </div>
+
+        <div id="tripsContainer" class="trips-container"><div class="loading">Загрузка...</div></div>
+    </div>
+</div>
+
+<script>
+    // ========== НАВИГАЦИЯ ==========
+    function navigateToReferences(tabId) {
+        localStorage.setItem('referencesTab', tabId);
+        window.location.href = '/references';
+    }
+
+    function navigateToSettings(section) {
+        localStorage.setItem('settingsSection', section);
+        window.location.href = '/settings';
+    }
+
+    // ========== ТЕМА ==========
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        const themeBtn = document.getElementById('themeToggle');
+        if (document.body.classList.contains('dark-theme')) {
+            localStorage.setItem('theme', 'dark');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        } else {
+            localStorage.setItem('theme', 'light');
+            if (themeBtn) themeBtn.innerHTML = '<span>🌙</span> Тема';
+        }
+    }
+
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    initTheme();
+
+    function toggleSubmenu(element) {
+        const menuItem = element.closest('.has-submenu');
+        menuItem.classList.toggle('open');
+        const submenu = menuItem.querySelector('.submenu');
+        if (submenu) submenu.classList.toggle('show');
+        event.stopPropagation();
+    }
+
+    let currentUserRole = '';
+    let currentProductType = 'BRANDED';
+    let allTrips = [];
+    let filterPanelVisible = false;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('type') === 'NON_BRANDED') {
+        currentProductType = 'NON_BRANDED';
+        document.getElementById('page-title').innerText = 'Рейсы (Небрендовая продукция)';
+    }
+
+    async function fetchCurrentUser() {
+        try {
+            const response = await fetch('/api/auth/current-user');
+            if (response.ok) {
+                const user = await response.json();
+                currentUserRole = user.role;
+                document.getElementById('username').innerText = user.username || user.fullName || 'User';
+                document.body.setAttribute('data-role', currentUserRole);
+
+                if (currentUserRole === 'LOGIST') {
+                    document.getElementById('tripsContainer').innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-text">Доступ запрещен. Только администратор или диспетчер могут просматривать рейсы.</div></div>';
+                }
+            } else {
+                document.getElementById('username').innerText = 'User';
+            }
+        } catch(e) {
+            document.getElementById('username').innerText = 'User';
+        }
+    }
+
+    document.getElementById('filterBtn')?.addEventListener('click', function() {
+        filterPanelVisible = !filterPanelVisible;
+        const panel = document.getElementById('filterPanel');
+        const btn = document.getElementById('filterBtn');
+        if (filterPanelVisible) {
+            panel.classList.add('show');
+            btn.classList.add('active');
+            loadCarriersForFilter();
+        } else {
+            panel.classList.remove('show');
+            btn.classList.remove('active');
+        }
+    });
+
+    async function loadCarriersForFilter() {
+        try {
+            const response = await fetch('/api/references/carriers');
+            const carriers = await response.json();
+            const select = document.getElementById('filterCarrier');
+            select.innerHTML = '<option value="">Все</option>' +
+                carriers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        } catch(e) {
+            console.error('Ошибка загрузки перевозчиков:', e);
+        }
+    }
+
+    function clearFilters() {
+        document.getElementById('filterStatus').value = 'ALL';
+        document.getElementById('filterSync').value = 'ALL';
+        document.getElementById('filterId').value = '';
+        document.getElementById('filterRequestId').value = '';
+        document.getElementById('filterCarrier').value = '';
+        document.getElementById('filterVehiclePlate').value = '';
+        document.getElementById('filterDriverName').value = '';
+        document.getElementById('filterDateFrom').value = '';
+        document.getElementById('filterDateTo').value = '';
+        applyFilters();
+    }
+
+    function applyAdvancedFilters() {
+        applyFilters();
+    }
+
+    async function loadTrips() {
+        if (currentUserRole === 'LOGIST') return;
+
+        try {
+            const response = await fetch(`/api/trips?type=${currentProductType}`);
+            if (!response.ok) {
+                if (response.status === 403) {
+                    document.getElementById('tripsContainer').innerHTML = '<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-text">Доступ запрещен. Только администратор или диспетчер могут просматривать рейсы.</div></div>';
+                    return;
+                }
+                throw new Error('Ошибка загрузки');
+            }
+            allTrips = await response.json();
+            allTrips.sort((a, b) => a.id - b.id);
+            applyFilters();
+        } catch(e) {
+            console.error(e);
+            document.getElementById('tripsContainer').innerHTML = '<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-text">Ошибка загрузки рейсов</div></div>';
+        }
+    }
+
+    function applyFilters() {
+        const filterStatus = document.getElementById('filterStatus').value;
+        const filterSync = document.getElementById('filterSync').value;
+        const filterId = document.getElementById('filterId').value;
+        const filterRequestId = document.getElementById('filterRequestId').value;
+        const filterCarrier = document.getElementById('filterCarrier').value;
+        const filterVehiclePlate = document.getElementById('filterVehiclePlate').value.toLowerCase();
+        const filterDriverName = document.getElementById('filterDriverName').value.toLowerCase();
+        const filterDateFrom = document.getElementById('filterDateFrom').value;
+        const filterDateTo = document.getElementById('filterDateTo').value;
+
+        let filtered = [...allTrips];
+
+        if (filterStatus !== 'ALL') {
+            filtered = filtered.filter(t => t.status === filterStatus);
+        }
+
+        if (filterSync === 'NOT_SET') {
+            filtered = filtered.filter(t => t.status === 'NEW' || t.status === 'ARRIVED_LOADING');
+        } else if (filterSync === 'PENDING') {
+            filtered = filtered.filter(t => t.status === 'LOADED' && !t.syncedToDispatch);
+        } else if (filterSync === 'COMPLETED') {
+            filtered = filtered.filter(t => t.syncedToDispatch === true);
+        }
+
+        if (filterId) {
+            filtered = filtered.filter(t => t.id === parseInt(filterId));
+        }
+        if (filterRequestId) {
+            filtered = filtered.filter(t => t.requestId === parseInt(filterRequestId));
+        }
+        if (filterCarrier) {
+            filtered = filtered.filter(t => t.carrierId === parseInt(filterCarrier) || t.carrierName === filterCarrier);
+        }
+        if (filterVehiclePlate) {
+            filtered = filtered.filter(t => t.vehiclePlate && t.vehiclePlate.toLowerCase().includes(filterVehiclePlate));
+        }
+        if (filterDriverName) {
+            filtered = filtered.filter(t => t.driverName && t.driverName.toLowerCase().includes(filterDriverName));
+        }
+        if (filterDateFrom) {
+            filtered = filtered.filter(t => t.tripDate && t.tripDate >= filterDateFrom);
+        }
+        if (filterDateTo) {
+            filtered = filtered.filter(t => t.tripDate && t.tripDate <= filterDateTo);
+        }
+
+        filtered.sort((a, b) => a.id - b.id);
+        renderTrips(filtered);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        var parts = dateString.split('-');
+        if (parts.length === 3) {
+            return parts[2] + '.' + parts[1] + '.' + parts[0];
+        }
+        return dateString;
+    }
+
+    function getStatusText(status) {
+        const map = {
+            'NEW': 'Новый',
+            'ARRIVED_LOADING': 'Прибыл на погрузку',
+            'LOADED': 'Погружен',
+            'IN_TRANSIT': 'В пути',
+            'PROCESSED': 'Обработан',
+            'CANCELLED': 'Отменен'
+        };
+        return map[status] || status;
+    }
+
+    function getStatusClass(status) {
+        const map = {
+            'NEW': 'new',
+            'ARRIVED_LOADING': 'arrived_loading',
+            'LOADED': 'loaded',
+            'IN_TRANSIT': 'loaded',
+            'PROCESSED': 'processed',
+            'CANCELLED': 'cancelled'
+        };
+        return map[status] || 'new';
+    }
+
+    function getSyncText(trip) {
+        if (trip.status === 'NEW' || trip.status === 'ARRIVED_LOADING') {
+            return 'Не установлен';
+        }
+        if (trip.status === 'LOADED' && !trip.syncedToDispatch) {
+            return 'Ожидает синхронизации';
+        }
+        if (trip.syncedToDispatch) {
+            return 'Синхронизирован';
+        }
+        return 'Не установлен';
+    }
+
+    function getSyncClass(trip) {
+        if (trip.status === 'NEW' || trip.status === 'ARRIVED_LOADING') {
+            return 'sync-not-set';
+        }
+        if (trip.status === 'LOADED' && !trip.syncedToDispatch) {
+            return 'sync-pending';
+        }
+        if (trip.syncedToDispatch) {
+            return 'sync-completed';
+        }
+        return 'sync-not-set';
+    }
+
+    function editTrip(tripId) {
+        window.location.href = `/trip-form?id=${tripId}`;
+    }
+
+    function viewTrip(tripId) {
+        window.location.href = `/trip-detail?id=${tripId}`;
+    }
+
+    async function deleteTrip(tripId) {
+        if (confirm('Удалить рейс? Рейс будет помечен как удаленный.')) {
+            try {
+                const response = await fetch(`/api/trips/${tripId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showNotification('Рейс удален', 'success');
+                    loadTrips();
+                } else {
+                    const error = await response.text();
+                    showNotification(error || 'Ошибка при удалении', 'error');
+                }
+            } catch(e) {
+                showNotification('Ошибка при удалении', 'error');
+            }
+        }
+    }
+
+    function renderTrips(trips) {
+        const container = document.getElementById('tripsContainer');
+        if (!trips.length) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-icon">🚛</div><div class="empty-text">Нет рейсов</div></div>';
+            return;
+        }
+
+        container.innerHTML = `
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID рейса</th>
+                        <th>Заявка</th>
+                        <th>Перевозчик</th>
+                        <th>Госномер</th>
+                        <th>Водитель</th>
+                        <th>Дата рейса</th>
+                        <th>Объем</th>
+                        <th>Статус</th>
+                        <th>Статус обмена</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${trips.map(trip => {
+                        const statusText = trip.statusDisplayName || getStatusText(trip.status);
+                        const statusColor = trip.statusColor || '#6b7280';
+                        const syncText = getSyncText(trip);
+                        const syncClass = getSyncClass(trip);
+                        const canEdit = trip.status === 'NEW';
+                        return `
+                            <tr>
+                                <td><a href="/trip-detail?id=${trip.id}" class="link-button">${trip.id}</a></span></span>
+                                <td><a href="/request-detail?id=${trip.requestId}" class="link-button">Заявка №${trip.requestId}</a></span></span>
+                                <td>${trip.carrierName || '-'}</span></span>
+                                <td>${trip.vehiclePlate || '-'}</span></span>
+                                <td>${trip.driverName || '-'}</span></span>
+                                <td>${formatDate(trip.tripDate)}</span></span>
+                                <td>${trip.volume} т</span></span>
+                                <td><span class="status-badge" style="background: ${statusColor}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; display: inline-block;">${statusText}</span></span>
+                                <td><span class="sync-badge ${syncClass}">${syncText}</span></span>
+                                <td>
+                                    <div class="action-buttons">
+                                        ${canEdit ?
+                                            `<button class="btn-edit" onclick="editTrip(${trip.id})">Редактировать</button>
+                                             <button class="btn-delete" onclick="deleteTrip(${trip.id})">Удалить</button>` :
+                                            `<button class="btn-edit" onclick="viewTrip(${trip.id})">Просмотр</button>`
+                                        }
+                                    </div>
+                                 </span>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+            color: white;
+            border-radius: 10px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    fetchCurrentUser().then(() => {
+        loadTrips();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+services:
+  postgres-logistics:
+    image: postgres:15
+    container_name: logistics_postgres
+    environment:
+      POSTGRES_DB: logistics_db
+      POSTGRES_USER: logistics_user
+      POSTGRES_PASSWORD: logistics_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - logistics-network
+    restart: unless-stopped
+
+  logistics-system:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: logistics-system
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      LOGISTICS_DB_PASSWORD: logistics_pass
+      DISPATCH_SYSTEM_PASSWORD: admin123
+    depends_on:
+      - postgres-logistics
+    networks:
+      - logistics-network
+    restart: unless-stopped
+    image: logistics-system:prod
+
+networks:
+  logistics-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

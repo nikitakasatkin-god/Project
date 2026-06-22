@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Форма заявки - Логистика</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #f5f7fb;
+            --bg-secondary: #ffffff;
+            --text-primary: #1a1f36;
+            --text-secondary: #374151;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --card-bg: #ffffff;
+            --sidebar-bg: #ffffff;
+            --header-bg: #ffffff;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --input-bg: #ffffff;
+            --hover-bg: #f9fafb;
+        }
+
+        body.dark-theme {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #eeeeee;
+            --text-secondary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --card-bg: #0f3460;
+            --sidebar-bg: #0f3460;
+            --header-bg: #16213e;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --input-bg: #1e2a4a;
+            --hover-bg: #1a2744;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100%;
+            background: var(--sidebar-bg);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            overflow-y: auto;
+            transition: background 0.3s ease;
+        }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid var(--border-color); }
+        .sidebar-header h2 {
+            font-size: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .sidebar-menu { padding: 20px 0; }
+        .menu-item { padding: 12px 24px; cursor: pointer; transition: all 0.3s; }
+        .menu-item:hover { background: var(--hover-bg); }
+        .menu-title { font-weight: 600; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
+        .has-submenu { position: relative; }
+        .submenu { margin-top: 8px; margin-left: 20px; display: none; }
+        .submenu.show { display: block; }
+        .submenu-item { padding: 8px 12px; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 14px; }
+        .submenu-item:hover { background: var(--hover-bg); color: #667eea; }
+        .arrow { font-size: 12px; transition: transform 0.2s; }
+        .has-submenu.open .arrow { transform: rotate(180deg); }
+        .main-content { margin-left: 260px; padding: 24px; }
+        .top-bar {
+            background: var(--header-bg);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
+        }
+        .page-title { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .logout-btn {
+            padding: 8px 16px;
+            background: #fee2e2;
+            color: #dc2626;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--hover-bg);
+        }
+        .back-btn { background: none; border: none; font-size: 14px; color: #667eea; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .content-panel {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            transition: background 0.3s ease;
+        }
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .form-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+        .form-section h3 {
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 18px;
+            color: var(--text-primary);
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+            margin-top: 24px;
+        }
+        .info-message {
+            background: #eef2ff;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #4338ca;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .info-message.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .readonly-field {
+            background: var(--input-bg);
+            cursor: not-allowed;
+        }
+        .field-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: var(--text-secondary); }
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 14px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            transition: border 0.2s;
+        }
+        .form-control:focus { outline: none; border-color: #667eea; }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .btn-secondary {
+            background: var(--hover-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; }
+            .form-row { grid-template-columns: 1fr; }
+            .form-actions { flex-direction: column; }
+            .form-actions button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-header"><h2>Логистика</h2></div>
+    <div class="sidebar-menu">
+        <div class="menu-item" onclick="window.location.href='/dashboard'"><div class="menu-title">Главная</div></div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Брендовая продукция<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/requests?type=BRANDED'">Заявки</div>
+                <div class="submenu-item dispatcher-only admin-only" onclick="window.location.href='/trips?type=BRANDED'">Рейсы</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Справочники<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="navigateToReferences('divisions')">Подразделения</div>
+                <div class="submenu-item" onclick="navigateToReferences('users')">Пользователи</div>
+                <div class="submenu-item" onclick="navigateToReferences('trip-statuses')">Статусы рейсов</div>
+                <div class="submenu-item" onclick="navigateToReferences('dispatch-mappings')">Сопоставление статусов</div>
+                <div class="submenu-item" onclick="navigateToReferences('carriers')">Перевозчики</div>
+                <div class="submenu-item" onclick="navigateToReferences('plants')">Заводы</div>
+                <div class="submenu-item" onclick="navigateToReferences('warehouses')">Склады</div>
+                <div class="submenu-item" onclick="navigateToReferences('products')">Продукты</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu admin-only">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Настройки<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="navigateToSettings('sync')">Синхронизация</div>
+                <div class="submenu-item" onclick="navigateToSettings('auto')">Автообработка заявок</div>
+                <div class="submenu-item" onclick="navigateToSettings('theme')">Оформление</div>
+            </div>
+        </div>
+        <div class="menu-item has-submenu">
+            <div class="menu-title" onclick="toggleSubmenu(this)">Профиль<span class="arrow">▼</span></div>
+            <div class="submenu">
+                <div class="submenu-item" onclick="window.location.href='/profile'">Личные данные</div>
+                <div class="submenu-item" onclick="window.location.href='/logout'">Выход</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="top-bar">
+        <button class="back-btn" onclick="history.back()">← Назад</button>
+        <h1 class="page-title" id="page-title">
+            <span th:text="${requestId != null ? 'Редактирование заявки' : 'Создание заявки'}"></span>
+        </h1>
+        <div class="user-info">
+            <span class="user-name" sec:authentication="name">User</span>
+            <button class="theme-toggle" id="themeToggle">
+                <span>🌙</span> Тема
+            </button>
+            <a href="/logout" class="logout-btn">Выйти</a>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <div id="infoMessage" class="info-message" style="display: none;">
+            <span>ℹ️</span>
+            <span id="infoMessageText"></span>
+        </div>
+
+        <form id="requestForm">
+            <div class="form-section">
+                <h3>Основная информация</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Тип продукции *</label>
+                        <select id="productType" class="form-control" required>
+                            <option value="BRANDED">Брендовая продукция</option>
+                            <option value="NON_BRANDED">Небрендовая продукция</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Продукт *</label>
+                        <select id="productId" class="form-control" required>
+                            <option value="">Выберите продукт</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Объем (тонн) *</label>
+                        <input type="number" id="volume" step="0.1" class="form-control" required>
+                        <div class="field-hint">Минимальный объем: 1 тонна</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Маршрут</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Пункт погрузки *</label>
+                        <select id="pickupPoint" class="form-control" required>
+                            <option value="">Выберите пункт погрузки</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Пункт разгрузки *</label>
+                        <select id="deliveryPoint" class="form-control" required>
+                            <option value="">Выберите пункт разгрузки</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Дата и время погрузки</h3>
+                <div class="info-message warning" style="margin-bottom: 16px;">
+                    <span>⚠️</span>
+                    <span>Дата погрузки не может быть раньше сегодняшнего дня</span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Дата начала погрузки *</label>
+                        <input type="date" id="pickupStartDate" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата окончания погрузки *</label>
+                        <input type="date" id="pickupEndDate" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Время начала погрузки *</label>
+                        <input type="time" id="pickupStartTime" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Время окончания погрузки *</label>
+                        <input type="time" id="pickupEndTime" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+
+            <div id="editRestrictions" class="form-section" style="display: none;">
+                <h3>Информация о заявке</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Статус</label>
+                        <input type="text" id="statusDisplay" class="form-control readonly-field" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Владелец заявки</label>
+                        <input type="text" id="ownerName" class="form-control readonly-field" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Подразделение</label>
+                        <input type="text" id="divisionName" class="form-control readonly-field" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата создания</label>
+                        <input type="text" id="createdAt" class="form-control readonly-field" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="cancelForm()">Отмена</button>
+                <button type="button" class="btn-primary" id="submitBtn" onclick="submitForm()">
+                    <span th:text="${requestId != null ? 'Сохранить изменения' : 'Создать заявку'}"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function navigateToReferences(tabId) {
+        localStorage.setItem('referencesTab', tabId);
+        window.location.href = '/references';
+    }
+
+    function navigateToSettings(section) {
+        localStorage.setItem('settingsSection', section);
+        window.location.href = '/settings';
+    }
+
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        const themeBtn = document.getElementById('themeToggle');
+        if (document.body.classList.contains('dark-theme')) {
+            localStorage.setItem('theme', 'dark');
+            if (themeBtn) themeBtn.innerHTML = '<span>☀️</span> Тема';
+        } else {
+            localStorage.setItem('theme', 'light');
+            if (themeBtn) themeBtn.innerHTML = '<span>🌙</span> Тема';
+        }
+    }
+
+    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    initTheme();
+
+    function toggleSubmenu(element) {
+        const menuItem = element.closest('.has-submenu');
+        menuItem.classList.toggle('open');
+        const submenu = menuItem.querySelector('.submenu');
+        if (submenu) submenu.classList.toggle('show');
+        if (event) event.stopPropagation();
+    }
+
+    let requestId = null;
+    let isEditMode = false;
+    let originalData = {};
+
+    const urlParams = new URLSearchParams(window.location.search);
+    requestId = urlParams.get('id');
+    isEditMode = requestId && requestId !== 'null';
+
+    async function loadProducts() {
+        try {
+            const response = await fetch('/api/requests/reference/products');
+            const products = await response.json();
+            const productSelect = document.getElementById('productId');
+            productSelect.innerHTML = '<option value="">Выберите продукт</option>' +
+                products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        } catch(e) {
+            console.error('Ошибка загрузки продуктов:', e);
+        }
+    }
+
+    async function loadLocations() {
+        try {
+            const [plants, warehouses] = await Promise.all([
+                fetch('/api/references/plants').then(r => r.json()),
+                fetch('/api/references/warehouses').then(r => r.json())
+            ]);
+
+            const pickupSelect = document.getElementById('pickupPoint');
+            const deliverySelect = document.getElementById('deliveryPoint');
+
+            pickupSelect.innerHTML = '<option value="">Выберите пункт погрузки</option>' +
+                plants.map(p => `<option value="${p.name}">🏭 Завод: ${p.name}</option>`).join('');
+
+            deliverySelect.innerHTML = '<option value="">Выберите пункт разгрузки</option>' +
+                warehouses.map(w => `<option value="${w.name}">📦 Склад: ${w.name}</option>`).join('');
+        } catch(e) {
+            console.error('Ошибка загрузки справочников:', e);
+            const pickupSelect = document.getElementById('pickupPoint');
+            const deliverySelect = document.getElementById('deliveryPoint');
+            if (pickupSelect) pickupSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+            if (deliverySelect) deliverySelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+        }
+    }
+
+    async function loadRequestData() {
+        if (!isEditMode) return;
+
+        try {
+            const response = await fetch(`/api/requests/${requestId}`);
+            const data = await response.json();
+            originalData = data;
+
+            document.getElementById('productType').value = data.productType;
+            document.getElementById('productId').value = data.product?.id || '';
+            document.getElementById('volume').value = data.volume;
+            document.getElementById('pickupPoint').value = data.pickupPoint;
+            document.getElementById('deliveryPoint').value = data.deliveryPoint;
+            document.getElementById('pickupStartDate').value = data.pickupStartDate;
+            document.getElementById('pickupEndDate').value = data.pickupEndDate;
+            document.getElementById('pickupStartTime').value = data.pickupStartTime;
+            document.getElementById('pickupEndTime').value = data.pickupEndTime;
+
+            document.getElementById('editRestrictions').style.display = 'block';
+            document.getElementById('statusDisplay').value = getStatusText(data.status);
+            document.getElementById('ownerName').value = data.owner?.fullName || data.owner?.username || 'Не указан';
+            document.getElementById('divisionName').value = data.division?.name || 'Не указано';
+            document.getElementById('createdAt').value = formatDateTime(data.createdAt);
+
+            if (data.status !== 'NEW') {
+                disableFormFields(true);
+                document.getElementById('infoMessage').style.display = 'flex';
+                document.getElementById('infoMessageText').innerHTML = 'Заявка имеет статус "' + getStatusText(data.status) + '". Редактирование недоступно.';
+                document.getElementById('submitBtn').style.display = 'none';
+            } else {
+                const userRole = await getCurrentRole();
+                if (userRole !== 'LOGIST' && userRole !== 'ADMIN') {
+                    disableFormFields(true);
+                    document.getElementById('infoMessage').style.display = 'flex';
+                    document.getElementById('infoMessageText').innerHTML = 'Только логист может редактировать заявку.';
+                    document.getElementById('submitBtn').style.display = 'none';
+                }
+            }
+
+            setDateRestrictions();
+
+        } catch(e) {
+            console.error('Ошибка загрузки заявки:', e);
+            showNotification('Не удалось загрузить данные заявки', 'error');
+        }
+    }
+
+    async function getCurrentRole() {
+        try {
+            const response = await fetch('/api/auth/current-user');
+            if (response.ok) {
+                const user = await response.json();
+                return user.role;
+            }
+        } catch(e) {
+            console.error('Ошибка получения роли:', e);
+        }
+        return 'LOGIST';
+    }
+
+    function getStatusText(status) {
+        const texts = {'NEW': 'Новая', 'IN_PROGRESS': 'В работе', 'PROCESSED': 'Обработана', 'COMPLETED': 'Завершена', 'REJECTED': 'Отклонена'};
+        return texts[status] || status;
+    }
+
+    function formatDateTime(dateTimeStr) {
+        if (!dateTimeStr) return '-';
+        const date = new Date(dateTimeStr);
+        return date.toLocaleString('ru-RU');
+    }
+
+    function disableFormFields(disabled) {
+        const fields = ['productType', 'productId', 'volume', 'pickupPoint', 'deliveryPoint',
+                       'pickupStartDate', 'pickupEndDate', 'pickupStartTime', 'pickupEndTime'];
+        fields.forEach(field => {
+            const el = document.getElementById(field);
+            if (el) el.disabled = disabled;
+        });
+    }
+
+    function setDateRestrictions() {
+        const today = new Date().toISOString().split('T')[0];
+        const startDateInput = document.getElementById('pickupStartDate');
+        const endDateInput = document.getElementById('pickupEndDate');
+
+        startDateInput.min = today;
+        endDateInput.min = today;
+
+        if (startDateInput.value && startDateInput.value < today) {
+            startDateInput.classList.add('readonly-field');
+            startDateInput.disabled = true;
+            document.getElementById('infoMessage').style.display = 'flex';
+            document.getElementById('infoMessageText').innerHTML = 'Дата начала погрузки не может быть изменена, так как установлена на прошедшую дату.';
+        }
+
+        startDateInput.addEventListener('change', function() {
+            if (this.value < today) {
+                alert('Дата не может быть раньше сегодняшнего дня');
+                this.value = today;
+            }
+            endDateInput.min = this.value;
+        });
+
+        endDateInput.addEventListener('change', function() {
+            if (this.value < startDateInput.value) {
+                alert('Дата окончания не может быть раньше даты начала');
+                this.value = startDateInput.value;
+            }
+        });
+    }
+
+    function validateForm() {
+        const productId = document.getElementById('productId').value;
+        const volume = parseFloat(document.getElementById('volume').value);
+        if (!productId) {
+            alert('Выберите продукт');
+            return false;
+        }
+        if (isNaN(volume) || volume <= 0) {
+            alert('Введите корректный объем (больше 0)');
+            return false;
+        }
+
+        const pickupPoint = document.getElementById('pickupPoint').value;
+        const deliveryPoint = document.getElementById('deliveryPoint').value;
+        if (!pickupPoint || !deliveryPoint) {
+            alert('Выберите пункт погрузки и разгрузки');
+            return false;
+        }
+
+        if (pickupPoint === deliveryPoint) {
+            alert('Пункт погрузки и разгрузки не могут совпадать');
+            return false;
+        }
+
+        const startDate = document.getElementById('pickupStartDate').value;
+        const endDate = document.getElementById('pickupEndDate').value;
+        if (!startDate || !endDate) {
+            alert('Выберите даты погрузки');
+            return false;
+        }
+
+        if (startDate > endDate) {
+            alert('Дата начала не может быть позже даты окончания');
+            return false;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        if (startDate < today) {
+            alert('Дата начала погрузки не может быть раньше сегодняшнего дня');
+            return false;
+        }
+
+        const startTime = document.getElementById('pickupStartTime').value;
+        const endTime = document.getElementById('pickupEndTime').value;
+        if (startTime && endTime && startTime >= endTime) {
+            alert('Время начала должно быть раньше времени окончания');
+            return false;
+        }
+
+        return true;
+    }
+
+    async function submitForm() {
+        if (!validateForm()) return;
+
+        const formData = {
+            productId: parseInt(document.getElementById('productId').value),
+            volume: parseFloat(document.getElementById('volume').value),
+            productType: document.getElementById('productType').value,
+            pickupPoint: document.getElementById('pickupPoint').value,
+            deliveryPoint: document.getElementById('deliveryPoint').value,
+            pickupStartDate: document.getElementById('pickupStartDate').value,
+            pickupEndDate: document.getElementById('pickupEndDate').value,
+            pickupStartTime: document.getElementById('pickupStartTime').value,
+            pickupEndTime: document.getElementById('pickupEndTime').value
+        };
+
+        try {
+            let response;
+            if (isEditMode) {
+                response = await fetch(`/api/requests/${requestId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(formData)
+                });
+            } else {
+                response = await fetch('/api/requests', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(formData)
+                });
+            }
+
+            if (response.ok) {
+                showNotification(isEditMode ? 'Заявка обновлена' : 'Заявка создана', 'success');
+                setTimeout(() => {
+                    window.location.href = '/requests?type=' + formData.productType;
+                }, 1000);
+            } else {
+                const error = await response.text();
+                alert('Ошибка: ' + error);
+            }
+        } catch(e) {
+            console.error('Ошибка сохранения:', e);
+            alert('Произошла ошибка при сохранении');
+        }
+    }
+
+    function cancelForm() {
+        if (isEditMode) {
+            window.location.href = `/request-detail?id=${requestId}`;
+        } else {
+            window.location.href = '/requests';
+        }
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === 'success' ? '#10b981' : '#ef4444'};
+            color: white;
+            border-radius: 10px;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadProducts();
+        await loadLocations();
+        if (isEditMode) {
+            await loadRequestData();
+            document.getElementById('page-title').innerText = 'Редактирование заявки';
+        } else {
+            setDateRestrictions();
+            const now = new Date();
+            const defaultTime = `${String(now.getHours()).padStart(2,'0')}:00`;
+            document.getElementById('pickupStartTime').value = defaultTime;
+            document.getElementById('pickupEndTime').value = '17:00';
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateX(100%); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+</body>
+</html>
